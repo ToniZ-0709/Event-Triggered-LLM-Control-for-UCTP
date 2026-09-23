@@ -1,0 +1,38 @@
+{
+  "instance": "lums-sum17",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\lums-sum17.xml",
+  "classes": 20,
+  "rooms": 62,
+  "courses": 19,
+  "students": 0,
+  "distributions": 2,
+  "runtime_seconds": 4.388847199967131,
+  "evaluations": 80,
+  "feasible": true,
+  "score": {
+    "hard": 0,
+    "time": 0,
+    "room": 12,
+    "distribution": 0,
+    "student": 0,
+    "weighted": [
+      0,
+      12,
+      0,
+      0
+    ],
+    "total": 12,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 40,
+    "generations": 2,
+    "partitions": 4,
+    "seed": 42,
+    "mutation_rate": 0.2,
+    "crossover_rate": 0.9
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "instance": "wbg-fal10",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\wbg-fal10.xml",
+  "classes": 150,
+  "rooms": 7,
+  "courses": 21,
+  "students": 19,
+  "distributions": 82,
+  "runtime_seconds": 41.43561349995434,
+  "evaluations": 800,
+  "feasible": false,
+  "score": {
+    "hard": 1,
+    "time": 0,
+    "room": 49,
+    "distribution": 9,
+    "student": 20,
+    "weighted": [
+      0,
+      49,
+      90,
+      200
+    ],
+    "total": 339,
+    "room_conflicts": 1,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 40,
+    "generations": 20,
+    "partitions": 4,
+    "seed": 42,
+    "mutation_rate": 0.2,
+    "crossover_rate": 0.9
+  },
+  "run_id": "20260923T050333285157Z_seed42"
+}
