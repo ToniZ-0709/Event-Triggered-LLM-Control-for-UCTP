@@ -42,17 +42,17 @@ def attendee_conflict(instance: Instance, a: Time, room_a: str | None,
     return not (a.end + travel <= b.start or b.end + travel <= a.start)
 
 
-def _blocks(intervals: list[tuple[int, int]], gap: int) -> list[tuple[int, int]]:
+def _blocks(intervals: list[tuple[int, int]], gap: int) -> list[tuple[int, int, int]]:
     if not intervals:
         return []
     intervals.sort()
-    blocks = [intervals[0]]
+    blocks = [(intervals[0][0], intervals[0][1], 1)]
     for start, end in intervals[1:]:
-        previous_start, previous_end = blocks[-1]
+        previous_start, previous_end, count = blocks[-1]
         if start <= previous_end + gap:
-            blocks[-1] = (previous_start, max(previous_end, end))
+            blocks[-1] = (previous_start, max(previous_end, end), count + 1)
         else:
-            blocks.append((start, end))
+            blocks.append((start, end, 1))
     return blocks
 
 
@@ -84,7 +84,8 @@ def distribution_violations(instance: Instance, distribution: Distribution,
                     if kind == "MaxBreaks":
                         excess += max(0, len(blocks) - distribution.params[0] - 1)
                     else:
-                        excess += sum(end - start > distribution.params[0] for start, end in blocks)
+                        excess += sum(count > 1 and end - start > distribution.params[0]
+                                      for start, end, count in blocks)
         return excess
 
     count = 0

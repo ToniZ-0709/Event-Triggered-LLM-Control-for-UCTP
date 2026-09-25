@@ -2,6 +2,8 @@
 
 Thư mục này triển khai baseline NSGA-III cho bài toán xếp thời khóa biểu đại học trên các instance ITC 2019. Đây là bộ giải nền để dùng trong nghiên cứu UCTP; phiên bản hiện tại **chưa triển khai LLM controller**.
 
+README tổng ở [thư mục gốc](../README.md) giới thiệu cả ba phương pháp, lệnh bắt đầu nhanh và cách đối chiếu kết quả. Mã baseline nằm trong `main.py` và `itc2019/`.
+
 ## Dữ liệu
 
 Baseline đọc các file XML gốc trong thư mục `Dataset_ITC2019`, nằm cùng cấp với thư mục `NSGA-III`:
@@ -22,13 +24,13 @@ Một instance chứa courses, classes, lựa chọn thời gian và phòng, sin
 
 `main.py` đọc XML, mã hóa lựa chọn thời gian/phòng cho từng class, khởi tạo quần thể và chạy NSGA-III. Mỗi cá thể được đánh giá theo bốn penalty có trọng số: time, room, soft distribution và student conflict. Số vi phạm hard được đưa vào như một constraint. Vòng lặp tìm kiếm sử dụng crossover, mutation, repair giới hạn và lựa chọn theo reference directions.
 
-Ở cuối lần chạy, solver chọn cá thể có ít vi phạm hard nhất; nếu bằng nhau thì chọn cá thể có tổng penalty có trọng số thấp nhất. `weighted_total` dùng để xếp các nghiệm cuối, còn NSGA-III tối ưu đồng thời bốn mục tiêu trong suốt quá trình tìm kiếm.
+Trong mỗi thế hệ, callback giữ bản sao nghiệm tốt nhất đã thấy theo thứ tự ít vi phạm hard nhất, rồi tổng penalty có trọng số thấp nhất. Ở cuối lần chạy, solver so nghiệm đã lưu với quần thể cuối và áp dụng cùng quy tắc để chọn nghiệm xuất. `weighted_total` dùng để xếp nghiệm khi số vi phạm hard bằng nhau, còn NSGA-III tối ưu đồng thời bốn mục tiêu trong suốt quá trình tìm kiếm.
 
 ## Cài đặt và chạy
 
 Yêu cầu Python 3.10 trở lên. Từ thư mục `NSGA-III`:
 
-```powershell
+```cmd
 python -m pip install -r requirements.txt
 python main.py --instance wbg-fal10 --inspect
 python main.py --instance wbg-fal10 --population 40 --generations 20 --seed 42
@@ -36,7 +38,7 @@ python main.py --instance wbg-fal10 --population 40 --generations 20 --seed 42
 
 `--inspect` chỉ đọc và tóm tắt instance, không chạy tối ưu. Một lần chạy nhiều instance:
 
-```powershell
+```cmd
 python main.py --instance wbg-fal10 --instance lums-sum17 --population 40 --generations 20 --seed 42
 ```
 
@@ -47,7 +49,7 @@ wbg-fal10
 lums-sum17
 ```
 
-```powershell
+```cmd
 python main.py --manifest subset.txt --population 40 --generations 20 --seed 42
 ```
 
@@ -63,27 +65,34 @@ python main.py --manifest subset.txt --population 40 --generations 20 --seed 42
 | `--generations N` | Số thế hệ | `20` |
 | `--partitions N` | Tham số sinh reference directions | `4` |
 | `--seed N` | Random seed | `42` |
+| `--time-limit-seconds T` | Giới hạn thời gian solver trên mỗi instance | Không đặt |
 | `--output DIR` | Thư mục lưu kết quả | `results_itc2019/` |
 
 Với bốn mục tiêu, population phải đủ lớn để chứa các reference directions. Cấu hình mặc định population `40` và partitions `4` đáp ứng điều kiện này.
 
 ## Output
 
-Mỗi lần chạy tối ưu tạo một thư mục theo timestamp và seed trong `results_itc2019/`:
+Mỗi bộ cấu hình tạo một thư mục có tên ổn định trong `results_itc2019/`. Tên cho biết số instance (`n`), population (`p`), generations (`g`), partitions (`r`), seed (`s`) và mã nhận diện cho các thiết lập còn lại:
 
 ```text
-results_itc2019/<run-id>/
+results_itc2019/run_n1_p100_g100_r4_s42_<mã nhận diện>/
+├── run_config.json
 ├── summary.json
 └── <instance>/
     ├── result.json
     ├── choices.npz
+    ├── anytime_trace.jsonl
     └── solution.xml       # chỉ được xuất khi nghiệm đạt điều kiện khả thi nội bộ
 ```
 
+- `run_config.json`: danh sách instance, mã kiểm tra nội dung XML, đầy đủ tham số NSGA-III, thông tin môi trường và thời điểm hoàn tất.
 - `summary.json`: tổng hợp kết quả của các instance trong lần chạy.
 - `result.json`: thông tin instance, runtime, số lần đánh giá, cấu hình, tính khả thi và điểm số.
 - `choices.npz`: các chỉ số lựa chọn time và room option trong chromosome; có thể xuất hiện cả khi nghiệm chưa khả thi.
+- `anytime_trace.jsonl`: thống kê quần thể sau mỗi thế hệ, cùng format với hai pipeline controller.
 - `solution.xml`: lịch và phân công sinh viên của nghiệm mà bộ kiểm tra nội bộ đánh giá là khả thi.
+
+Chạy lại cùng instance, dữ liệu, cấu hình, phiên bản code và môi trường sẽ ghi đè thư mục tương ứng **sau khi lần chạy mới hoàn tất**. Đổi một trong các yếu tố đó sẽ tạo thư mục khác. Dòng cuối trên terminal in `results_dir` để tìm kết quả và `overwrote_existing: true` nếu vừa thay thế kết quả cũ. Muốn lưu nhiều lần chạy độc lập, hãy dùng các seed khác nhau. Các output theo format cũ, nếu còn, không được chương trình tự dọn hoặc chuyển.
 
 Trong `result.json`, `score.hard` là số vi phạm hard nội bộ ghi nhận; `room_conflicts`, `room_unavailable`, `hard_distributions` và `unassigned_requests` giúp xác định nguồn vi phạm. `score.weighted` ghi bốn penalty sau trọng số, còn `score.total` là tổng của chúng. Chỉ so sánh weighted penalty giữa các nghiệm hợp lệ của cùng một instance.
 

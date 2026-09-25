@@ -1,0 +1,14 @@
+{
+  "include": [
+    "NSGA-III",
+    "Single-Agent Controller",
+    "Multi-Agent Controller",
+    "compare_pipelines.py"
+  ],
+  "extraPaths": [
+    "NSGA-III",
+    "Single-Agent Controller",
+    "Multi-Agent Controller"
+  ],
+  "pythonVersion": "3.10"
+}

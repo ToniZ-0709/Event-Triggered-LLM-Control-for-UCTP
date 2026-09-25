@@ -13,6 +13,9 @@ from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.repair import Repair
 from pymoo.core.sampling import Sampling
 from pymoo.optimize import minimize
+from pymoo.termination.collection import TerminationCollection
+from pymoo.termination.max_gen import MaximumGenerationTermination
+from pymoo.termination.max_time import TimeBasedTermination
 from pymoo.util.ref_dirs import get_reference_directions
 
 from .instance import Instance, Time
@@ -249,7 +252,8 @@ class RoomRepair(Repair):
                                        random_state, steps=4) for row in X])
 
 
-def run(instance: Instance, config: Config) -> tuple[np.ndarray, Score, object]:
+def run(instance: Instance, config: Config, *, callback=None,
+        time_limit_seconds: float | None = None) -> tuple[np.ndarray, Score, object]:
     directions = get_reference_directions("das-dennis", n_dim=4, n_partitions=config.partitions)
     if config.population < len(directions):
         raise ValueError(f"Population must be >= {len(directions)} reference directions")
@@ -257,15 +261,28 @@ def run(instance: Instance, config: Config) -> tuple[np.ndarray, Score, object]:
                       sampling=PlacementSampling(), crossover=ClassCrossover(config.crossover_rate),
                       mutation=ClassMutation(config.mutation_rate), repair=RoomRepair(),
                       eliminate_duplicates=False)
-    result = minimize(PlacementProblem(instance), algorithm,
-                      termination=("n_gen", config.generations), seed=config.seed,
-                      verbose=False, save_history=False)
+    termination = (("n_gen", config.generations) if time_limit_seconds is None else
+                   TerminationCollection(MaximumGenerationTermination(config.generations),
+                                         TimeBasedTermination(time_limit_seconds)))
+    options = {"termination": termination, "seed": config.seed,
+               "verbose": False, "save_history": False}
+    if callback is not None:
+        options["callback"] = callback
+    result = minimize(PlacementProblem(instance), algorithm, **options)
     if result.pop is None or len(result.pop) == 0:
         raise RuntimeError("NSGA-III returned an empty population")
     n = len(instance.classes)
     candidates = []
     for individual in result.pop:
         choices = np.asarray(individual.X, dtype=np.int32)
+        score, _ = evaluate(instance, choices[:n], choices[n:])
+        candidates.append((score.hard, score.total, choices, score))
+    # Selection can discard a low-total trade-off even when it is the best
+    # feasible solution seen so far. Preserve the same anytime incumbent for
+    # all three pipelines, including candidates injected by a controller.
+    observed = getattr(callback, "best_choices", None)
+    if observed is not None:
+        choices = np.asarray(observed, dtype=np.int32)
         score, _ = evaluate(instance, choices[:n], choices[n:])
         candidates.append((score.hard, score.total, choices, score))
     _, _, best_choices, best_score = min(candidates, key=lambda item: (item[0], item[1]))
