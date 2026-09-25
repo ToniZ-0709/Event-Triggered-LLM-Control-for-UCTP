@@ -1,29 +1,16 @@
-# NSGA-III + Inspector-Planner Controller
+# Multi-Agent Controller
 
-Pipeline này dùng solver ITC 2019 chung trong `../NSGA-III/`. Mỗi review có tối đa hai lời gọi OpenAI: Inspector chọn WHERE, sau đó Planner nhận cả packet gốc và target đã kiểm tra để chọn HOW và WHEN. Code xác thực quyết định, chạy operator có giới hạn và đưa tối đa một ứng viên qua chọn lọc NSGA-III.
+This pipeline adds an Inspector-Planner controller to the shared NSGA-III solver. At each review, the Inspector selects a target region; the Planner selects an allowed improvement operator and the next review interval. A review uses up to two sequential LLM calls. The solver validates the decisions and evaluates any proposed change. Shared solver code is in [`../NSGA-III/itc2019/`](../NSGA-III/itc2019/).
 
-README tổng ở [repository root](../README.md) mô tả cách so sánh ba phương pháp. Baseline và evaluator chung được giới thiệu trong [NSGA-III README](../NSGA-III/README.md).
+## Setup and run
 
-## Chạy nhanh
+From this folder, install the requirements. API-backed optimization requires an OpenAI API key in `OPENAI_API_KEY`; provide the API model ID with `--model` or `OPENAI_MODEL` when running.
 
-Cần Python 3.10 trở lên. Khi chạy tối ưu, cần biến môi trường `OPENAI_API_KEY` và model được tài khoản hỗ trợ. `--inspect` chỉ đọc XML, không cần API key. Từ thư mục này:
-
-```cmd
+```powershell
 python -m pip install -r requirements.txt
-python main.py --instance lums-sum17 --inspect
-python main.py --instance lums-sum17 --model gpt-4o-mini --population 40 --generations 20 --seed 42
+python main.py --manifest ../pilot_instances.txt --population 40 --partitions 4 --generations 1000 --seed 17 --time-limit-seconds 90 --api-timeout-seconds 15 --max-api-calls 16
 ```
 
-Lệnh tối ưu sẽ gọi API và có thể phát sinh chi phí. Cả hai vai dùng cùng model từ `--model` hoặc `OPENAI_MODEL`. Khi so sánh, dùng cùng model cho pipeline single-agent. Để giới hạn thời gian trên từng instance, thêm `--time-limit-seconds 300` và đặt `--generations` đủ lớn.
+Repeat with seeds `42` and `73`. For comparison, use the same model, instance manifest, seeds, solver settings, and time limit as the single-agent pipeline. API latency is included in the time limit. `--inspect` parses the instances without making API calls. Run `python main.py --help` for controller-specific options.
 
-## File chính
-
-```text
-Multi-Agent Controller/
-├── main.py
-├── controller.py
-├── requirements.txt
-└── README.md
-```
-
-Parser, evaluator, NSGA-III, review gate, region builder, improvement operators và OpenAI adapter đều ở `../NSGA-III/itc2019/` để hai pipeline controller dùng cùng một implementation.
+Results are saved under `results_itc2019/`. The run metadata and API request records include configuration details. API use may incur charges.

@@ -1,49 +1,41 @@
 # Event-Triggered LLM Control for University Course Timetabling
 
-Repository này phục vụ nghiên cứu các phương pháp tiến hóa cho bài toán xếp thời khóa biểu đại học (University Course Timetabling Problem, UCTP) trên bộ benchmark International Timetabling Competition 2019 (ITC 2019).
+This repository compares three ITC 2019 course-timetabling pipelines: an NSGA-III baseline, a single-agent controller, and an Inspector-Planner controller. The two controller pipelines use the OpenAI Responses API to select bounded solver actions; the baseline does not call an LLM.
 
-## Current status
+## Pipelines
 
-Repository cung cấp baseline NSGA-III và hai pipeline controller chạy qua OpenAI API. Single-agent chọn WHERE, HOW, WHEN trong một lời gọi; Inspector-Planner chia quyết định thành tối đa hai lời gọi. Cả ba dùng cùng solver ITC 2019. Baseline và bộ đánh giá nội bộ vẫn cần đối chiếu official validator trước khi dùng làm kết quả nghiên cứu.
+- [NSGA-III baseline](<NSGA-III/README.md>)
+- [Single-Agent Controller](<Single-Agent Controller/README.md>)
+- [Multi-Agent Controller](<Multi-Agent Controller/README.md>)
 
-## Cấu trúc repository
+The shared ITC 2019 parser, evaluator, solver, regions, and improvement operators are in `NSGA-III/itc2019/`.
 
-```text
-.
-├── Dataset_ITC2019/          # Các instance XML gốc của ITC 2019
-├── NSGA-III/                 # Mã solver dùng chung và baseline
-├── Single-Agent Controller/ # Pipeline một lời gọi OpenAI
-├── Multi-Agent Controller/  # Pipeline Inspector-Planner hai lời gọi
-└── compare_pipelines.py     # Kiểm tra và so sánh ba run cùng cấu hình
+## Pilot benchmark setup
+
+The pilot subset contains two instances from each official release group, ranging from 417 to 1,083 classes and including student data. The names and grouping follow the [ITC 2019 instance releases](https://www.itc2019.org/early-instances), [middle](https://www.itc2019.org/middle-instances), and [late](https://www.itc2019.org/late-instances) instance pages.
+
+| Release group | Instances | Classes |
+| --- | --- | ---: |
+| Early | `muni-fi-spr16`, `muni-fsps-spr17` | 575, 561 |
+| Middle | `yach-fal17`, `nbi-spr18` | 417, 782 |
+| Late | `mary-fal18`, `bet-spr18` | 951, 1,083 |
+
+The subset is recorded in [`pilot_instances.txt`](pilot_instances.txt). The configured run uses paired seeds `17`, `42`, and `73`, population `40`, partitions `4`, generation cap `1000`, and a `90` second per-instance wall-clock limit for all three pipelines. This produces 54 instance runs and takes about 81 minutes at the full time limit when run serially.
+
+Both controller pipelines require an OpenAI API key in `OPENAI_API_KEY`. Supply the API model ID with `--model` or `OPENAI_MODEL`; the baseline does not use a model. Controller limits are a 15 second API timeout, 8 API calls for single-agent, and 16 for multi-agent, allowing up to 8 review opportunities per method.
+
+Run each method from its own directory, repeating the command for each seed. For example, from `NSGA-III/`:
+
+```powershell
+python main.py --manifest ../pilot_instances.txt --population 40 --partitions 4 --generations 1000 --seed 17 --time-limit-seconds 90
 ```
 
-Thư mục dữ liệu gồm 36 instance XML: 30 instance thi đấu và 6 test instance. Mỗi file XML mô tả một bài toán độc lập. Có thể chạy toàn bộ dữ liệu hoặc chọn subset bằng tùy chọn instance/manifest của baseline.
+For either controller, use the same solver options and add `--api-timeout-seconds 15`; also set `--max-api-calls 8` for single-agent or `16` for multi-agent. Configure `OPENAI_API_KEY` and provide the API model ID at runtime. API latency counts toward the wall-clock budget; controller runs may incur API charges. Keep each method's result directory for comparison with `compare_pipelines.py`.
 
-## Bắt đầu nhanh
+## Official validation
 
-Yêu cầu Python 3.10 trở lên. Chạy các lệnh sau từ thư mục gốc repository:
+The internal evaluator is not a substitute for the [official ITC 2019 validator](https://www.itc2019.org/validator). Log in to the ITC 2019 site, open **Validation**, upload a generated solution XML, and select **Validate**. The solution must use the ITC solution format and its instance name must match the problem instance. The [official FAQ](https://www.itc2019.org/faq) describes the validation and upload flow. Validation is required before treating a generated schedule as officially valid.
 
-```cmd
-python -m pip install -r NSGA-III/requirements.txt
-cd NSGA-III
-python main.py --instance wbg-fal10 --population 40 --generations 20 --seed 42
-```
+## Requirements
 
-README của từng phương pháp: [NSGA-III baseline](NSGA-III/README.md), [Single-Agent Controller](Single-Agent%20Controller/README.md), [Multi-Agent Controller](Multi-Agent%20Controller/README.md).
-
-Hai pipeline controller cần `OPENAI_API_KEY` và model được chỉ định khi tối ưu; `--inspect` không cần API key.
-
-Sau khi chạy đủ ba phương pháp với cùng instance, seed và thời gian giới hạn, kiểm tra cấu hình và so sánh theo từng instance bằng lệnh:
-
-```cmd
-python compare_pipelines.py --baseline "NSGA-III/results_itc2019/RUN_ID" --single "Single-Agent Controller/results_itc2019/RUN_ID" --multi "Multi-Agent Controller/results_itc2019/RUN_ID"
-```
-
-## Kiểm chứng
-
-Bộ đánh giá nội bộ báo cáo vi phạm hard và penalty có trọng số. Trước khi dùng điểm số để so sánh trong nghiên cứu, cần kiểm tra file nghiệm bằng [validator chính thức của ITC 2019](https://www.itc2019.org/validator). Heuristic xếp sinh viên thất bại không chứng minh instance không có nghiệm khả thi.
-
-## Tài liệu tham khảo
-
-- [ITC 2019 problem format](https://www.itc2019.org/format)
-- [ITC 2019 competition paper](https://www.itc2019.org/papers/itc2019-patat2018.pdf)
+Python 3.10 or later. Install the requirements for the pipeline being used; controller pipelines additionally require an OpenAI API key.
