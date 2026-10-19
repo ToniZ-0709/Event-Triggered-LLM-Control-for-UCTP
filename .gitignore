@@ -4,3 +4,15 @@
 NSGA-III/results_itc2019/
 Single-Agent Controller/results_itc2019/
 Multi-Agent Controller/results_itc2019/
+solver_checks/calibration_20261017/
+solver_checks/tuning_20261017/
+solver_checks/extended_trace_20261017/
+solver_checks/preparation_v3/
+solver_checks/strengthening_runs/
+solver_checks/recalibration_v4/
+**/.env
+**/.env.*
+!**/.env.example
+**/*api-key*.txt
+solver_checks/official_validation/
+tmp/

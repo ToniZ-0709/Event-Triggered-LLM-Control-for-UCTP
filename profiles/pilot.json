@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "name": "local-pilot-measured",
+  "solver": {
+    "population": 20,
+    "partitions": 3,
+    "mutation_rate": 0.35,
+    "mutation_fraction": 0.01,
+    "crossover_rate": 0.7,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "inner_partitions": null,
+    "inner_scale": 0.5
+  },
+  "repair": {
+    "interval": 5,
+    "near_feasible_hard": 12,
+    "neighborhood_classes": 32,
+    "neighborhood_options": 32,
+    "neighborhood_seconds": 8,
+    "neighborhood_deterministic_limit": 0.5,
+    "fallback_seconds": 2,
+    "fallback_evaluations": 128,
+    "failure_cooldown": 5,
+    "max_failure_cooldown": 20
+  },
+  "controller": {
+    "review_interval": 10,
+    "warmup_generations": 5,
+    "stagnation_window": 5,
+    "min_review_interval": 3,
+    "max_review_interval": 20,
+    "diversity_threshold": 0.2,
+    "diversity_recovery_threshold": 0.3,
+    "max_regions": 6,
+    "region_size": 5,
+    "max_operator_evaluations": 24,
+    "max_reviews": 12,
+    "api_timeout_seconds": 15,
+    "max_output_tokens": 1024
+  },
+  "llm": {
+    "provider": "gemini",
+    "model": "gemini-3.8-flash",
+    "free_tier_only": true,
+    "min_request_interval_seconds": 10.0,
+    "max_input_characters": 60000
+  },
+  "instances": {
+    "muni-fi-spr16": {
+      "generations": 200,
+      "evaluations": 1200,
+      "time_limit_seconds": 840
+    },
+    "muni-fsps-spr17": {
+      "generations": 200,
+      "evaluations": 1200,
+      "time_limit_seconds": 630
+    },
+    "yach-fal17": {
+      "generations": 200,
+      "evaluations": 1200,
+      "time_limit_seconds": 1050,
+      "population": 12,
+      "partitions": 2,
+      "repair_neighborhood_seconds": 15,
+      "repair_neighborhood_deterministic_limit": 2
+    },
+    "nbi-spr18": {
+      "generations": 200,
+      "evaluations": 1200,
+      "time_limit_seconds": 750,
+      "population": 12,
+      "partitions": 2
+    },
+    "mary-fal18": {
+      "generations": 200,
+      "evaluations": 1100,
+      "time_limit_seconds": 810
+    },
+    "bet-spr18": {
+      "generations": 230,
+      "evaluations": 2300,
+      "time_limit_seconds": 2880
+    }
+  },
+  "provenance": {
+    "decisions": "IMPROVEMENT_HISTORY.md",
+    "history_entries": [
+      "H18",
+      "H19",
+      "H20",
+      "H22",
+      "H23",
+      "H24",
+      "H25",
+      "H26",
+      "H27",
+      "H28",
+      "H29",
+      "H30",
+      "H31",
+      "H32"
+    ],
+    "solver_source_sha256": "e93b50a6140e6b943fd49ec6f2fbf22fec6db9d603facac216eb38e9021c2f05",
+    "candidate": "instance_specific_mutation_preset",
+    "source_note": "solver_source_sha256 identifies the measured H29-H30 snapshot, not the later Gemini transport/logging sources. Search/repair settings are unchanged. API integration is only offline-tested until a Free Tier key is configured.",
+    "recalibration_required": true,
+    "endpoint_time_censoring": {
+      "bet-spr18": [
+        42
+      ]
+    },
+    "budget_status": {
+      "bet-spr18": "time_censored",
+      "mary-fal18": "measured_local_knee",
+      "muni-fi-spr16": "progressing_at_evaluation_cap",
+      "muni-fsps-spr17": "measured_local_knee",
+      "nbi-spr18": "measured_local_knee",
+      "yach-fal17": "progressing_at_evaluation_cap"
+    },
+    "calibration_seeds": [
+      17,
+      42
+    ],
+    "screening_and_promotion_seeds": [
+      17,
+      42,
+      73
+    ],
+    "raw_artifact_root": "solver_checks/recalibration_v4",
+    "accepted_record_manifest": "solver_checks/recalibration_v4/_accepted_records.json",
+    "budget_rule": "Measured local cap: 90% of observed feasible soft gain plus grace, or last hard improvement plus grace; never beyond the shortest measured seed trajectory.",
+    "timing_note": "Concurrent local engineering runs, up to five compute workers during supplemental probes; safety-cap sizing, not a speed comparison."
+  }
+}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import math
 from collections import defaultdict
@@ -12,7 +12,7 @@ import numpy as np
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
 from .instance import Instance
-from .scoring import distribution_violations, evaluate, overlaps
+from .scoring import distribution_violations, evaluate, overlaps, attendee_conflict
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,8 +24,8 @@ class RegionCandidate:
     class_ids: tuple[str, ...]
     boundary_class_ids: tuple[str, ...]
     constraint_ids: tuple[str, ...]
-    hard_contribution: int
-    soft_contribution: int
+    hard_contribution: float
+    soft_contribution: float
     unlocalized_penalties: tuple[str, ...]
     class_summaries: tuple[dict, ...]
     movable_class_count: int
@@ -35,6 +35,9 @@ class RegionCandidate:
     def public(self) -> dict:
         result = asdict(self)
         result.pop("class_indices")
+        result["boundary_class_count"] = len(self.boundary_class_ids)
+        result["boundary_truncated"] = len(self.boundary_class_ids) > 32
+        result["boundary_class_ids"] = self.boundary_class_ids[:32]
         return result
 
 
@@ -69,6 +72,20 @@ def swap_targets(instance: Instance, choices: np.ndarray, left: int,
     return new_a[0], new_a[1], new_b[0], new_b[1]
 
 
+def placement_diversity(chromosomes: np.ndarray) -> float:
+    """Mean pairwise fraction of classes with a different time or room."""
+    chromosomes = np.asarray(chromosomes, dtype=np.int32)
+    n_classes = chromosomes.shape[1] // 2
+    if len(chromosomes) < 2 or n_classes == 0:
+        return 0.0
+    left, right = np.triu_indices(len(chromosomes), k=1)
+    different = ((chromosomes[left, :n_classes] !=
+                  chromosomes[right, :n_classes]) |
+                 (chromosomes[left, n_classes:] !=
+                  chromosomes[right, n_classes:]))
+    return float(np.mean(np.count_nonzero(different, axis=1) / n_classes))
+
+
 def population_metrics(algorithm, elapsed_seconds: float,
                        remaining_seconds: float | None) -> dict:
     pop = algorithm.pop
@@ -80,17 +97,22 @@ def population_metrics(algorithm, elapsed_seconds: float,
     feasible_front = 0
     if feasible.any():
         feasible_front = len(NonDominatedSorting().do(weighted[feasible], only_non_dominated_front=True))
-    unique = len({tuple(map(int, row)) for row in np.asarray(pop.get("X"))})
+    chromosomes = np.asarray(pop.get("X"), dtype=np.int32)
+    unique = len({tuple(map(int, row)) for row in chromosomes})
     niches = pop.get("niche")
     valid_niches = [] if niches is None else [int(value) for value in niches
                                              if value is not None and int(value) >= 0]
     direction_count = len(algorithm.ref_dirs)
     objective_names = ("time", "room", "distribution", "student")
+    evaluations = int(algorithm.evaluator.n_eval) + getattr(algorithm.problem, "repair_scoring_calls", 0)
+    evaluation_budget = getattr(algorithm.problem, "evaluation_budget", None)
     return {
         "generation": int(algorithm.n_gen),
         "elapsed_seconds": round(elapsed_seconds, 3),
         "remaining_seconds": None if remaining_seconds is None else round(max(0.0, remaining_seconds), 3),
-        "evaluations": int(algorithm.evaluator.n_eval),
+        "evaluations": evaluations,
+        "evaluation_budget": evaluation_budget,
+        "remaining_evaluations": None if evaluation_budget is None else max(0, evaluation_budget - evaluations),
         "population_size": len(pop),
         "feasible_count": int(np.count_nonzero(feasible)),
         "best_hard": int(hard[best_index]),
@@ -100,6 +122,7 @@ def population_metrics(algorithm, elapsed_seconds: float,
         "metric_source": "internal_evaluator",
         "feasible_nondominated_count": feasible_front,
         "decision_diversity": round(unique / len(pop), 4),
+        "placement_diversity": round(placement_diversity(chromosomes), 4),
         "reference_direction_coverage": (
             round(len(set(valid_niches)) / direction_count, 4)
             if valid_niches and direction_count else None),
@@ -122,7 +145,7 @@ class RegionBuilder:
                 self.by_class[index].append(distribution)
 
     def _contributions(self, choices: np.ndarray) -> tuple[
-            list[int], list[int], list[set[int]], list[set[str]], tuple[str, ...]]:
+            list[float], list[float], list[set[int]], list[set[str]], tuple[str, ...]]:
         instance = self.instance
         n = len(instance.classes)
         times = [cls.times[int(choices[i])] for i, cls in enumerate(instance.classes)]
@@ -153,42 +176,104 @@ class RegionBuilder:
                         constraint_ids[left].add(conflict_id)
                         constraint_ids[right].add(conflict_id)
         for distribution_index, distribution in enumerate(instance.distributions):
+            for i in distribution.classes:
+                neighbors[i].update(j for j in distribution.classes if j != i)
+                constraint_ids[i].add(f"distribution:{distribution_index}")
             violations = distribution_violations(instance, distribution, times, rooms)
             if not violations:
                 continue
             contribution = (violations if distribution.required else
                             violations * distribution.penalty * instance.weights[2])
-            for i in distribution.classes:
-                (hard if distribution.required else soft)[i] += contribution
-                neighbors[i].update(j for j in distribution.classes if j != i)
-                constraint_ids[i].add(f"distribution:{distribution_index}")
-        score, _ = evaluate(instance, choices[:n], choices[n:])
+            target = hard if distribution.required else soft
+            if distribution.kind not in {"MaxDays", "MaxDayLoad", "MaxBreaks", "MaxBlock"}:
+                for a, b in combinations(distribution.classes, 2):
+                    amount = distribution_violations(instance, replace(distribution, classes=(a,b)), times, rooms)
+                    if amount:
+                        cost = amount if distribution.required else amount*distribution.penalty*instance.weights[2]
+                        target[a] += cost
+                        target[b] += cost
+            else:
+                for i in distribution.classes:
+                    target[i] += contribution/max(1, len(distribution.classes))
+        # A legal alternative room can be occupied by a currently nonviolating blocker.
+        for i, cls in enumerate(instance.classes):
+            for room, _ in cls.room_options:
+                neighbors[i].update(j for j in by_room.get(room, ()) if j != i)
+        fn = getattr(self, "score_fn", None)
+        score = fn(choices) if fn else evaluate(instance, choices[:n], choices[n:])[0]
         self.scoring_calls += 1
         unlocalized = []
         if score.student:
-            unlocalized.append("student_conflict")
+            engine = getattr(self, "engine", None)
+            if engine is None:
+                unlocalized.append("student_conflict")
+            else:
+                attending = defaultdict(list)
+                for i, students in engine.details(choices).items():
+                    for student in students:
+                        attending[student].append(i)
+                for members in attending.values():
+                    for a, b in combinations(sorted(members), 2):
+                        if attendee_conflict(instance, times[a], rooms[a], times[b], rooms[b]):
+                            soft[a] += instance.weights[3]
+                            soft[b] += instance.weights[3]
+                            neighbors[a].add(b)
+                            neighbors[b].add(a)
+                            constraint_ids[a].add("student_conflict")
+                            constraint_ids[b].add("student_conflict")
         if score.unassigned_requests:
             unlocalized.append("unassigned_requests")
         return hard, soft, neighbors, constraint_ids, tuple(unlocalized)
 
     def build(self, algorithm, max_regions: int, region_size: int) -> list[RegionCandidate]:
+        self.score_fn = getattr(getattr(algorithm, "problem", None), "score_state", None)
+        self.engine = getattr(getattr(algorithm, "problem", None), "engine", None)
         pop = algorithm.pop
         hard = np.asarray(pop.get("G"), dtype=float).reshape(-1)
         totals = np.asarray(pop.get("F"), dtype=float).sum(axis=1)
-        representatives = sorted(range(len(pop)), key=lambda i: (hard[i], totals[i], i))[:2]
+        ranked_solutions = sorted(range(len(pop)), key=lambda i: (hard[i], totals[i], i))
+        representatives = []
+        seen_chromosomes: set[bytes] = set()
+        for index in ranked_solutions:
+            chromosome = np.asarray(pop[index].X, dtype=np.int32).tobytes()
+            if chromosome in seen_chromosomes:
+                continue
+            seen_chromosomes.add(chromosome)
+            representatives.append(index)
+            if len(representatives) == 2:
+                break
+        if len(representatives) == 2:
+            first = representatives[0]
+            weighted = np.asarray(pop.get("F"), dtype=float)
+            norm = (weighted-weighted.min(axis=0))/(np.ptp(weighted, axis=0)+1)
+            eligible = [i for i in ranked_solutions if i != first and
+                        hard[i] <= hard[first]+(0 if hard[first] == 0 else 1) and
+                        not np.array_equal(pop[i].X, pop[first].X)]
+            if eligible:
+                representatives[1] = max(eligible, key=lambda i: (
+                    float(np.linalg.norm(norm[i]-norm[first])) +
+                    float(np.mean(np.asarray(pop[i].X) != np.asarray(pop[first].X))), -i))
         per_solution = math.ceil(max_regions / len(representatives))
         candidates: list[RegionCandidate] = []
         seen: set[tuple[int, tuple[int, ...]]] = set()
-        for solution_index in representatives:
+        for position, solution_index in enumerate(representatives):
+            target_count = (max_regions if position == len(representatives) - 1 else
+                            min(max_regions, per_solution * (position + 1)))
             choices = np.asarray(pop[solution_index].X, dtype=np.int32)
             hard_by_class, soft_by_class, neighbors, by_class_constraints, unlocalized = (
                 self._contributions(choices))
             ranked = sorted(range(len(self.instance.classes)),
                             key=lambda i: (-hard_by_class[i], -soft_by_class[i], i))
-            for center in ranked[:per_solution]:
-                adjacent = sorted(neighbors[center],
-                                  key=lambda i: (-hard_by_class[i], -soft_by_class[i], i))
-                active = tuple(sorted([center, *adjacent[:max(0, region_size - 1)]]))
+            for center in ranked:
+                if len(candidates) >= target_count:
+                    break
+                component = {center}
+                while len(component) < region_size:
+                    frontier = set().union(*(neighbors[i] for i in component))-component
+                    if not frontier:
+                        break
+                    component.add(min(frontier, key=lambda i: (-hard_by_class[i], -soft_by_class[i], i)))
+                active = tuple(sorted(component))
                 key = (solution_index, active)
                 if key in seen:
                     continue

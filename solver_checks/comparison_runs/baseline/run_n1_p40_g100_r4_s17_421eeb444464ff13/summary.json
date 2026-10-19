@@ -1,0 +1,54 @@
+[
+  {
+    "instance": "bet-sum18",
+    "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\bet-sum18.xml",
+    "classes": 127,
+    "rooms": 46,
+    "courses": 48,
+    "students": 0,
+    "distributions": 144,
+    "runtime_seconds": 100.73529709991999,
+    "evaluations": 4000,
+    "feasible": false,
+    "score": {
+      "hard": 36,
+      "time": 24,
+      "room": 1262,
+      "distribution": 98,
+      "student": 0,
+      "weighted": [
+        24,
+        1262,
+        980,
+        0
+      ],
+      "total": 2266,
+      "room_conflicts": 0,
+      "room_unavailable": 1,
+      "hard_distributions": 35,
+      "unassigned_requests": 0
+    },
+    "config": {
+      "population": 40,
+      "generations": 100,
+      "partitions": 4,
+      "seed": 17,
+      "mutation_rate": 0.2,
+      "crossover_rate": 0.9
+    },
+    "stop_on_feasible": false,
+    "selection_policy": "best_observed_lexicographic_hard_then_total",
+    "validation": {
+      "internal_feasible": false,
+      "official_status": "not_run"
+    },
+    "run_id": "run_n1_p40_g100_r4_s17_421eeb444464ff13",
+    "monitor": {
+      "generations_recorded": 100,
+      "time_limit_seconds": null,
+      "elapsed_seconds": 100.751,
+      "best_observed_hard": 36,
+      "best_observed_internal_total": 2266
+    }
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "run_id": "run_n1_p40_g2_r4_s17_a94e11c7ad5511c5",
+  "settings": {
+    "instances": [
+      {
+        "file": "muni-fi-spr16.xml",
+        "sha256": "24ade384213545a5416a628fbfeb6cbf2408e8a89423d515f1ae8c7b01c1d532"
+      }
+    ],
+    "config": {
+      "population": 40,
+      "generations": 2,
+      "partitions": 4,
+      "seed": 17,
+      "mutation_rate": 0.2,
+      "crossover_rate": 0.9
+    },
+    "solution_metadata": {
+      "author": "NSGA-III baseline",
+      "institution": "Ho Chi Minh City University of Technology",
+      "country": "Vietnam"
+    },
+    "environment": {
+      "python": "3.11.9",
+      "numpy": "2.4.6",
+      "pymoo": "0.6.2"
+    },
+    "solver_sources_sha256": {
+      "main.py": "33cd0528410bad86eaac39c3099a0050ceec51aacc43d02ef6fdf8bc701c3015",
+      "itc2019/instance.py": "207f27acfce521004b44c4e4be0f4e93db320ade96ab1ae3227e4a08cf645142",
+      "itc2019/nsga3.py": "bc8630485cee7cb501168718903e71a354ba3312113c1a6ae8e5eaee0ac49b7f",
+      "itc2019/scoring.py": "aff115e3f1f7d2f96dd99b47d15dc16ced0c47c36242b2c27f254ec2a79e70b7",
+      "itc2019/controller.py": "f57c4ac4585ff5afc8bf209635075f29cde07e6f6e36fe75c40c41d3bb92e6dd",
+      "itc2019/regions.py": "04002c670f0a06e6840cb6168e921d3fb1b0575d35ae718aa5717eab2a60c000",
+      "itc2019/operators.py": "daf7825c942959c106f5aa8e3aeeb42bab5c44678a8fe2be2e9ab0a9b1d4bde9"
+    },
+    "time_limit_seconds": null,
+    "stop_on_feasible": false
+  },
+  "dataset_directory": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019",
+  "completed_at_utc": "2026-10-17T07:32:46.489397+00:00"
+}

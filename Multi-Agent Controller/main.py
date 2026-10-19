@@ -1,4 +1,4 @@
-"""Run ITC 2019 NSGA-III with OpenAI Inspector and Planner roles."""
+"""Run ITC 2019 NSGA-III with Gemini Inspector and Planner roles."""
 
 from __future__ import annotations
 

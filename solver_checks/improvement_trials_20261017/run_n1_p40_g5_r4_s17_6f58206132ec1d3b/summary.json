@@ -1,0 +1,58 @@
+[
+  {
+    "instance": "yach-fal17",
+    "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\yach-fal17.xml",
+    "classes": 417,
+    "rooms": 33,
+    "courses": 91,
+    "students": 821,
+    "distributions": 645,
+    "runtime_seconds": 417.44297559998813,
+    "evaluations": 201,
+    "feasible": false,
+    "score": {
+      "hard": 19,
+      "time": 8,
+      "room": 808,
+      "distribution": 759,
+      "student": 3162,
+      "weighted": [
+        40,
+        808,
+        7590,
+        15810
+      ],
+      "total": 24248,
+      "room_conflicts": 13,
+      "room_unavailable": 0,
+      "hard_distributions": 6,
+      "unassigned_requests": 0
+    },
+    "config": {
+      "population": 40,
+      "generations": 5,
+      "partitions": 4,
+      "seed": 17,
+      "mutation_rate": 0.2,
+      "crossover_rate": 0.9
+    },
+    "stop_on_feasible": false,
+    "selection_policy": "best_observed_lexicographic_hard_then_total",
+    "validation": {
+      "internal_feasible": false,
+      "official_status": "not_run"
+    },
+    "run_id": "run_n1_p40_g5_r4_s17_6f58206132ec1d3b",
+    "monitor": {
+      "generations_recorded": 5,
+      "time_limit_seconds": null,
+      "elapsed_seconds": 417.589,
+      "best_observed_hard": 19,
+      "best_observed_internal_total": 24248,
+      "room_chain_scoring_calls": 0,
+      "room_chain_events": [],
+      "coordinated_repair_scoring_calls": 1,
+      "coordinated_repair_events": []
+    }
+  }
+]

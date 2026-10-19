@@ -4,13 +4,15 @@ This pipeline adds an Inspector-Planner controller to the shared NSGA-III solver
 
 ## Setup and run
 
-From this folder, install the requirements. API-backed optimization requires an OpenAI API key in `OPENAI_API_KEY`; provide the API model ID with `--model` or `OPENAI_MODEL` when running.
+From this folder, install the requirements. Set `GEMINI_API_KEY` locally and verify its project is **Free Tier** in AI Studio. There is no OpenAI dependency or paid-provider fallback. Inspector and Planner use the same Gemini model and transport settings.
 
-```powershell
+```cmd
 python -m pip install -r requirements.txt
-python main.py --manifest ../pilot_instances.txt --population 40 --partitions 4 --generations 1000 --seed 17 --time-limit-seconds 90 --api-timeout-seconds 15 --max-api-calls 16
+python ../tools/gemini_preflight.py
+python ../run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --dry-run
+python ../run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
 ```
 
-Repeat with seeds `42` and `73`. For comparison, use the same model, instance manifest, seeds, solver settings, and time limit as the single-agent pipeline. API latency is included in the time limit. `--inspect` parses the instances without making API calls. Run `python main.py --help` for controller-specific options.
+The wrapper uses the shared local profile and per-instance budgets. Add `--instance NAME` to run one instance, or change `--seed` for another run. Both agents should use the same model and profile. API latency is included in the time cap. `python main.py --instance NAME --inspect` parses XML without API calls. See [GUIDE.md](GUIDE.md) for operation, [Current pipelines](../PIPELINES.md) for implementation, and [Improvement history](../IMPROVEMENT_HISTORY.md) for decisions.
 
-Results are saved under `results_itc2019/`. The run metadata and API request records include configuration details. API use may incur charges.
+Results are saved under `results_itc2019/`. Only the last command sends real Gemini calls. `--confirm-free-tier` is a human confirmation, not a billing-tier lookup: a paid project can still incur charges. Both roles are paced and logged separately; a quota/network failure saves an incomplete run and returns exit code 3 instead of silently continuing without its controller.

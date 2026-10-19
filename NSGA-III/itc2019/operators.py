@@ -12,6 +12,7 @@ from pymoo.core.population import Population
 from .instance import Instance
 from .regions import RegionCandidate, swap_targets
 from .scoring import evaluate
+from .neighborhood import room_neighborhood_repair
 
 
 OPERATORS = ("move", "swap", "destroy_repair")
@@ -97,10 +98,18 @@ def _repair_options(instance: Instance, current: np.ndarray, index: int,
 _PROPOSALS = {"move": _move, "swap": _swap}
 
 
+def _admissible_candidate(source_hard: int, source_total: int,
+                          trial_hard: int, trial_total: int) -> bool:
+    """Require hard progress before feasibility, then preserve it and improve soft."""
+    if source_hard > 0:
+        return trial_hard < source_hard
+    return trial_hard == 0 and trial_total < source_total
+
+
 def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
                    operator_id: str, budget: int, rng: np.random.Generator,
                    deadline: float | None) -> OperatorOutcome:
-    """Try at most ``budget`` full evaluations and inject at most one feasible candidate."""
+    """Try at most ``budget`` full evaluations and inject one improving candidate."""
     if operator_id not in OPERATORS or budget < 1:
         raise ValueError("Invalid improvement operator or budget")
     started = time.perf_counter()
@@ -132,14 +141,41 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
         rank = (hard, total)
         if best_trial is None or rank < best_trial:
             best_trial = rank
-        if hard != 0:
+        if not _admissible_candidate(source_hard, source_total, hard, total):
             return rank
-        key = (total, identity)
+        key = (hard, total, identity)
         if best_key is None or key < best_key:
             best_pop, best_key = candidate_pop, key
         return rank
 
     if operator_id == "destroy_repair":
+        # Solve the entire selected region jointly before the cheap sequential fallback.
+        # The outside chromosome is immutable; all solver checks are charged to this budget.
+        engine = algorithm.problem.engine
+        cached = engine.cache.get(engine.key(source))
+        source_score = cached[0] if cached else algorithm.problem.score_state(source)
+        if cached is None:
+            evaluations += 1
+            algorithm.evaluator.n_eval += 1
+        local_deadline = time.perf_counter()+3.0
+        if deadline is not None:
+            local_deadline = min(local_deadline, deadline)
+        candidate, stats = room_neighborhood_repair(
+            instance, source, deadline=local_deadline, seed=int(rng.integers(2147483647)),
+            max_classes=len(region.class_indices), max_options=32, max_table_cells=50000,
+            deterministic_limit=0.25, allowed_classes=region.class_indices,
+            require_room_improvement=False, allow_soft_improvement=True, source_score=source_score,
+            max_full_scoring_calls=max(0, budget-evaluations), score_fn=algorithm.problem.score_state)
+        used = stats["full_scoring_calls"]
+        evaluations += used
+        attempts += used
+        algorithm.evaluator.n_eval += used
+        if candidate is not None:
+            score = engine.cache[engine.key(candidate)][0]
+            best_trial = score.hard, score.total
+            best_key = (score.hard, score.total, tuple(map(int, candidate)))
+            best_pop = Population.new("X", candidate[None], "F", np.asarray([score.weighted]),
+                                      "G", np.asarray([[score.hard]]))
         # Rebuild up to three classes sequentially. Each proposed placement is
         # evaluated on the complete timetable and charged to the same budget.
         mutable = [i for i in region.class_indices if len(instance.classes[i].times) > 1 or
@@ -171,14 +207,14 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
 
     trial_hard, trial_total = best_trial if best_trial is not None else (None, None)
     if best_pop is None:
-        status = "no_candidate_evaluated" if evaluations == 0 else "no_feasible_candidate"
+        status = "no_candidate_evaluated" if evaluations == 0 else "no_improving_candidate"
         return OperatorOutcome(status, attempts, evaluations, False, source_hard,
                                source_total, trial_hard, trial_total,
                                None, None, None, 0, time.perf_counter() - started)
     n = len(instance.classes)
     choices = np.asarray(best_pop[0].X, dtype=np.int32)
-    score, _ = evaluate(instance, choices[:n], choices[n:])
-    if score.hard != 0 or score.total != best_key[0]:
+    score = algorithm.problem.score_state(choices)
+    if (score.hard, score.total) != best_key[:2]:
         return OperatorOutcome("scoring_mismatch", attempts, evaluations, False,
                                source_hard, source_total, trial_hard, trial_total,
                                score.hard, score.total, score.weighted, 1,

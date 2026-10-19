@@ -103,6 +103,7 @@ class Instance:
     distributions: tuple[Distribution, ...]
     students: tuple[Student, ...]
     class_index: dict[str, int]
+    sectioning_cache: dict = field(default_factory=dict, init=False, repr=False, compare=False)
 
     def travel(self, room_a: str | None, room_b: str | None) -> int:
         if not room_a or not room_b or room_a == room_b:

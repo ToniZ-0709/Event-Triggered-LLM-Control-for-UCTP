@@ -1,15 +1,17 @@
 """ITC 2019 penalties and feasibility for a complete class placement.
 
 Distribution formulas follow Muller, Rudova and Mullerova (PATAT 2018),
-https://www.itc2019.org/format . Student sectioning is a deterministic greedy
-decoder; failure to section a requested course is reported as a hard violation.
+https://www.itc2019.org/format . Student sectioning uses deterministic greedy/beam
+decoding with a bounded course-capacity reassignment fallback. Failure is a hard
+violation in the decoded solution, not a certificate of instance infeasibility.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import combinations
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+import numpy as np
 
 from .instance import Distribution, Instance, Time
 
@@ -27,6 +29,42 @@ class Score:
     room_unavailable: int
     hard_distributions: int
     unassigned_requests: int
+
+
+class ScoreEngine:
+    """Bounded per-instance cache; cache hits still consume logical evaluations."""
+    def __init__(self, instance, capacity=16):
+        self.instance, self.capacity = instance, capacity
+        self.cache = OrderedDict()
+        self.requests = self.physical_calls = self.cache_hits = 0
+
+    def key(self, choices):
+        return np.asarray(choices, dtype=np.int32).tobytes()
+
+    def score(self, choices):
+        self.requests += 1
+        key = self.key(choices)
+        if key in self.cache:
+            self.cache_hits += 1
+            self.cache.move_to_end(key)
+            return self.cache[key][0]
+        n = len(self.instance.classes)
+        score, assignments = evaluate(self.instance, choices[:n], choices[n:], keep_assignments=True)
+        self.physical_calls += 1
+        self.cache[key] = score, {i: tuple(ids) for i, ids in (assignments or {}).items()}
+        if len(self.cache) > self.capacity:
+            self.cache.popitem(last=False)
+        return score
+
+    def details(self, choices):
+        key = self.key(choices)
+        if key not in self.cache:
+            self.score(choices)
+        return self.cache[key][1]
+
+    def report(self):
+        return {"logical_requests": self.requests, "physical_calls": self.physical_calls,
+                "cache_hits": self.cache_hits, "cache_capacity": self.capacity}
 
 
 def overlaps(a: Time, b: Time) -> bool:
@@ -132,7 +170,7 @@ def distribution_violations(instance: Instance, distribution: Distribution,
     return count
 
 
-def _section_students(instance: Instance, times: list[Time], room_ids: list[str | None],
+def _greedy_section_students(instance: Instance, times: list[Time], room_ids: list[str | None],
                       *, keep_assignments: bool) -> tuple[int, int, dict[int, list[str]] | None]:
     """Greedy, capacity aware sectioning with a small beam for course choices.
 
@@ -145,6 +183,23 @@ def _section_students(instance: Instance, times: list[Time], room_ids: list[str 
     assignments: dict[int, list[str]] | None = defaultdict(list) if keep_assignments else None
     unassigned = 0
     conflicts = 0
+    n_classes = len(instance.classes)
+    pair_conflicts: list[bytearray | None] = [None] * n_classes
+
+    def conflict(left: int, right: int) -> int:
+        if left > right:
+            left, right = right, left
+        row = pair_conflicts[left]
+        if row is None:
+            row = bytearray([2]) * n_classes
+            pair_conflicts[left] = row
+        cached = row[right]
+        if cached == 2:
+            cached = int(attendee_conflict(instance, times[left], room_ids[left],
+                                           times[right], room_ids[right]))
+            row[right] = cached
+        return cached
+
     # Harder students first reduces, but does not eliminate, greedy failures.
     students = sorted(instance.students, key=lambda s: (-len(s.courses), s.id))
     for student in students:
@@ -156,7 +211,6 @@ def _section_students(instance: Instance, times: list[Time], room_ids: list[str 
                 for subpart in config.subparts:
                     next_beam: list[tuple[int, tuple[int, ...]]] = []
                     for cost, selected in beam:
-                        selected_ids = {instance.classes[i].id for i in selected}
                         for index in subpart:
                             cls = instance.classes[index]
                             if cls.limit is not None and counts[index] >= cls.limit:
@@ -165,8 +219,7 @@ def _section_students(instance: Instance, times: list[Time], room_ids: list[str 
                                 parent_index = instance.class_index[cls.parent_id]
                                 if parent_index not in selected and any(parent_index in s for s in config.subparts[:len(selected)]):
                                     continue
-                            extra = sum(attendee_conflict(instance, times[index], room_ids[index],
-                                                          times[other], room_ids[other])
+                            extra = sum(conflict(index, other)
                                         for other in (*attending, *selected))
                             next_beam.append((cost + extra, (*selected, index)))
                     if not next_beam:
@@ -189,6 +242,15 @@ def _section_students(instance: Instance, times: list[Time], room_ids: list[str 
                 if assignments is not None:
                     assignments[index].append(student.id)
     return unassigned, conflicts, assignments
+
+
+def _section_students(instance, times, room_ids, *, keep_assignments=False):
+    unassigned, conflicts, assignments = _greedy_section_students(
+        instance, times, room_ids, keep_assignments=True)
+    if unassigned:
+        from .sectioning import repair_sectioning
+        unassigned, conflicts, assignments = repair_sectioning(instance, times, room_ids, assignments)
+    return unassigned, conflicts, assignments if keep_assignments else None
 
 
 def validate_sectioning(instance: Instance, assignments: dict[int, list[str]]) -> None:

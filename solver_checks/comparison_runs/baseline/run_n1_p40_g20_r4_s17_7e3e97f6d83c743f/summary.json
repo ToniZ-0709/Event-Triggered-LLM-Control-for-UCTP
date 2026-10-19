@@ -1,0 +1,54 @@
+[
+  {
+    "instance": "muni-fi-spr16",
+    "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\muni-fi-spr16.xml",
+    "classes": 575,
+    "rooms": 35,
+    "courses": 228,
+    "students": 1543,
+    "distributions": 740,
+    "runtime_seconds": 728.0010039000772,
+    "evaluations": 800,
+    "feasible": false,
+    "score": {
+      "hard": 135,
+      "time": 282,
+      "room": 522,
+      "distribution": 71,
+      "student": 2593,
+      "weighted": [
+        846,
+        522,
+        710,
+        12965
+      ],
+      "total": 15043,
+      "room_conflicts": 3,
+      "room_unavailable": 0,
+      "hard_distributions": 132,
+      "unassigned_requests": 0
+    },
+    "config": {
+      "population": 40,
+      "generations": 20,
+      "partitions": 4,
+      "seed": 17,
+      "mutation_rate": 0.2,
+      "crossover_rate": 0.9
+    },
+    "stop_on_feasible": false,
+    "selection_policy": "best_observed_lexicographic_hard_then_total",
+    "validation": {
+      "internal_feasible": false,
+      "official_status": "not_run"
+    },
+    "run_id": "run_n1_p40_g20_r4_s17_7e3e97f6d83c743f",
+    "monitor": {
+      "generations_recorded": 20,
+      "time_limit_seconds": null,
+      "elapsed_seconds": 728.694,
+      "best_observed_hard": 135,
+      "best_observed_internal_total": 15043
+    }
+  }
+]

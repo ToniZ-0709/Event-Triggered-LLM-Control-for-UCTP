@@ -1,4 +1,4 @@
-"""Run ITC 2019 NSGA-III with one OpenAI controller."""
+"""Run ITC 2019 NSGA-III with one Gemini free-tier controller."""
 
 from __future__ import annotations
 

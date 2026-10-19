@@ -21,8 +21,9 @@ import pymoo
 
 from itc2019.controller import BaselineMonitor, ControllerSettings
 from itc2019.instance import Instance, load_instance
-from itc2019.nsga3 import Config, run
+from itc2019.nsga3 import Config, evaluation_count, reference_directions, run
 from itc2019.scoring import Score, evaluate, validate_sectioning
+from itc2019.repair_policy import RepairSettings
 
 
 DEFAULT_DATASET = Path(__file__).resolve().parent.parent / "Dataset_ITC2019"
@@ -39,15 +40,18 @@ def _sha256(path: Path) -> str:
 def _run_settings(paths: list[Path], config: Config, args: argparse.Namespace) -> dict:
     source_root = Path(__file__).resolve().parent
     sources = ("main.py", "itc2019/instance.py", "itc2019/nsga3.py", "itc2019/scoring.py",
-               "itc2019/controller.py", "itc2019/regions.py", "itc2019/operators.py")
+               "itc2019/controller.py", "itc2019/regions.py", "itc2019/operators.py",
+               "itc2019/room_search.py", "itc2019/neighborhood.py", "itc2019/repair_policy.py",
+               "itc2019/construction.py", "itc2019/sectioning.py")
     return {
         "instances": [{"file": path.name, "sha256": _sha256(path)}
                       for path in sorted(paths, key=lambda path: path.name)],
         "config": asdict(config),
+        "repair": asdict(RepairSettings()),
         "solution_metadata": {"author": args.author, "institution": args.institution,
                               "country": args.country},
         "environment": {"python": platform.python_version(), "numpy": np.__version__,
-                        "pymoo": pymoo.__version__},
+                        "pymoo": pymoo.__version__, "ortools": package_version("ortools")},
         "solver_sources_sha256": {name: _sha256(source_root / name) for name in sources},
     }
 
@@ -147,36 +151,79 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     parser.add_argument("--all", action="store_true", help="Run every XML file in --dataset")
     parser.add_argument("--inspect", action="store_true", help="Parse and summarize instances without optimizing")
     parser.add_argument("--output", type=Path, default=pipeline_root / "results_itc2019")
-    parser.add_argument("--population", type=int, default=40)
+    parser.add_argument("--population", type=int, default=20)
     parser.add_argument("--generations", type=int, default=20)
-    parser.add_argument("--partitions", type=int, default=4)
+    parser.add_argument("--partitions", type=int, default=3)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--evaluations", type=int, help="Cap full search evaluations, including routine repair")
+    parser.add_argument("--mutation-rate", type=float, default=0.2)
+    parser.add_argument("--mutation-fraction", type=float, default=0.005)
+    parser.add_argument("--crossover-rate", type=float, default=0.7)
+    parser.add_argument("--initial-repair-steps", type=int, default=12)
+    parser.add_argument("--initial-pair-trials", type=int, default=3)
+    parser.add_argument("--inner-partitions", type=int, help="Add an inner reference-direction layer")
+    parser.add_argument("--inner-scale", type=float, default=0.5)
+    parser.add_argument("--offspring-repair-steps", type=int, default=8,
+                        help="Hard-repair rounds for each generated offspring (default: 8)")
+    parser.add_argument("--offspring-pair-trials", type=int, default=2,
+                        help="Bounded joint-move attempts per offspring (default: 2)")
     parser.add_argument("--time-limit-seconds", type=float,
                         help="Per-instance wall-clock limit for solver and controller")
+    parser.add_argument("--stop-on-feasible", action="store_true",
+                        help="Stop after a generation contains a candidate with zero hard violations")
     parser.add_argument("--author", default=pipeline_name or "NSGA-III baseline")
     parser.add_argument("--institution", default="Ho Chi Minh City University of Technology")
     parser.add_argument("--country", default="Vietnam")
+    for name, default in asdict(RepairSettings()).items():
+        parser.add_argument("--repair-" + name.replace("_", "-"), type=type(default), default=default,
+                            help=f"Shared repair setting {name} (default: {default})")
     if controller_factory is not None:
-        parser.add_argument("--review-interval", type=int, default=5,
+        from itc2019.llm import DEFAULT_MODEL
+        parser.add_argument("--review-interval", type=int, default=10,
                             help="Default controller review interval in generations")
-        parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL"),
-                            help="OpenAI model; can also be set via OPENAI_MODEL")
-        parser.add_argument("--api-timeout-seconds", type=float, default=30.0)
-        parser.add_argument("--max-output-tokens", type=int, default=300)
+        parser.add_argument("--provider", choices=("gemini",), default="gemini")
+        parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
+                            help="Gemini Free Tier text model; can also be set via GEMINI_MODEL")
+        parser.add_argument("--confirm-free-tier", action="store_true",
+                            help="Confirm in AI Studio that this API key's project is Free Tier")
+        parser.add_argument("--api-min-interval-seconds", type=float, default=10.0,
+                            help="Pace API request starts; actual project quota must still be checked")
+        parser.add_argument("--api-max-input-characters", type=int, default=60000)
+        parser.add_argument("--api-timeout-seconds", type=float, default=15.0)
+        parser.add_argument("--max-output-tokens", type=int, default=1024)
         parser.add_argument("--warmup-generations", type=int, default=5)
         parser.add_argument("--stagnation-window", type=int, default=5)
-        parser.add_argument("--min-review-interval", type=int, default=2)
-        parser.add_argument("--max-review-interval", type=int, default=10)
-        parser.add_argument("--diversity-threshold", type=float, default=0.25)
+        parser.add_argument("--min-review-interval", type=int, default=3)
+        parser.add_argument("--max-review-interval", type=int, default=20)
+        parser.add_argument("--diversity-threshold", type=float, default=0.20,
+                            help="Trigger when timetable placement diversity falls below this fraction")
+        parser.add_argument("--diversity-recovery-threshold", type=float, default=0.30)
         parser.add_argument("--max-regions", type=int, default=6)
-        parser.add_argument("--region-size", type=int, default=3)
-        parser.add_argument("--max-operator-evaluations", type=int, default=8)
+        parser.add_argument("--region-size", type=int, default=5)
+        parser.add_argument("--max-operator-evaluations", type=int, default=24)
         parser.add_argument("--max-api-calls", type=int, default=100)
+        parser.add_argument("--max-reviews", type=int, default=12,
+                            help="Maximum number of review opportunities per instance")
     args = parser.parse_args()
     if args.time_limit_seconds is not None and args.time_limit_seconds <= 0:
         parser.error("--time-limit-seconds must be positive")
     paths = _paths(args)
-    config = Config(args.population, args.generations, args.partitions, args.seed)
+    try:
+        config = Config(args.population, args.generations, args.partitions, args.seed,
+                        mutation_rate=args.mutation_rate, crossover_rate=args.crossover_rate,
+                        offspring_repair_steps=args.offspring_repair_steps,
+                        offspring_pair_trials=args.offspring_pair_trials,
+                        initial_repair_steps=args.initial_repair_steps,
+                        initial_pair_trials=args.initial_pair_trials,
+                        mutation_fraction=args.mutation_fraction,
+                        inner_partitions=args.inner_partitions, inner_scale=args.inner_scale,
+                        evaluations=args.evaluations)
+        if config.population < len(reference_directions(config)):
+            raise ValueError("Population is smaller than the selected reference-direction set")
+        repair_settings = RepairSettings(**{
+            name: getattr(args, "repair_" + name) for name in asdict(RepairSettings())})
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.inspect:
         for path in paths:
             instance = load_instance(path)
@@ -192,30 +239,38 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         try:
             controller_settings = ControllerSettings(
                 model=args.model,
+                provider=args.provider,
                 review_interval=args.review_interval,
                 warmup_generations=args.warmup_generations,
                 stagnation_window=args.stagnation_window,
                 min_review_interval=args.min_review_interval,
                 max_review_interval=args.max_review_interval,
                 diversity_threshold=args.diversity_threshold,
+                diversity_recovery_threshold=args.diversity_recovery_threshold,
                 max_regions=args.max_regions,
                 region_size=args.region_size,
                 max_operator_evaluations=args.max_operator_evaluations,
                 api_timeout_seconds=args.api_timeout_seconds,
                 max_output_tokens=args.max_output_tokens,
                 max_api_calls=args.max_api_calls,
+                max_reviews=args.max_reviews,
             )
-            from itc2019.llm import OpenAIDecisionClient
-            client = OpenAIDecisionClient(args.model, args.api_timeout_seconds,
-                                          args.max_output_tokens)
+            from itc2019.llm import GeminiDecisionClient
+            client = GeminiDecisionClient(args.model, args.api_timeout_seconds,
+                args.max_output_tokens, free_tier_confirmed=args.confirm_free_tier,
+                min_request_interval_seconds=args.api_min_interval_seconds,
+                max_input_characters=args.api_max_input_characters)
         except (ValueError, RuntimeError) as exc:
             parser.error(str(exc))
     settings = _run_settings(paths, config, args)
+    settings["repair"] = asdict(repair_settings)
     settings["time_limit_seconds"] = args.time_limit_seconds
+    settings["stop_on_feasible"] = args.stop_on_feasible
     if controller_factory is not None:
         settings["pipeline"] = {"name": pipeline_name, "status": "active"}
         settings["controller"] = asdict(controller_settings)
-        settings["environment"]["openai"] = package_version("openai")
+        settings["llm"] = client.metadata()
+        settings["environment"]["google-genai"] = package_version("google-genai")
         settings["controller_sources_sha256"] = {
             str(source.resolve().relative_to(pipeline_root.parent.resolve())): _sha256(source)
             for source in controller_sources
@@ -234,11 +289,14 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                        "students": len(instance.students), "distributions": len(instance.distributions)}
             started = time.perf_counter()
             monitor = (controller_factory(instance, controller_settings, client,
-                                          config.seed, started, args.time_limit_seconds)
+                                          config.seed, started, args.time_limit_seconds,
+                                          repair_settings=repair_settings)
                        if controller_factory is not None else
-                       BaselineMonitor(instance, started, args.time_limit_seconds))
+                       BaselineMonitor(instance, started, args.time_limit_seconds, config.seed,
+                                       repair_settings))
             choices, score, result = run(instance, config, callback=monitor,
-                                         time_limit_seconds=args.time_limit_seconds)
+                                         time_limit_seconds=args.time_limit_seconds,
+                                         stop_on_feasible=args.stop_on_feasible)
             runtime = time.perf_counter() - started
             n = len(instance.classes)
             checked_score, assignments = evaluate(instance, choices[:n], choices[n:], keep_assignments=True)
@@ -247,19 +305,37 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
             folder = staging / instance.name
             folder.mkdir(parents=True, exist_ok=True)
             report = monitor.report()
-            summary.update({"runtime_seconds": runtime, "evaluations": int(result.algorithm.evaluator.n_eval),
+            monitor_keys = ("generations_recorded", "time_limit_seconds",
+                            "elapsed_seconds", "best_observed_hard",
+                            "best_observed_internal_total", "room_chain_scoring_calls",
+                             "room_repair_backoff_skips",
+                             "room_chain_events", "coordinated_repair_scoring_calls",
+                             "coordinated_repair_events", "room_plateau_scoring_calls",
+                             "room_plateau_events")
+            summary.update({"runtime_seconds": runtime, "evaluations": evaluation_count(result.algorithm),
+                            "evaluation_breakdown": {
+                                "objective_and_monitor": int(result.algorithm.evaluator.n_eval),
+                                "routine_repair": result.algorithm.problem.repair_scoring_calls,
+                                "final_verification": 2,
+                            },
+                            "score_engine": result.algorithm.problem.engine.report(),
+                            "sectioning_fallback": {k: {name: value for name, value in row.items() if name != "plan"}
+                                                     for k, row in instance.sectioning_cache.items()},
+                            "stage_timing": {
+                                "seconds": {key: round(value, 3) for key, value in
+                                            result.algorithm.problem.stage_seconds.items()},
+                                "candidates": result.algorithm.problem.stage_candidates,
+                            },
                             "feasible": score.hard == 0, "score": asdict(score), "config": asdict(config),
+                            "stop_on_feasible": args.stop_on_feasible,
                             "selection_policy": "best_observed_lexicographic_hard_then_total",
                             "validation": {"internal_feasible": score.hard == 0,
                                            "official_status": "not_run"},
                             "run_id": run_id, "monitor": {
-                                key: report[key] for key in ("generations_recorded",
-                                                         "time_limit_seconds", "elapsed_seconds",
-                                                         "best_observed_hard",
-                                                         "best_observed_internal_total")}})
+                                key: report[key] for key in monitor_keys}})
             if controller_factory is not None:
                 summary["controller"] = {key: value for key, value in report.items()
-                                         if key not in summary["monitor"]}
+                                         if key not in monitor_keys}
             (folder / "result.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
             (folder / "anytime_trace.jsonl").write_text(
                 "".join(json.dumps(event, ensure_ascii=False) + "\n"
@@ -274,23 +350,42 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                 _write_solution(folder / "solution.xml", instance, choices, score, assignments,
                                 runtime, args.author, args.institution, args.country,
                                 pipeline_name or "NSGA-III")
+                (folder / "expected.json").write_text(json.dumps({
+                    "instance": instance.name, "classes": len(instance.classes),
+                    "score": asdict(score), "solution_sha256": _sha256(folder / "solution.xml"),
+                    "dataset_sha256": _sha256(path), "weights": instance.weights,
+                    "official_status": "not_run", "source": "solver_export",
+                }, indent=2) + "\n", encoding="utf-8")
             print(json.dumps({"instance": instance.name, "hard": score.hard,
                               "weighted_total": score.total, "runtime_seconds": round(runtime, 2),
                               "solution_xml": score.hard == 0}))
             summaries.append(summary)
+            if summary.get("controller", {}).get("completion_status") == "incomplete_api_failure":
+                break
 
         (staging / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n", encoding="utf-8")
         (staging / "run_config.json").write_text(json.dumps({
             "run_id": run_id, "settings": settings,
             "dataset_directory": str(args.dataset.resolve()),
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+            "completion_status": ("incomplete_api_failure" if any(
+                row.get("controller", {}).get("completion_status") == "incomplete_api_failure"
+                for row in summaries) else "completed"),
         }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         replaced = _publish_run(staging, run_folder, run_id, settings)
     finally:
         if staging.exists():
             shutil.rmtree(staging)
+        if client is not None:
+            client.close()
     print(json.dumps({"run_id": run_id, "results_dir": str(run_folder),
                       "overwrote_existing": replaced}))
+    if controller_factory is not None and any(
+            row.get("controller", {}).get("completion_status") == "incomplete_api_failure"
+            for row in summaries):
+        print("API failure: results saved as incomplete; no provider fallback. "
+              "Resolve quota/key/network before restarting.")
+        raise SystemExit(3)
 
 
 if __name__ == "__main__":

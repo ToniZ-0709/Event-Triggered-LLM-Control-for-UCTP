@@ -1,3 +1,2 @@
-numpy
-pymoo>=0.6.2,<0.7
-openai>=1.66,<3
+-r ../NSGA-III/requirements.txt
+google-genai>=2.31,<3
