@@ -43,7 +43,7 @@
   },
   "llm": {
     "provider": "gemini",
-    "model": "gemini-3.8-flash",
+    "model": "gemini-3.5-flash-lite",
     "free_tier_only": true,
     "min_request_interval_seconds": 10.0,
     "max_input_characters": 60000
@@ -102,11 +102,12 @@
       "H29",
       "H30",
       "H31",
-      "H32"
+      "H32",
+      "H33"
     ],
     "solver_source_sha256": "e93b50a6140e6b943fd49ec6f2fbf22fec6db9d603facac216eb38e9021c2f05",
     "candidate": "instance_specific_mutation_preset",
-    "source_note": "solver_source_sha256 identifies the measured H29-H30 snapshot, not the later Gemini transport/logging sources. Search/repair settings are unchanged. API integration is only offline-tested until a Free Tier key is configured.",
+    "source_note": "solver_source_sha256 identifies the measured H29-H30 snapshot, not the later Gemini transport/logging sources. Search/repair settings are unchanged. Gemini 3.5 Flash-Lite passed a live synthetic connection check; live controller runs are separate from solver calibration.",
     "recalibration_required": true,
     "endpoint_time_censoring": {
       "bet-spr18": [

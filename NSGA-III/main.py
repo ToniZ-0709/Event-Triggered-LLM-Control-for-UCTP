@@ -42,7 +42,8 @@ def _run_settings(paths: list[Path], config: Config, args: argparse.Namespace) -
     sources = ("main.py", "itc2019/instance.py", "itc2019/nsga3.py", "itc2019/scoring.py",
                "itc2019/controller.py", "itc2019/regions.py", "itc2019/operators.py",
                "itc2019/room_search.py", "itc2019/neighborhood.py", "itc2019/repair_policy.py",
-               "itc2019/construction.py", "itc2019/sectioning.py")
+               "itc2019/construction.py", "itc2019/sectioning.py",
+               "itc2019/diagnostics.py", "itc2019/state_packet.py")
     return {
         "instances": [{"file": path.name, "sha256": _sha256(path)}
                       for path in sorted(paths, key=lambda path: path.name)],
@@ -200,6 +201,8 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         parser.add_argument("--diversity-recovery-threshold", type=float, default=0.30)
         parser.add_argument("--max-regions", type=int, default=6)
         parser.add_argument("--region-size", type=int, default=5)
+        parser.add_argument("--enable-blocker-chain", action="store_true",
+                            help="Publish one explicit capped expanded region for bounded chain repair")
         parser.add_argument("--max-operator-evaluations", type=int, default=24)
         parser.add_argument("--max-api-calls", type=int, default=100)
         parser.add_argument("--max-reviews", type=int, default=12,
@@ -248,6 +251,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                 diversity_threshold=args.diversity_threshold,
                 diversity_recovery_threshold=args.diversity_recovery_threshold,
                 max_regions=args.max_regions,
+                enable_blocker_chain=args.enable_blocker_chain,
                 region_size=args.region_size,
                 max_operator_evaluations=args.max_operator_evaluations,
                 api_timeout_seconds=args.api_timeout_seconds,
@@ -294,6 +298,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                        if controller_factory is not None else
                        BaselineMonitor(instance, started, args.time_limit_seconds, config.seed,
                                        repair_settings))
+            monitor.run_id = run_id
             choices, score, result = run(instance, config, callback=monitor,
                                          time_limit_seconds=args.time_limit_seconds,
                                          stop_on_feasible=args.stop_on_feasible)

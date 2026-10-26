@@ -193,7 +193,8 @@ def test_joint_operator_crosses_four_class_barrier_and_respects_boundary():
     assert outcome.status == "rejected_by_selection"
     assert problem.incumbent.quality == (0,10)
     assert problem.incumbent.choices[4] == 0 and problem.incumbent.choices[9] == -1
-    assert problem.engine.requests == evaluator.n_eval+outcome.scoring_rechecks
+    assert problem.engine.requests == evaluator.n_eval
+    assert outcome.evaluations <= 12  # final recheck is inside the requested allowance
 
 
 def test_cp_global_costs_match_scorer_with_fixed_boundary_and_duplicate_intervals():

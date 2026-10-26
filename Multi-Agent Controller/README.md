@@ -1,18 +1,21 @@
-# Multi-Agent Controller
+# Inspector-Planner Controller
 
-This pipeline adds an Inspector-Planner controller to the shared NSGA-III solver. At each review, the Inspector selects a target region; the Planner selects an allowed improvement operator and the next review interval. A review uses up to two sequential LLM calls. The solver validates the decisions and evaluates any proposed change. Shared solver code is in [`../NSGA-III/itc2019/`](../NSGA-III/itc2019/).
+A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene; after target validation, Planner receives the state and diagnosis to select HOW and WHEN. The shared solver executes and scores the proposed change.
 
-## Setup and run
+Both roles use the same six-block StatePacket v2. Inspector selects IDs from `candidate_regions[].target` and references `boundary_context[].constraints.ids`; Planner chooses an operator from that region's `available_actions`. The shared actions now include `guided_move` and `distribution_repair`. The direct entrypoint optionally accepts `--enable-blocker-chain` for a separately published expanded target. Decisions retain their existing response fields; Section 3 XAI fields remain deferred.
 
-From this folder, install the requirements. Set `GEMINI_API_KEY` locally and verify its project is **Free Tier** in AI Studio. There is no OpenAI dependency or paid-provider fallback. Inspector and Planner use the same Gemini model and transport settings.
+Commands below run from the repository root:
 
 ```cmd
-python -m pip install -r requirements.txt
-python ../tools/gemini_preflight.py
-python ../run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --dry-run
-python ../run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+python -m pip install -r "Multi-Agent Controller/requirements.txt"
+python tools/gemini_preflight.py
+python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --dry-run
 ```
 
-The wrapper uses the shared local profile and per-instance budgets. Add `--instance NAME` to run one instance, or change `--seed` for another run. Both agents should use the same model and profile. API latency is included in the time cap. `python main.py --instance NAME --inspect` parses XML without API calls. See [GUIDE.md](GUIDE.md) for operation, [Current pipelines](../PIPELINES.md) for implementation, and [Improvement history](../IMPROVEMENT_HISTORY.md) for decisions.
+Optimization requires `GEMINI_API_KEY` and confirmation that its project is Free Tier. Both roles use the model and request limits in the selected profile.
 
-Results are saved under `results_itc2019/`. Only the last command sends real Gemini calls. `--confirm-free-tier` is a human confirmation, not a billing-tier lookup: a paid project can still incur charges. Both roles are paced and logged separately; a quota/network failure saves an incomplete run and returns exit code 3 instead of silently continuing without its controller.
+```cmd
+python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+```
+
+Results go to `Multi-Agent Controller/results_itc2019/`. A failed API request saves an incomplete run and returns exit code 3. See [PIPELINES.md](../PIPELINES.md) for review rules, actions, accounting and comparison requirements, or the [repository README](../README.md) for profiles and saved reports.

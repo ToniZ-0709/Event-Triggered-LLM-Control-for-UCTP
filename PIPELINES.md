@@ -1,187 +1,181 @@
-# Pipeline hiện tại
+# Pipeline reference
 
-Tài liệu mô tả code đang chạy, không phải danh sách dự định hoặc báo cáo số liệu. Quyết định và lịch sử nằm trong [IMPROVEMENT_HISTORY.md](IMPROVEMENT_HISTORY.md); thao tác CMD nằm trong [Guideline](NSGA-III/GUIDELINE.md).
+This document describes the shared solver and controller contracts. Setup, profiles and saved report locations are listed in the [repository README](README.md).
 
-## 1. Phần dùng chung và phần riêng
+## Representation and scoring
 
-| Pipeline | Entry point | Quyết định riêng |
-| --- | --- | --- |
-| Baseline | `NSGA-III/main.py` | Không gọi LLM. |
-| Single-agent | `Single-Agent Controller/main.py` | Một agent chọn WHERE, HOW, WHEN. |
-| Inspector–Planner | `Multi-Agent Controller/main.py` | Inspector chọn WHERE; Planner chọn HOW và WHEN. |
+Each ITC 2019 XML is an independent problem. A chromosome has `2n` entries: time-option indices followed by room-option indices for the `n` classes. Classes that do not require a room use `-1`. Student assignment is computed by the scorer rather than encoded in the chromosome.
 
-Cả ba dùng cùng parser, representation, scorer, construction, NSGA-III và monitor repair trong `NSGA-III/itc2019/`. Baseline là **NSGA-III có repair**, không phải crossover/mutation thuần. Không dành một bản solver yếu hơn cho baseline. Hai controller dùng cùng action library, boundary validation và acceptance.
-
-## 2. Dữ liệu, chromosome và score
-
-- Mỗi XML ITC 2019 là một instance độc lập. Subset là danh sách XML nguyên vẹn.
-- Chromosome dài `2n`: n time-option indices rồi n room-option indices. Class không cần phòng dùng `-1`.
-- Student assignment không nằm trong chromosome. Scorer giải mã theo course/config/subpart/parent và class limit.
-- Bốn objective là weighted time, room, soft distribution và student conflict. NSGA-III vẫn chọn lọc đa mục tiêu; tổng penalty chỉ dùng chọn nghiệm đại diện.
+NSGA-III minimizes four weighted objectives: time, room, soft distribution and student conflict. Hard violations are handled separately:
 
 ```text
 hard = room_conflicts + room_unavailable
      + hard_distributions + unassigned_requests
 ```
 
-Hard 0 là khả thi nội bộ; không phải chứng nhận từ validator độc lập.
+Student sectioning starts with greedy bundle assignment. When requests remain unassigned, bounded bundle enumeration and CP-SAT reallocate course capacity across its enrolled students. Sectioning uses class limits. The fallback prioritizes capacity feasibility and does not guarantee minimum student-conflict cost.
 
-### Student sectioning
+The incumbent is the best fully scored candidate under `(hard, total weighted penalty)`. It is stored independently of population survival, so a good candidate remains available for final output even if NSGA-III removes it from the population. This stores one representative solution, not a complete external Pareto archive.
 
-Greedy xử lý sinh viên nhiều course trước, beam 12 để chọn bundle class. Khi còn yêu cầu chưa gán, fallback giải lại **toàn bộ người đăng ký course bị lỗi**, thay vì chỉ cố nhét sinh viên cuối:
+Source: [instance.py](NSGA-III/itc2019/instance.py), [scoring.py](NSGA-III/itc2019/scoring.py), [sectioning.py](NSGA-III/itc2019/sectioning.py).
 
-1. Sinh các bundle hợp lệ theo config/subpart/parent.
-2. CP-SAT tìm số sinh viên dùng từng bundle, bảo đảm tổng demand và class limits.
-3. Phân các bundle đó cho sinh viên, ưu tiên ít xung đột với các course khác.
-4. Tính lại missing requests và student conflicts từ assignment cuối.
+## Shared solver
 
-Plan sức chứa không phụ thuộc timetable nên cache theo instance/course; ghép sinh viên theo xung đột vẫn phụ thuộc timetable. Enumeration giới hạn 4.096 bundles/200.000 nodes; CP một worker, seed cố định, deterministic budget 0,5. Nếu hết giới hạn hoặc không có plan trong tập bundle đã sinh, giữ lỗi unassigned; không kết luận instance vô nghiệm. Fallback ưu tiên khả thi sức chứa, không bảo đảm student penalty tối ưu.
+All three pipelines use the same construction, NSGA-III operators, scorer, monitor repair and incumbent. The baseline includes these repairs.
 
-## 3. Luồng solver và incumbent
-
-```text
-XML → constraint-aware construction → initial hard repair → initial population
-    → crossover / mutation → local hard repair → full scoring → NSGA-III survival
-    → shared distribution / room repair → incumbent và trace
-    → optional controller review → validated regional operator → survival
-    → generation / evaluation / time cap → verify incumbent → output
+```mermaid
+flowchart TD
+    XML[ITC 2019 XML] --> Init[Constraint-aware construction and initial repair]
+    Init --> Search[Crossover, mutation and offspring repair]
+    Search --> Score[Full scoring and NSGA-III survival]
+    Score --> Repair[Shared monitor repair and incumbent update]
+    Repair --> Review{Controller review due?}
+    Review -->|Baseline or no review| Cap{Budget remains?}
+    Review -->|Single-agent| Single[WHERE, HOW and WHEN]
+    Review -->|Multi-agent| Inspector[Inspector: WHERE]
+    Inspector --> Planner[Validate target, then Planner: HOW and WHEN]
+    Single --> Action[Validate action, execute, rescore and select]
+    Planner --> Action
+    Action --> Cap
+    Cap -->|Yes| Search
+    Cap -->|No| Output[Verify incumbent and export]
 ```
 
-1. **Construction:** domain nhỏ trước, mức liên kết và seeded tie-break; kiểm tra required pairs với class đã đặt, partial global constraints, room usage và unavailable. Forward checking tối đa 4 hàng xóm, lan truyền pair-compatible domains; giao domain cho SameRoom/SameStart nếu có. Mỗi class lấy mẫu tối đa 32 time/16 room rồi giữ tối đa 64 placements đa dạng. Domain bị cắt không có nghĩa domain gốc vô nghiệm.
-2. **Initial repair:** single moves, rồi bounded joint moves hai class. Lượt `RoomRepair` tự động của Pymoo sau sampling được bỏ qua để tránh repair hai lần.
-3. **Variation:** crossover giữ cặp time/room theo class; mutation đổi một phần nhỏ class. Routine repair sửa quanh vi phạm, không dựng lại toàn bộ timetable.
-4. **Scoring/survival:** feasibility handling và bốn objective; selection dùng RNG của solver.
-5. **Archive:** mọi candidate đã full-score đều đi qua một incumbent chung trong `PlacementProblem`, trước survival. Nghiệm tốt không bị mất khi survival loại nó. Monitor, progress, controller feedback và final output cùng tham chiếu archive theo `(hard, total)`.
-6. **Final:** đối chiếu archive/quần thể, xác minh lại score; không tự dừng ở hard 0 trừ khi bật `--stop-on-feasible`.
+Construction orders constrained classes first and propagates compatible choices. Initial and offspring repair use bounded single-class and joint two-class moves. Variation preserves inherited placements instead of rebuilding the schedule.
 
-Archive này giữ một nghiệm đại diện, không phải external Pareto archive đầy đủ.
+The shared monitor adds the following repair routes:
 
-## 4. Repair chung
-
-| Nhánh | Gate | Cách làm và budget |
-| --- | --- | --- |
-| Routine repair | Sau construction/variation | Single/two-class moves; xét exhaustive theo product domain ≤ 96, domain lớn lấy mẫu. Kiểm tra deadline bên trong vòng lặp. |
-| Distribution group CP | Mốc 5 generations, chưa khả thi, distribution violations không ít hơn room clashes | Seed từ required group đang vi phạm; sửa đồng thời nhiều class với boundary cố định. Dùng deadline chung 5 giây; còn thời gian mới thử tối đa 3 rounds pair fallback, 8 pairs/round. |
-| Room plateau | Mốc 5 generations, hard > 12, lỗi phòng ít nhất 4 | Local deltas và neutral/worse intermediate states; tối đa 5 giây/16 full checks, chỉ trả cải thiện cuối. |
-| Adaptive room CP | Lỗi phòng còn tồn tại, hard ≤ 12, qua interval/backoff | Từ vùng 16 class/16 options lên preset 32/32, cuối cùng tối đa 64/64 nếu cần. **Cùng một** deadline 8 giây/check budget, không phải 8 giây cho mỗi tầng. |
-| Beam fallback | Room CP chưa cải thiện, còn budget | Tối đa 2 giây/128 full checks. Không đưa intermediate state vào population. |
-| Failure backoff | Cấu trúc lỗi phòng đã thử thất bại | Hoãn 5 → 10 → 20 generations; thay đổi cấu trúc lỗi/hard có thể mở target mới. |
-
-Các số trên là mặc định; `RepairSettings`/CLI/profile điều khiển các giới hạn tương ứng. Vùng room mở sang lớp đang chặn lựa chọn thay thế, kể cả lớp hiện không vi phạm.
-
-CP mã hóa room clash/unavailability, pairwise required distributions, MaxDays, MaxDayLoad, MaxBreaks và MaxBlock, kể cả tương tác với phần ngoài vùng. Block models giữ số lượng class trùng interval, xử lý singleton và gom week/day patterns giống nhau. Model quá lớn hoặc hết thời gian thì trả trạng thái budget, không kết luận infeasible toàn bài toán. Full scorer luôn kiểm lại cả timetable và sectioning.
-
-Room branch yêu cầu giảm tổng hard **và** lỗi phòng; distribution branch chỉ cần giảm tổng hard, không đòi có lỗi phòng. Candidate cuối vẫn qua survival; archive giữ nghiệm tốt trước bước đó.
-
-## 5. Controller: WHERE, HOW, WHEN
-
-### WHEN
-
-Warm-up generation 5; khoảng cách tối thiểu 3; checkpoint mặc định 10. Review khi đến checkpoint, stagnation 5 generations hoặc placement diversity ≤ 0,20. Event low-diversity rearm khi diversity > 0,30; stagnation chỉ rearm khi có tiến bộ. Agent đặt interval trong [3, 20]. Progress dùng incumbent: hard trước khả thi, total sau khả thi.
-
-Mặc định tối đa 12 reviews. Profile cấp single tối đa 12 calls, multi tối đa 24 calls; timeout 15 giây/call. Adapter hiện dùng Gemini Developer API, model mặc định `gemini-3.8-flash`, low thinking và tối đa 1.024 output tokens (allowance kỹ thuật mới, chưa tuning bằng API thật). Kiểm tra budget trước review/operator. Không gọi API ở baseline.
-
-Chỉ gửi request sau khi có `GEMINI_API_KEY` và xác nhận project Free Tier qua `--confirm-free-tier` hoặc `GEMINI_FREE_TIER_CONFIRMED=1`. Code không bật billing, không dùng OpenAI và không fallback provider/model. Key không cung cấp API tra billing tier, nên xác nhận của người dùng không phải bảo đảm kỹ thuật về hóa đơn. Allowlist model có Free Tier cũng không biến key thuộc paid project thành miễn phí.
-
-Pacing mặc định 10 giây giữa các request starts, SDK attempts = 1, input cap 60.000 ký tự; tắt cả automatic continuation và automatic function calling để SDK không tự sinh calls ngoài sổ đếm. Pacing/latency tính vào runtime/deadline; không bảo đảm quota thực tế của mọi project. Đếm requests thực, prompt/output/thinking/total/cached tokens riêng. Lỗi quota, billing, cấu hình, network hoặc timeout được ghi là lỗi hạ tầng; dừng sớm run, lưu `incomplete_api_failure`, exit code 3. Wrapper không tiếp tục hàng loạt sau lỗi; comparator từ chối run lỗi hoặc không có API calls, không diễn giải chúng thành agent chọn no-op.
-
-### WHERE và StatePacket
-
-- Tối đa hai representatives: nghiệm tốt nhất theo hard/total và một chromosome khác, ưu tiên objective/placement trade-off khi hard tương đương. Nếu không có ứng viên gần tương đương, giữ đại diện còn lại theo thứ tự hard/total.
-- Tối đa 6 connected regions, mỗi region mặc định 5 class.
-- Pairwise violation quy về đúng hai đầu đang vi phạm; global penalty chia heuristic trong nhóm, không diễn giải như attribution chính xác.
-- Student conflicts được localize từ assignment thực của scorer. Missing course requests vẫn đánh dấu unlocalized.
-- Boundary gồm distribution relationships (kể cả đang thỏa) và các lớp chiếm alternative rooms. Packet chỉ hiện tối đa 32 boundary IDs, kèm tổng count/truncated; nội bộ vẫn giữ đầy đủ boundary và full scoring.
-
-Packet chứa global progress/diversity, regions/current placements/allowed moves, 5 outcomes gần nhất và action limits. Incumbent và population metrics được phân biệt; outcome progress không phụ thuộc candidate có sống sót trong population hay không.
-
-### HOW và execution
-
-Single-agent quyết định cả ba phần trong một call. Inspector chọn region trước; solver xác minh target rồi Planner chọn operator/budget/interval. Agent chỉ chọn target/operator có sẵn, không chạy mã tự sinh.
-
-| Action | Thực hiện |
+| Route | Purpose |
 | --- | --- |
-| `move` | Đổi time hoặc room của một class trong vùng. |
-| `swap` | Hoán đổi hai placements tương thích với domain của từng class. |
-| `destroy_repair` | CP sửa **đồng thời toàn vùng đã chọn**, tối đa 3 giây, fixed outside; dùng phần evaluation budget còn lại cho fallback tuần tự tối đa 3 class. |
-| `no_op` | Không sửa, vẫn có next review interval hợp lệ. |
+| Distribution-group CP | Jointly repair required distribution violations with classes outside the region fixed |
+| Room plateau search | Cross temporary neutral or worse states to reduce the final hard count |
+| Adaptive room CP | Expand the neighborhood around remaining room conflicts near feasibility |
+| Beam fallback and backoff | Bound unsuccessful repair work and defer repeated attempts |
 
-Action/IDs/boundary/operator/budget/interval phải qua validation. Khi source chưa khả thi, candidate phải giảm hard; khi đã khả thi, giữ hard 0 và giảm total. Không bắt candidate chưa khả thi phải đạt ngay hard 0. Operator trials/recheck cùng tính vào search budget. JSON/schema/action sai thành fallback no-op có reason; phân biệt `model_no_op` với fallback và lỗi hạ tầng, không gộp chúng thành chất lượng lựa chọn của LLM.
+CP neighborhoods model room clashes, unavailable rooms, required pairs, MaxDays, MaxDayLoad, MaxBreaks and MaxBlock, including fixed outside classes. Candidates are checked by the full scorer before acceptance. A bounded or sampled neighborhood that finds no candidate does not establish infeasibility of the full problem.
 
-CP soft branch ưu tiên weighted time/room; student/soft distribution được kiểm bằng full scorer, chưa được tối ưu trực tiếp trong local CP objective.
+The default search continues after internal feasibility to improve soft cost. The direct CLI option `--stop-on-feasible` instead stops after a completed generation containing a feasible candidate.
 
-## 6. Scoring, budget và setting
+Source: [construction.py](NSGA-III/itc2019/construction.py), [nsga3.py](NSGA-III/itc2019/nsga3.py), [neighborhood.py](NSGA-III/itc2019/neighborhood.py), [shared monitor](NSGA-III/itc2019/controller.py).
 
-`ScoreEngine` là LRU cache theo instance và toàn chromosome, tối đa 16 entries, giữ score cùng assignment phục vụ region. Cache hit vẫn tiêu **logical evaluation** để tránh lợi thế đếm budget cho pipeline lặp lại candidate.
+## Controller contract
 
-`evaluations = Pymoo/monitor/controller checks + routine repair checks`; đối chiếu được với `score_engine.logical_requests`. Physical calls/cache hits ghi riêng; local delta và CP node chỉ tính runtime. Hai final verification calls liệt kê riêng, không cộng vào search budget.
+The shared read-only extractor builds StatePacket v2. The six model-facing blocks are:
 
-Evaluation cap được giữ bằng cách reserve objective checks trong repair và thu nhỏ batch offspring cuối theo ngân sách còn lại. Không làm tròn lên nguyên population rồi vượt cap; cache hit vẫn tính vào allowance đó.
-
-Deadline được truyền xuống construction/routine/CP/plateau/operator. Không ngắt giữa một full score; initial population hoặc scoring đã bắt đầu vẫn có thể hoàn tất sau time cap. Time limit là hàng rào hợp tác, không phải hard process timeout.
-
-| Solver setting | Mặc định CLI |
+| Block | Contents |
 | --- | --- |
-| Population / H | 20 / 3 (20 directions) |
-| Crossover / mutation rate / mutation fraction | 0,7 / 0,2 / 0,005 |
-| Initial repair steps / pair trials | 12 / 3 |
-| Offspring repair steps / pair trials | 8 / 2 |
-| Inner reference layer | Tắt; tùy chọn `--inner-partitions` |
-| Generations / seed khi gọi main trực tiếp | 20 / 42 |
-| Stop-on-feasible | Tắt |
+| `global_search_state` | Progress/evaluations, population and feasible counts, separate population-best/incumbent/best-feasible quality, weighted objective distributions and diversity |
+| `recent_quality` | Generation-labelled incumbent history, hard/feasible-total stagnation mode and review triggers |
+| `candidate_regions` | Published target IDs, active placements/domains, heuristic nonadditive contributions, operator eligibility and local diagnostics |
+| `boundary_context` | Fixed outside placements, complete validation-ID registry, bounded rule descriptions and their current satisfaction/cost |
+| `recent_outcomes` | Requested action/budget, actual work, source/best-trial/candidate quality, admission/selection and incumbent changes |
+| `action_limits` | Global operator list and bounded execution/review allowances; `no_op` uses null targets and zero execution budget |
 
-Các mặc định CLI trên không tự đọc JSON. Để dùng cấu hình đã đo, chạy `run_pilot.py` với [profiles/pilot.json](profiles/pilot.json); wrapper dùng seed 17 nếu không truyền seed.
+Schema version, instance/seed identity, packet/settings hashes, source fingerprints and diagnostic time/work are trace metadata rather than model payload. Target/boundary IDs identify the published source snapshot. Both controllers use the same extractor; Planner receives that packet plus Inspector's validated diagnosis.
 
-Preset hiện chọn mutation rate **0,35**, class fraction **0,01**. `nbi-spr18` và `yach-fal17` dùng population 12/H=2; bốn instance còn lại giữ 20/H=3. Crossover, initial repair, offspring repair và inner-layer settings giữ như bảng. Riêng `yach-fal17` dùng room-CP deadline 15 giây/deterministic limit 2; các instance khác giữ 8 giây/0,5. Đây là lựa chọn trong phạm vi đã thử, không phải tham số tối ưu toàn dataset.
+Diagnostics exhaust small one-gene pools or deterministically sample at most 24 alternatives per active class. Per region, return at most 32 outside placements, 12 rule descriptions and two placement examples. Full distribution groups are checked before display truncation. Swap-domain compatibility is distinct from local conflict checks; joint CP is not run to predict a repair outcome. Counts, coverage and truncation are explicit. Negative deltas mean improvement, but passing a local check does not guarantee a better full score or complete student resectioning. Unknown values remain null and student identities never enter the payload.
 
-Wrapper áp override solver/`repair_*` theo instance cho **cả ba pipeline**, mỗi flag chỉ xuất hiện một lần. Các pipeline phải dùng cùng profile và seed khi so cùng instance; không bắt buộc các instance khác nhau có cùng population hay budget.
+Extraction makes zero full-score requests and consumes no solver RNG. Student-conflict attribution uses existing cached assignments only; uncached attendance effects remain unlocalized. Optional examples are trimmed first for input size, followed by lower-ranked regions; an essential-context overflow skips the review with a recorded reason. The existing API input cap is retained, including room for the Planner envelope. A previous review with a different source is noncomparable; matching source alone remains inconclusive until scope/settings/budget also match.
 
-Caps đã được đo trên source hiện tại với seed 17/42, sau sàng lọc và thử thêm seed 73. Xem `provenance.budget_status`: `measured_local_knee` là mốc hữu ích trong khoảng đã đo; `progressing_at_evaluation_cap` nghĩa chưa quan sát đủ đuôi tiến triển; `time_censored` nghĩa trần thời gian ngắt trước horizon mong muốn. `muni-fi`, `yach`, `bet` vẫn có horizon mở; `recalibration_required` được giữ đúng trạng thái này. Không suy ra chạy thêm sẽ vô ích.
+Reviews start after warm-up and are triggered by a scheduled checkpoint, stagnation or low diversity. Minimum spacing and event rearming prevent repeated calls for the same stagnation or diversity episode. The controller chooses the next interval within configured bounds; progress is measured by hard violations until feasibility and by weighted total afterward.
 
-Evaluation cap không vượt quãng đã quan sát ở cả hai seed. Wall cap có hệ số an toàn, dự phòng generation dài và tối đa 360 giây API latency cho hai agent; **không phải dự báo thời gian baseline**, cũng không phải phép đo agent thật. Thời gian thu từ các job kỹ thuật chạy đồng thời, không dùng để tuyên bố ưu thế tốc độ.
+Single-agent returns WHERE, HOW and WHEN in one response. In the multi-agent pipeline, Inspector selects WHERE; the code validates the target before Planner receives the original packet and diagnosis to select HOW and WHEN. Both methods use the same regions, operators and action limits.
 
-## 7. Chạy và output
+| Action | Effect |
+| --- | --- |
+| `move` | Change a class's time or room within its domain |
+| `swap` | Exchange two compatible placements |
+| `destroy_repair` | Jointly repair the selected region with the outside fixed, then try a bounded fallback |
+| `guided_move` | Try distinct screened one-time/room changes in ranked order, with every other placement fixed |
+| `distribution_repair` | Require progress on one deterministically selected violated required rule; only relevant movable participants inside the published region may change |
+| `blocker_chain` | Opt-in bounded beam through neutral/worse intermediate states within a separately published expanded region |
+| `no_op` | Leave the timetable unchanged and set the next review interval |
 
-Từ thư mục Experiment, sau khi cài requirements trong venv:
+IDs, boundary, operator, execution budget and review interval are validated before execution. An infeasible source requires a strict reduction in total hard violations. A feasible source requires hard zero and a lower weighted total. The candidate is fully rescored and submitted to selection; the incumbent also observes scored candidates.
+
+`guided_move` reuses the private diagnostic shortlist only while its full source fingerprint matches. Its ranking uses checked hard deltas before feasibility, then known time/room costs; after feasibility known soft changes take priority. `distribution_repair` chooses the required rule by violation units, smaller mutable group and stable rule ID. A class with room freedom alone cannot repair a day/time rule. The CP model includes all fixed participants and requires a reduction in the chosen rule as well as the full hard admission check.
+
+All operator stages share the requested logical full-evaluation allowance: source scoring when uncached, trials and the final recheck, including cache hits. A trial plus recheck needs at least two available evaluations; an uncached CP source can require one more. Construction/search has a cooperative three-second local bound. Trace outcomes include the stop reason, changed classes, targeted rule, admission, survival and source/trial/candidate weighted vectors. Rechecks are already included in new `outcome.evaluations` and are not charged twice.
+
+`blocker_chain` is disabled by default. A direct controller CLI call with `--enable-blocker-chain` may replace the lowest-ranked offered region with one separately identified expanded target, capped at `min(10, 2 * region_size)` classes. Chain search uses at most three layers, beam width two and hard slack one, charging every full-scored intermediate state. Classes outside that target remain fixed throughout execution. The final candidate must pass the same admission rule; archive retention remains independent of population survival.
+
+Invalid responses become logged fallback no-ops. A model-selected `no_op` is recorded separately from validation failure and API failure.
+
+Source: [controller.py](NSGA-III/itc2019/controller.py), [regions.py](NSGA-III/itc2019/regions.py), [operators.py](NSGA-III/itc2019/operators.py).
+
+## API and budgets
+
+Both controllers use the Gemini Developer API through [llm.py](NSGA-III/itc2019/llm.py). Credentials come from `GEMINI_API_KEY` or `GOOGLE_API_KEY`. The adapter requires Free Tier confirmation and restricts model selection to its allowlist. Model, pacing, timeout, token cap and input-size limits are configured by the selected profile and CLI.
+
+The adapter makes one SDK attempt per request and disables automatic continuation and function calling. There is no provider or model fallback. Pacing waits and API latency consume runtime. Logs count actual requests and record prompt, output, thinking, cached and total tokens separately.
+
+Failures during API requests, including quota, billing, configuration, network and timeout errors, end the controller run as `incomplete_api_failure`; the CLI publishes its status and exits with code 3. Startup configuration errors stop before optimization with exit code 2. Campaign-level retries are recorded as separate attempts rather than hidden requests. The comparison tool rejects incomplete API runs.
+
+Search accounting includes routine repair, monitor repair, operator source/trial scoring and rechecks. StatePacket v2 extraction uses local checks only and reports zero full evaluations; earlier campaign traces can include charged region-scoring requests. Cache hits count as logical evaluations; physical scorer calls and cache hits are reported separately. CP search and local diagnostics consume time. Final verification calls are counted separately from the search budget. The final offspring batch shrinks to fit the remaining evaluation allowance. Unknown request usage is tracked separately, so reported native-token totals can be a lower bound.
+
+Wall-clock limits are cooperative. An ongoing full score or sectioning operation may finish after the deadline. Reported solver runtime includes controller waiting and computation, but excludes XML parsing and output writing.
+
+## Outputs and comparison
+
+| Artifact | Contents |
+| --- | --- |
+| `run_config.json` | Solver/controller settings, XML and source hashes, dependency versions |
+| `summary.json` / `result.json` | Scores, feasibility, runtime, accounting and completion status |
+| `choices.npz` | Saved chromosome, including infeasible endpoints |
+| `anytime_trace.jsonl` | Generation-level population and incumbent quality, saved incumbent objective vectors, diversity and cumulative stage timing |
+| `controller_trace.jsonl` | v2 packet/metadata, review timestamps, role usage, validated action, source/trial/candidate outcomes and incumbent before/after |
+| `solution.xml` / `expected.json` | Internally feasible schedule and score/hash for independent validation |
+
+The run identity includes configuration, inputs, source hashes and dependencies. A repeated identity replaces prior output only after the new run has completed staging. Profiles retain their original calibration provenance and historical document labels; these records stay unchanged to preserve saved hashes.
+
+Compare paired runs with the same instances, seed, solver/repair settings and compatible source versions. Controller comparisons also require matching model and transport policies, with equal review caps and the appropriate one-call/two-call allowances.
 
 ```cmd
-python run_pilot.py --pipeline baseline --seed 17 --dry-run
-python run_pilot.py --pipeline baseline --seed 17
-python run_pilot.py --pipeline baseline --instance muni-fsps-spr17 --seed 42
+python compare_pipelines.py --baseline "BASELINE_RUN_DIR" --single "SINGLE_RUN_DIR" --multi "MULTI_RUN_DIR" --output comparison.json
 ```
 
-Đổi `--pipeline` thành single/multi và cung cấp Gemini key/project Free Tier để dùng controller. Chạy `python tools/gemini_preflight.py` kiểm tra offline trước; `--live --confirm-free-tier` mới gửi một packet tổng hợp qua API. Khi chạy controller thật, thêm `--confirm-free-tier`; dry-run và inspect không gửi request, không cần key.
+`--multi` is optional for baseline/single comparisons. Time-censored endpoints are distinguished from runs that reached equal evaluation budgets. The expanded campaign and the no-time-cap follow-up remain separate reports; plot manifests identify any follow-up endpoints substituted into a figure.
 
-Mỗi run có `run_config.json`, `summary.json`; mỗi instance có `result.json`, `choices.npz`, `anytime_trace.jsonl`. Agent thêm `controller_trace.jsonl`. Result ghi score, evaluation breakdown, physical/logical scoring, sectioning fallback status, stage timing và repair events. `solution.xml` và `expected.json` (score/hash phục vụ validation) chỉ xuất khi hard 0 và sectioning validation nội bộ qua. Metadata agent ghi provider, SDK version, transport policy, model requested/returned và trạng thái API; không ghi key.
+### Per-instance result figures
 
-Run ID gồm setting, XML hash, source hashes và dependency versions. Cùng định danh chỉ thay output cũ sau khi run mới hoàn tất qua staging. Không trộn run của source/config khác nhau.
+`tools/plot_search_results.py --report REPORT --output NEW_FOLDER` reads either legacy or v2 saved traces. It exports three core figure sets per instance/seed: final hard and descriptive soft quality, incumbent convergence versus actual wall time and logical full evaluations, and endpoint runtime/native-token use. Initial elapsed time is retained, step curves stop at the last observation, and end/review/admission markers are explicit. Feasible soft progress gets a panel only when hard zero is observed. Shared observed ranges are recorded for comparisons.
 
-## 8. Trạng thái sau cải thiện và hiệu chỉnh
+`--extra reviews diversity operators objectives` adds per-review token/latency, diversity, operator behavior and saved incumbent component plots. Missing incumbent vectors skip the component view with an explicit manifest reason. Native totals are counted once; latency already includes pacing. The optional `--split-runtime` remainder means all non-API work, not a measured pure-solver timer. Usage is attached to review-completion times in new traces, or same-generation post-review checkpoints in legacy traces; missing checkpoints remain unknown.
 
-R01–R07 đã có implementation và regression tương ứng: shared incumbent, group CP, forward-checking construction, adaptive/global CP, scoring cache/guards, regional diagnosis/joint operator, sectioning reassignment.
+Install plotting dependencies with `python -m pip install -r tools/requirements-plotting.txt`. PDF/SVG/PNG, source CSV and JSON manifests go to a separate folder such as `output/search_diagnostics/tg_no_timecap/`. Figure manifests retain configuration/source/trace hashes, unmatched/censored status, campaign failures/interruption/recoveries and unknown-usage caveats. Existing nine-panel figures are not overwritten. Each seed is shown separately without significance claims; recorded hardware conditions remain a comparability limit for legacy timing data.
 
-Đã sàng lọc cấu hình, thử tổ hợp mutation/population, kiểm tra budget CP riêng và chạy xác nhận cả sáu instance ở hai seed. Core solver được giữ nguyên trong đợt đo; thay đổi nằm ở preset, runner, công cụ đo và kiểm tra. Các quyết định nằm tại H29–H30 trong lịch sử; records được chọn nằm ở `solver_checks/recalibration_v4/_accepted_records.json`, không tạo báo cáo Markdown số liệu riêng.
+The v2 implementation passed 158 offline tests on 26 October 2026, including mocked Single/Inspector-Planner flows, fixed-boundary/global-rule checks and logical evaluation accounting. Eighteen example diagnostic PDFs passed rendered alignment, font-size and collision audits. Their screen-readable PDF/SVG plus 300-dpi PNG layout is for analysis rather than a journal-column submission. These are implementation/visualization checks using archived evidence; the new controller behavior has not been benchmarked with live API runs.
 
-Trong phạm vi đã đo, `muni-fi`, `muni-fsps`, `mary`, `nbi` đạt khả thi nội bộ ở cả hai seed xác nhận. `yach` vẫn còn room clashes; `bet` còn cả room clashes/unavailability lẫn required distributions. Missing student requests không phải thành phần gây hard còn lại trong các endpoint này. Không coi việc thêm generations là lời giải đã được chứng minh cho hai ca khó.
+### Current no-time-cap follow-up
 
-Repair còn có giới hạn chính sách: room CP chỉ chạy gần khả thi; coordinated CP đòi distribution violations không ít hơn room clashes. Trạng thái lỗi hỗn hợp có thể chủ yếu rơi vào plateau/routine repair. Thử gọi CP sớm hơn trên `bet` không cải thiện ca đã đo; ép riêng các CP neighborhoods trên incumbent cũng chưa tìm được candidate trong giới hạn thử. `UNKNOWN` không phải chứng minh vô nghiệm. Cần cải thiện hiệu quả neighborhood/model và phối hợp repair trước khi khẳng định solver đã ổn định trên cả sáu instance.
+The `tg-spr18` follow-up is complete: all three pipelines finished for seeds 17 and 42. The profile is `profiles/tg_no_timecap.json`; only the global wall-clock cap is unset. Population 20, H3, generation cap 200, evaluation cap 1,200, solver/repair/prompts, both `gemini-3.5-flash-lite` controllers, review/API budgets and request timeout were kept fixed. Every endpoint reached the same 1,200-evaluation budget; none was time-censored. These are internal endpoints, not official validation results.
 
-Kiểm nghiệm validator độc lập và quyết định từ agent thật vẫn chưa thực hiện. Gemini adapter đã có kiểm thử offline/HTTP giả lập, chưa gọi model thật do người dùng sẽ thêm key sau. Hai XML từ saved feasible choices của `muni-fsps-spr17` và `nbi-spr18` đã được re-score/export để người dùng Validate sau khi đăng nhập; đây không phải hai lượt GA mới hay kết quả official đã pass. Tool `tools/validate_itc2019.py` chuẩn bị, submit có authentication hoặc import response, giữ raw response và đối chiếu đúng XML hash/instance/assigned classes/total. Không gọi endpoint công bố nghiệm. Comparator đọc receipt sidecar, từ chối hash/score lệch và giữ nguyên `not_run` khi chưa có bằng chứng.
+| Seed | Pipeline | Hard | Weighted soft total | Runtime (s) | API calls | Reported native tokens |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 17 | Baseline | 17 | 74,300 | 2,052.92 | 0 | 0 |
+| 17 | Single-agent | 16 | 74,070 | 3,259.29 | 5 | 34,990 |
+| 17 | Inspector–Planner | 15 | 73,870 | 3,624.25 | 10 | 71,770 |
+| 42 | Baseline | 22 | 77,282 | 3,765.33 | 0 | 0 |
+| 42 | Single-agent | 21 | 76,682 | 3,686.27 | 5 | 33,825 |
+| 42 | Inspector–Planner | 21 | 76,242 | 4,002.56 | 8 | 54,322 |
 
-Không gọi API trong các lượt calibration H29-H30. Hash trong provenance chỉ snapshot đã đo, không gán hash mới của adapter/logging với kết quả cũ. Search/repair parameters giữ nguyên; các horizon mở vẫn ghi rõ trong profile, không gọi endpoint bị time cap là hội tụ. Hai PDF đã xuất trước là snapshot H01-H30; tài liệu hiện tại tiếp tục theo H31-H32.
+All six endpoints remain internally infeasible (hard violations are nonzero); no solution XML was produced for these endpoints. Hard counts are the primary descriptive comparison. The weighted soft total is only a descriptive tie-break when hard counts are equal: for seed 42, single-agent and Inspector–Planner both have hard 21, with totals 76,682 and 76,242 respectively. Do not interpret this two-seed pilot as statistical significance or a general performance claim. The historical 20-minute endpoint can be shown for context only; it is not a matched-budget improvement comparison.
 
-Solver vẫn heuristic và bounded: sampled domains/neighborhoods có thể bỏ lỡ nghiệm, sectioning fallback không bảo đảm tìm đủ bundles, chưa có Pareto archive ngoài quần thể và local CP chưa tối ưu trực tiếp mọi soft objective. Không có cơ sở khẳng định solver đã tối ưu toàn cục hay giải được mọi instance.
+The report `solver_checks/tg_no_timecap_comparison.json` records 6 completed cells, 2 completed seed triples, 20 published attempts checked (6 complete and 14 incomplete), plus one separately recorded unpublished user-interrupted attempt, 13 authorized recoveries, 53 API calls and 267,790 reported native tokens. Single-agent seed 42 attempts 1–4 ended in HTTP 504; attempt 5 was user-interrupted before publication and retains unknown usage; attempt 6 completed. Inspector–Planner seed 42 attempts 1–10 ended in transient service/network/timeout errors (six HTTP 504, two HTTP 503, two read timeouts); attempt 11 completed at 1,200 evaluations, hard 21, weighted soft total 76,242, runtime 4,002.56 seconds, 8 API calls and 54,322 reported native tokens. Failed-request usage is unknown: a zero reported-token field is not evidence that the failed request consumed zero tokens. All attempts, logs, recovery approvals and the attempt-5 interruption record are retained under `solver_checks/tg_no_timecap/` for audit and unknown-usage accounting; none were deleted.
 
-## 9. Bản đồ code
+The final summary and `tools/audit_expanded_pilot.py` audit passed (20 published attempts checked; no audit failures); 131 offline tests passed after the seed-42 figure update. Both frozen campaign snapshots still match the original solver/profile inputs; solver, profile and controller settings are unchanged. The seed-42 figure was refreshed only for the `tg-spr18` endpoint, and its manifest retains the earlier seed-17 and current seed-42 follow-up sources. The seed-17 figure, `profiles/expanded_pilot.json`, the 54-cell comparison and pipeline PDF remain unchanged. These results make no official-validation or significance claim.
 
-| Thành phần | File |
-| --- | --- |
-| Parse / dữ liệu | [instance.py](NSGA-III/itc2019/instance.py) |
-| Construction | [construction.py](NSGA-III/itc2019/construction.py) |
-| Score / sectioning fallback | [scoring.py](NSGA-III/itc2019/scoring.py), [sectioning.py](NSGA-III/itc2019/sectioning.py) |
-| NSGA-III / archive / routine repair | [nsga3.py](NSGA-III/itc2019/nsga3.py) |
-| Monitor / review / validation | [controller.py](NSGA-III/itc2019/controller.py) |
-| CP / repair policy / room deltas | [neighborhood.py](NSGA-III/itc2019/neighborhood.py), [repair_policy.py](NSGA-III/itc2019/repair_policy.py), [room_search.py](NSGA-III/itc2019/room_search.py) |
-| Regions / actions / API | [regions.py](NSGA-III/itc2019/regions.py), [operators.py](NSGA-III/itc2019/operators.py), [llm.py](NSGA-III/itc2019/llm.py) |
-| Run / ghép kết quả | [run_pilot.py](run_pilot.py), [compare_pipelines.py](compare_pipelines.py) |
-| Calibration / replay / budget analysis | [recalibrate_solver.py](solver_checks/recalibrate_solver.py), [analyze_recalibration.py](solver_checks/analyze_recalibration.py) |
+These saved campaigns predate StatePacket v2, new action accounting and the new operators. Their frozen snapshots remain historical provenance; the current sources intentionally have different hashes. Use a fresh campaign state root and output namespace for new experiments. Offline implementation checks do not constitute a new benchmark result.
+
+All existing campaign scores are internal. [validate_itc2019.py](tools/validate_itc2019.py) can compare a saved official response and bind its receipt to the exact solution XML hash. Internal hard zero alone is not an official validation result.
+
+## Design decisions and limitations
+
+- Whole XML instances are compared using paired seeds and shared per-instance profiles. The baseline receives the same underlying solver and repairs as both agent methods.
+- Single versus baseline measures the complete controller package, including additional interventions. Multi versus single measures the two-call package, including its extra latency and tokens; it does not isolate role specialization alone.
+- Student sectioning remains bounded and heuristic. Local CP minimizes modeled hard cost while infeasible, or weighted time/room cost in feasible soft mode; the full scorer checks the complete candidate afterward.
+- Room CP is gated near feasibility, and distribution repair has its own gate. Mixed violations can remain unresolved within the allocated budget.
+- The saved campaign covers two seeds. Its results describe those runs rather than establishing a general statistical advantage.
+- Campaign snapshots currently store absolute paths. Existing state created at another checkout location cannot resume unchanged, even when file contents match.
+
+Research source notes are retained for [LAOS](evidence/P005/paper-card.md), [DRAGON](evidence/P012/paper-card.md), [LLM-LNS](evidence/P002/paper-card.md) and [MOTIF](evidence/P047/paper-card.md). They motivate parts of the design; superiority of the online Inspector-Planner pipeline remains an experimental question.

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "name": "nine-instance-two-seed-controller-check",
+  "solver": {
+    "population": 20, "partitions": 3,
+    "mutation_rate": 0.35, "mutation_fraction": 0.01, "crossover_rate": 0.7,
+    "initial_repair_steps": 12, "initial_pair_trials": 3,
+    "offspring_repair_steps": 8, "offspring_pair_trials": 2,
+    "inner_partitions": null, "inner_scale": 0.5
+  },
+  "repair": {
+    "interval": 5, "near_feasible_hard": 12,
+    "neighborhood_classes": 32, "neighborhood_options": 32,
+    "neighborhood_seconds": 8, "neighborhood_deterministic_limit": 0.5,
+    "fallback_seconds": 2, "fallback_evaluations": 128,
+    "failure_cooldown": 5, "max_failure_cooldown": 20
+  },
+  "controller": {
+    "review_interval": 10, "warmup_generations": 5, "stagnation_window": 5,
+    "min_review_interval": 3, "max_review_interval": 20,
+    "diversity_threshold": 0.2, "diversity_recovery_threshold": 0.3,
+    "max_regions": 6, "region_size": 5, "max_operator_evaluations": 24,
+    "max_reviews": 12, "api_timeout_seconds": 15, "max_output_tokens": 1024
+  },
+  "llm": {
+    "provider": "gemini", "model": "gemini-3.5-flash-lite", "free_tier_only": true,
+    "min_request_interval_seconds": 10.0, "max_input_characters": 60000
+  },
+  "instances": {
+    "muni-fi-spr16": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 840},
+    "muni-fsps-spr17": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 630},
+    "yach-fal17": {
+      "generations": 200, "evaluations": 1200, "time_limit_seconds": 1050,
+      "population": 12, "partitions": 2,
+      "repair_neighborhood_seconds": 15, "repair_neighborhood_deterministic_limit": 2
+    },
+    "nbi-spr18": {
+      "generations": 200, "evaluations": 1200, "time_limit_seconds": 750,
+      "population": 12, "partitions": 2
+    },
+    "mary-fal18": {"generations": 200, "evaluations": 1100, "time_limit_seconds": 810},
+    "bet-spr18": {"generations": 230, "evaluations": 2300, "time_limit_seconds": 2880},
+    "pu-cs-fal07": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200},
+    "lums-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200},
+    "tg-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200}
+  },
+  "provenance": {
+    "parent_profile": "profiles/pilot.json",
+    "original_six": "All search, repair, review, evaluation and wall-clock caps are unchanged; completed seed-17 runs may be reused only with matching source, data and configuration hashes.",
+    "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students), lums-spr18 (487 classes, 73 rooms, no students), tg-spr18 (676 classes, 24 rooms, no students). Different institutions and sizes; not a representative sample of all 36 instances.",
+    "new_budget_rule": "Provisional engineering caps fixed before examining controller outcomes: the existing default population 20 / partitions 3, 200 generations, 1200 logical evaluations, 1200 seconds per method. Not tuned or claimed optimal.",
+    "seeds": [17, 42],
+    "pipeline_order": ["baseline", "single", "multi"],
+    "comparison_rule": "Descriptive paired endpoints at shared caps. Rank soft scores only when both endpoints are feasible. Mark evaluation-censored runs separately; never treat API failures as losses.",
+    "multi_budget_rule": "Same maximum 12 reviews and operator evaluation cap; up to 24 requests for Inspector then Planner, versus up to 12 single-agent requests. Record both calls and pacing latency.",
+    "retry_rule": "Preserve every attempt. At most one whole-run retry for a transient service/network/timeout failure; never retry quota/auth/billing failures automatically, and never select a completed attempt by score."
+  }
+}

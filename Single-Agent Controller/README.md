@@ -1,18 +1,21 @@
 # Single-Agent Controller
 
-This pipeline adds one bounded LLM decision to the shared NSGA-III solver. At each review, the agent selects a target region, an allowed improvement operator, and the next review interval. The solver validates the response and evaluates any proposed change. Shared solver code is in [`../NSGA-III/itc2019/`](../NSGA-III/itc2019/).
+One Gemini call selects WHERE to intervene, HOW to modify the region and WHEN to review again. The shared solver validates the decision, executes an allowed operator and scores the candidate before selection.
 
-## Setup and run
+The current input is the shared six-block StatePacket v2. Decisions keep the original ActionPlan fields; local diagnostics guide operator selection and do not supply executable placements. Actions include the original `move`/`swap`/`destroy_repair`, plus `guided_move` and `distribution_repair`. The direct entrypoint optionally accepts `--enable-blocker-chain` for an explicitly published expanded target. XAI justification fields remain deferred under Section 3 of the plan.
 
-From this folder, install the requirements. Set `GEMINI_API_KEY` locally and verify its project is **Free Tier** in AI Studio. There is no OpenAI dependency or paid-provider fallback. The profile selects `gemini-3.8-flash`.
+Commands below run from the repository root:
 
 ```cmd
-python -m pip install -r requirements.txt
-python ../tools/gemini_preflight.py
-python ../run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --dry-run
-python ../run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+python -m pip install -r "Single-Agent Controller/requirements.txt"
+python tools/gemini_preflight.py
+python run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --dry-run
 ```
 
-The wrapper uses the shared local profile and per-instance budgets. Add `--instance NAME` to run one instance, or change `--seed` for another run. Both agents should use the same model and profile. API latency is included in the time cap. `python main.py --instance NAME --inspect` parses XML without API calls. See [GUIDE.md](GUIDE.md) for operation, [Current pipelines](../PIPELINES.md) for implementation, and [Improvement history](../IMPROVEMENT_HISTORY.md) for decisions.
+Optimization requires `GEMINI_API_KEY` and confirmation that its project is Free Tier. The selected profile supplies the model and request limits.
 
-Results are saved under `results_itc2019/`. Only the last command sends real Gemini calls. `--confirm-free-tier` is a human confirmation, not a billing-tier lookup: an API key linked to a paid project can still incur charges. Quota/network failures produce an incomplete run (exit code 3), not a successful no-op experiment. See the guide before running all six instances.
+```cmd
+python run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+```
+
+Results go to `Single-Agent Controller/results_itc2019/`. A failed API request saves an incomplete run and returns exit code 3. See [PIPELINES.md](../PIPELINES.md) for review rules, actions, accounting and comparison requirements, or the [repository README](../README.md) for profiles and saved reports.

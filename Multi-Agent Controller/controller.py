@@ -25,13 +25,14 @@ class MultiAgentController(ControllerCallback):
         if target == (None, None, None):
             return self._fallback(), records, "inspector_no_target"
         matching = next((region for region in packet["candidate_regions"]
-                         if target == (region["solution_id"], region["region_id"],
-                                       region["boundary_id"])), None)
+                         if target == tuple(region["target"][k] for k in
+                                            ("solution_id", "region_id", "boundary_id"))), None)
         if matching is None:
             return None, records, "invalid_inspector_target"
         constraint_ids = raw.get("relevant_constraint_ids")
+        context = next(b for b in packet["boundary_context"] if b["region_id"] == target[1])
         if (not isinstance(constraint_ids, list) or
-                any(not isinstance(value, str) or value not in matching["constraint_ids"]
+                any(not isinstance(value, str) or value not in context["constraints"]["ids"]
                     for value in constraint_ids)):
             return None, records, "invalid_inspector_constraints"
         if self.remaining() is not None and self.remaining() <= 0.1:

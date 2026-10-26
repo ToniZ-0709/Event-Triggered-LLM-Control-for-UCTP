@@ -15,10 +15,10 @@ from typing import Any
 
 from .operators import OPERATORS
 
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 # Text models with a published Free Tier when this integration was prepared.
 # No latest/preview aliases or silent fallback to a different model/provider.
-FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.6-flash", "gemini-3.5-flash-lite")
+FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.6-flash", "gemini-3.8-flash")
 
 
 def _object(properties: dict[str, dict]) -> dict:
@@ -50,21 +50,30 @@ SCHEMAS = {
 PROMPTS = {
     "single_agent": (
         "You control one bounded NSGA-III improvement step for ITC 2019. "
-        "Select WHERE from candidate_regions, HOW from allowed_actions, and WHEN. "
-        "Choose an operator listed in the selected region's available_operators. "
+        "Select WHERE from candidate_regions[].target, HOW/WHEN from action_limits. "
+        "Choose an operator in the target region's available_actions.operators. "
+        "Use boundary_context joined by region_id for rules and fixed blockers. "
+        "Diagnostics are bounded local checks, not full scores or executable placements. "
+        "guided_move ranks one-gene proposals; distribution_repair targets its published required rule. "
+        "blocker_chain may move only classes in its separately published expanded target. "
         "Use only listed IDs and integer ranges. Return no_op with null IDs and budget 0 "
         "if no suitable action exists. Never output code or a timetable. "
         "The solver validates and executes your decision."
     ),
     "inspector": (
         "You are the Inspector for ITC 2019 NSGA-III. Choose only WHERE: one "
-        "candidate region's solution_id, region_id, and boundary_id. "
+        "candidate region's target.solution_id, target.region_id, and target.boundary_id. "
+        "Use boundary_context constraints.ids for relevant_constraint_ids. "
+        "Read diagnostics as bounded local evidence, with unknown full/student effects. "
         "Return null IDs if no target is appropriate. Do not choose an operator or schedule."
     ),
     "planner": (
         "You are the Planner for ITC 2019 NSGA-III. The Inspector's target is fixed. "
-        "Choose only HOW and WHEN from allowed_actions and ranges; the operator must "
-        "appear in the target region's available_operators. "
+        "Choose only HOW and WHEN from action_limits; the operator must "
+        "appear in the target region's available_actions.operators. "
+        "guided_move ranks one-gene changes, distribution_repair targets its published required rule, "
+        "and destroy_repair jointly repairs the active region. Local checks do not guarantee full improvement. "
+        "blocker_chain is available only on an explicitly expanded target. "
         "Return no_op with budget 0 if no suitable operator exists. "
         "Never output code or a timetable."
     ),

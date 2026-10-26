@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "name": "tg-spr18-two-seed-no-timecap-followup",
+  "solver": {
+    "population": 20, "partitions": 3,
+    "mutation_rate": 0.35, "mutation_fraction": 0.01, "crossover_rate": 0.7,
+    "initial_repair_steps": 12, "initial_pair_trials": 3,
+    "offspring_repair_steps": 8, "offspring_pair_trials": 2,
+    "inner_partitions": null, "inner_scale": 0.5
+  },
+  "repair": {
+    "interval": 5, "near_feasible_hard": 12,
+    "neighborhood_classes": 32, "neighborhood_options": 32,
+    "neighborhood_seconds": 8, "neighborhood_deterministic_limit": 0.5,
+    "fallback_seconds": 2, "fallback_evaluations": 128,
+    "failure_cooldown": 5, "max_failure_cooldown": 20
+  },
+  "controller": {
+    "review_interval": 10, "warmup_generations": 5, "stagnation_window": 5,
+    "min_review_interval": 3, "max_review_interval": 20,
+    "diversity_threshold": 0.2, "diversity_recovery_threshold": 0.3,
+    "max_regions": 6, "region_size": 5, "max_operator_evaluations": 24,
+    "max_reviews": 12, "api_timeout_seconds": 15, "max_output_tokens": 1024
+  },
+  "llm": {
+    "provider": "gemini", "model": "gemini-3.5-flash-lite", "free_tier_only": true,
+    "min_request_interval_seconds": 10.0, "max_input_characters": 60000
+  },
+  "instances": {
+    "tg-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": null}
+  },
+  "provenance": {
+    "parent_profile": "profiles/expanded_pilot.json",
+    "change": "Only tg-spr18 solver time_limit_seconds changes from 1200 to null. All search, repair, controller, prompt, API model and transport budgets stay unchanged.",
+    "seeds": [17, 42],
+    "pipeline_order": ["baseline", "single", "multi"],
+    "stop_on_feasible": false,
+    "comparison_rule": "Keep the prior time-capped results separate. Compare completed endpoints at shared evaluation/generation limits and report actual runtime, calls and tokens.",
+    "retry_rule": "Retain all attempts. At most one whole-run retry for transient service/network/timeout failures, never quota/auth/billing or unclassified unpublished failures."
+  }
+}

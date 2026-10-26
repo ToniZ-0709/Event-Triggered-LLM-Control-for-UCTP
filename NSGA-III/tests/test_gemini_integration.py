@@ -28,7 +28,7 @@ def adapter(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY","offline-test-key-never-send")
     monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
     calls=[]
-    response=NS(response_id="fake-id",model_version="gemini-3.8-flash-v1",
+    response=NS(response_id="fake-id",model_version=llm.DEFAULT_MODEL+"-v1",
                 text=json.dumps(NO_OP),candidates=[NS(finish_reason="STOP")],prompt_feedback=None,
                 usage_metadata=NS(prompt_token_count=20,candidates_token_count=30,
                                   thoughts_token_count=12,total_token_count=62,cached_content_token_count=0))
@@ -40,6 +40,11 @@ def adapter(monkeypatch):
     client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True,
                                   min_request_interval_seconds=0)
     return client,response,calls
+
+
+def test_default_model_matches_selected_live_connection_model():
+    assert llm.DEFAULT_MODEL == "gemini-3.5-flash-lite"
+    assert len(llm.FREE_TIER_MODELS) == len(set(llm.FREE_TIER_MODELS))
 
 
 def test_key_and_billing_confirmation_are_required_before_any_sdk_call(monkeypatch):
@@ -155,7 +160,7 @@ def test_native_sdk_serializes_schema_without_network(monkeypatch,finish_reason)
         assert request.url.host=="generativelanguage.googleapis.com"
         return httpx.Response(200,json={
             "candidates":[{"content":{"role":"model","parts":[{"text":json.dumps(NO_OP)}]},
-                           "finishReason":finish_reason}],"modelVersion":"gemini-3.8-flash-v1",
+                           "finishReason":finish_reason}],"modelVersion":llm.DEFAULT_MODEL+"-v1",
             "continuationToken":"must-not-be-followed",
             "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
     client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
@@ -257,6 +262,125 @@ def test_comparison_allows_infeasible_results_and_reports_hard_delta(tmp_path):
     assert result["provider"]=="gemini"
     assert result["instances"][0]["single_minus_baseline"]["hard_change"]==0
     assert result["instances"][0]["single_minus_baseline"]["internal_total_change_if_both_feasible"] is None
+
+
+def test_comparison_accepts_baseline_and_single_without_multi(tmp_path):
+    folders=make_runs(tmp_path)
+    result=compare({key:value for key,value in folders.items() if key!="multi"})
+    assert result["methods"]==["baseline","single"]
+    assert set(result["instances"][0]["methods"])=={"baseline","single"}
+    assert "multi_minus_single" not in result["instances"][0]
+    assert result["comparison_type"]=="paired_shared_caps"
+
+
+def test_two_pipeline_comparison_still_rejects_changed_search_settings(tmp_path):
+    folders=make_runs(tmp_path)
+    folders.pop("multi")
+    path=folders["single"]/"run_config.json"
+    manifest=json.loads(path.read_text())
+    manifest["settings"]["config"]["seed"]=42
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match="differs from baseline on config"):
+        compare(folders)
+
+
+def _summary_fixture(tmp_path, monkeypatch):
+    from tools import summarize_paired_pilot as collector
+    folders=make_runs(tmp_path)
+    for method in ("baseline","single"):
+        path=folders[method]/"run_config.json"
+        manifest=json.loads(path.read_text())
+        manifest["settings"]["config"]["evaluations"]=120
+        path.write_text(json.dumps(manifest))
+    monkeypatch.setattr(collector,"discover",lambda profile,instance,seed,method:folders[method])
+    monkeypatch.setattr(collector,"audit_attempts",lambda profile,seed:[])
+    profile={"instances":{"X":{}},"llm":{"model":llm.DEFAULT_MODEL}}
+    return collector,folders,profile
+
+
+def test_summary_does_not_count_censored_pair_as_equal_budget_win(tmp_path,monkeypatch):
+    collector,folders,profile=_summary_fixture(tmp_path,monkeypatch)
+    path=folders["single"]/"summary.json"
+    rows=json.loads(path.read_text())
+    rows[0]["evaluations"]=100
+    rows[0]["score"]["hard"]=2
+    path.write_text(json.dumps(rows))
+    report=collector.summarize(profile,17)
+    assert report["paired_instances"]==1 and report["evaluation_matched_pairs"]==0
+    assert report["instances"][0]["quality_outcome"]=="single_better"
+    assert report["quality_counts_matched_only"]["single_better"]==0
+
+
+def test_summary_excludes_failed_single_run_not_as_a_quality_loss(tmp_path,monkeypatch):
+    collector,folders,profile=_summary_fixture(tmp_path,monkeypatch)
+    path=folders["single"]/"summary.json"
+    rows=json.loads(path.read_text())
+    rows[0]["controller"].update(comparison_eligible=False,completion_status="incomplete_api_failure")
+    path.write_text(json.dumps(rows))
+    report=collector.summarize(profile,17)
+    assert report["paired_instances"]==0 and len(report["excluded"])==1
+    assert report["quality_counts_matched_only"]["baseline_better"]==0
+
+
+def test_summary_does_not_rank_soft_totals_for_equal_infeasible_hard(tmp_path,monkeypatch):
+    collector,folders,profile=_summary_fixture(tmp_path,monkeypatch)
+    path=folders["single"]/"summary.json"
+    rows=json.loads(path.read_text())
+    rows[0]["score"]["total"]=50
+    path.write_text(json.dumps(rows))
+    report=collector.summarize(profile,17)
+    assert report["evaluation_matched_pairs"]==1
+    assert report["instances"][0]["quality_outcome"]=="infeasible_hard_tie"
+    assert report["instances"][0]["soft_change_percent_if_both_feasible"] is None
+
+
+def test_discovery_keeps_failed_attempt_but_selects_completed_retry(tmp_path,monkeypatch):
+    from tools import summarize_paired_pilot as collector
+    folders=[]
+    for label,complete in (("failed",False),("retry",True)):
+        folder=tmp_path/label
+        folder.mkdir()
+        (folder/"run_config.json").write_text(json.dumps({"completion_status":
+            "completed" if complete else "incomplete_api_failure"}))
+        (folder/"summary.json").write_text(json.dumps([{"controller":{"comparison_eligible":complete}}]))
+        folders.append(folder)
+    monkeypatch.setattr(collector,"matching_runs",lambda *args:folders)
+    assert collector.discover({},"X",17,"single")==folders[1]
+    assert (folders[0]/"run_config.json").is_file()
+
+
+def test_discovery_rejects_multiple_completed_retries_instead_of_best_score(tmp_path,monkeypatch):
+    from tools import summarize_paired_pilot as collector
+    folders=[]
+    for label in ("a","b"):
+        folder=tmp_path/label
+        folder.mkdir()
+        (folder/"run_config.json").write_text(json.dumps({"completion_status":"completed"}))
+        (folder/"summary.json").write_text(json.dumps([{"controller":{"comparison_eligible":True}}]))
+        folders.append(folder)
+    monkeypatch.setattr(collector,"matching_runs",lambda *args:folders)
+    with pytest.raises(ValueError,match="do not select by score"):
+        collector.discover({},"X",17,"single")
+
+
+def test_behavior_does_not_count_infeasible_soft_drop_as_primary_progress(tmp_path):
+    from tools import summarize_paired_pilot as collector
+    folder=tmp_path/"X"
+    folder.mkdir()
+    events=[]
+    for generation,(before,after) in enumerate((((4,100),(4,90)),((4,90),(3,200)),((0,300),(0,250))),1):
+        events.append({"generation":generation,"validation":"valid_action","trigger":["deadline"],
+            "state":{"global":{"incumbent_hard":before[0],"incumbent_internal_total":before[1]}},
+            "incumbent_after":{"hard":after[0],"internal_total":after[1]},
+            "action":{"operator_id":"move","next_review_interval":10,"execution_budget":10},
+            "outcome":{"status":"no_improving_candidate","evaluations":1}})
+    (folder/"controller_trace.jsonl").write_text("\n".join(json.dumps(event) for event in events))
+    result=collector.behavior(tmp_path,"X")
+    assert result["interventions_improving_incumbent"]==3
+    assert result["interventions_improving_primary_progress"]==2
+    assert result["interventions_reducing_incumbent_hard"]==1
+    assert result["interventions_improving_feasible_soft"]==1
+    assert result["interventions_lowering_infeasible_soft_only"]==1
 
 
 def test_quota_failure_ends_solver_early_and_preserves_incomplete_report():

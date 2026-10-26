@@ -17,9 +17,10 @@ from .nsga3 import _joint_improve_hard, _room_chain_repair, evaluation_count
 from .operators import OPERATORS, apply_operator
 from .neighborhood import adaptive_room_repair, distribution_neighborhood_repair
 from .repair_policy import FailureBackoff, RepairSettings
-from .regions import RegionBuilder, RegionCandidate, population_metrics
+from .regions import RegionBuilder, RegionCandidate, population_metrics, expand_blocker_region
 from .room_search import room_plateau_repair
 from .scoring import evaluate, overlaps
+from .state_packet import SCHEMA_VERSION, make_packet, fit_packet, packet_hash
 
 
 _COORDINATED_INTERVAL = 5
@@ -46,6 +47,7 @@ class ControllerSettings:
     max_api_calls: int = 100
     max_reviews: int = 12
     provider: str = "gemini"
+    enable_blocker_chain: bool = False
 
     def __post_init__(self) -> None:
         if not self.model:
@@ -414,6 +416,7 @@ class BaselineMonitor(Callback):
             self.best_choices = np.asarray(algorithm.pop[best_index].X, dtype=np.int32).copy()
         metrics["best_observed_hard"] = self.best_quality[0]
         metrics["best_observed_internal_total"] = self.best_quality[1]
+        metrics["incumbent_weighted_objectives"] = algorithm.problem.incumbent.weighted
         self.anytime_events.append(metrics)
         if self.deadline is not None and time.perf_counter() >= self.deadline:
             algorithm.termination.terminate()
@@ -454,6 +457,7 @@ class ControllerCallback(BaselineMonitor):
         self.events: list[dict[str, Any]] = []
         self.outcomes: list[dict[str, Any]] = []
         self.quality_history: list[tuple[int, int]] = []
+        self.quality_records: list[dict] = []
         self.progress_history: list[tuple[str, int]] = []
         self.last_progress_generation = 0
         self._stagnation_event_handled = False
@@ -471,6 +475,10 @@ class ControllerCallback(BaselineMonitor):
         self.models_returned: set[str] = set()
         self.interventions = self.selected_interventions = 0
         self.operator_scoring_rechecks = 0
+        self.diagnostic_seconds = 0.0
+        self.diagnostic_local_checks = 0
+        self.context_skipped_reviews = 0
+        self.unknown_usage_requests = 0
 
     def decide(self, packet: dict) -> tuple[ActionPlan | None, list[dict], str]:
         raise NotImplementedError
@@ -526,24 +534,14 @@ class ControllerCallback(BaselineMonitor):
         return reasons
 
     def _packet(self, metrics: dict, regions: list[RegionCandidate]) -> dict:
-        s = self.settings
-        return {
-            "schema_version": 1,
-            "instance": self.instance.name,
-            "global": metrics,
-            "recent_best_quality": self.quality_history[-s.stagnation_window:],
-            "candidate_regions": [region.public() for region in regions],
-            "recent_outcomes": self.outcomes[-s.recent_outcomes:],
-            "allowed_actions": {
-                "operators": [*OPERATORS, "no_op"],
-                "execution_budget": [1, self.current_operator_limit],
-                "review_interval": [s.min_review_interval, s.max_review_interval],
-            },
-        }
+        return make_packet(metrics, regions, self.quality_records, self.outcomes,
+                           self.settings, self.current_operator_limit, OPERATORS)
 
     def _account_calls(self, role_records: list[dict]) -> None:
         for record in role_records:
             self.api_calls += record.get("api_requests", 1)
+            if record.get("api_requests", 1) and record.get("total_tokens") is None:
+                self.unknown_usage_requests += record.get("api_requests", 1)
             if isinstance(record.get("model_returned"), str):
                 self.models_returned.add(record["model_returned"])
             self.input_tokens += record.get("input_tokens") or 0
@@ -568,7 +566,10 @@ class ControllerCallback(BaselineMonitor):
                                      self.remaining())
         self.best_observed = self._sync_incumbent(algorithm)
         metrics["incumbent_hard"], metrics["incumbent_internal_total"] = self.best_observed
+        metrics["incumbent_weighted_objectives"] = algorithm.problem.incumbent.weighted
         self.quality_history.append(self.best_observed)
+        self.quality_records.append({"generation": metrics["generation"], "hard": self.best_observed[0],
+                                     "internal_total": self.best_observed[1]})
         progress_signal = _progress_signal(self.best_observed)
         if not self.progress_history or progress_signal != self.progress_history[-1]:
             self.last_progress_generation = metrics["generation"]
@@ -586,8 +587,22 @@ class ControllerCallback(BaselineMonitor):
             self._stagnation_event_handled |= "stagnation" in reasons
             self._low_diversity_event_handled |= "low_diversity" in reasons
             prior_scoring_calls = self.region_builder.scoring_calls
+            review_started = time.perf_counter()-self.started
+            extraction_started = time.perf_counter()
             regions = self.region_builder.build(
                 algorithm, self.settings.max_regions, self.settings.region_size)
+            if self.settings.enable_blocker_chain and len(regions) > 1:
+                for original in regions:
+                    expanded = expand_blocker_region(self.instance,
+                        algorithm.pop[int(original.solution_id)].X, original,
+                        max_classes=min(10,self.settings.region_size*2))
+                    if expanded is not None:
+                        regions = regions[:self.settings.max_regions-1]+[expanded]
+                        break
+            extraction_seconds = time.perf_counter()-extraction_started
+            local_checks = sum(r.screening["local_checks"] for r in regions if r.screening)
+            self.diagnostic_seconds += extraction_seconds
+            self.diagnostic_local_checks += local_checks
             region_calls = self.region_builder.scoring_calls - prior_scoring_calls
             algorithm.evaluator.n_eval += region_calls
             metrics["evaluations"] += region_calls
@@ -595,10 +610,31 @@ class ControllerCallback(BaselineMonitor):
             self.current_operator_limit = self.settings.max_operator_evaluations
             if remaining_evaluations is not None:
                 remaining_evaluations -= region_calls
-                self.current_operator_limit = min(self.current_operator_limit, remaining_evaluations - 1)
+                self.current_operator_limit = min(self.current_operator_limit, remaining_evaluations)
                 metrics["remaining_evaluations"] = max(0, remaining_evaluations)
+            metrics["trigger_reasons"] = reasons
             packet = self._packet(metrics, regions)
-            decision, role_records, decision_status = self.decide(packet)
+            # Bound the largest valid Inspector diagnosis and Planner wrapper.
+            from .llm import PROMPTS
+            import json
+            diagnosis_sizes = [len(json.dumps({**r["target"], "relevant_constraint_ids": b["constraints"]["ids"]},
+                                              ensure_ascii=False))
+                for r in packet["candidate_regions"] for b in packet["boundary_context"]
+                if r["target"]["region_id"] == b["region_id"]]
+            envelope = max(map(len,PROMPTS.values())) + max(diagnosis_sizes,default=0) + 64
+            packet, context_status = fit_packet(packet, max(0, getattr(self.client, "max_input_characters", 60000)-envelope))
+            context_status["reserved_envelope_characters"] = envelope
+            if packet is None:
+                self.context_skipped_reviews += 1
+                decision, role_records, decision_status = None, [], "context_limit_skipped"
+                regions = []
+            else:
+                published = {r["target"]["region_id"] for r in packet["candidate_regions"]}
+                regions = [r for r in regions if r.region_id in published]
+                if self.remaining() is not None and self.remaining() <= 0.1:
+                    decision, role_records, decision_status = None, [], "deadline_after_diagnostics"
+                else:
+                    decision, role_records, decision_status = self.decide(packet)
             self._account_calls(role_records)
             if self.api_disabled:
                 # Export an incomplete run rather than keep evolving silently
@@ -613,11 +649,11 @@ class ControllerCallback(BaselineMonitor):
                     plan.execution_budget, self.rng, self.deadline)
                 self.selected_interventions += int(outcome.selected)
                 self.operator_scoring_rechecks += outcome.scoring_rechecks
-                algorithm.evaluator.n_eval += outcome.scoring_rechecks
             after = population_metrics(algorithm, time.perf_counter() - self.started,
                                        self.remaining())
             self.best_observed = self._sync_incumbent(algorithm)
             self.quality_history[-1] = self.best_observed
+            self.quality_records[-1].update(hard=self.best_observed[0], internal_total=self.best_observed[1])
             after_progress = _progress_signal(self.best_observed)
             if after_progress != self.progress_history[-1]:
                 self.last_progress_generation = metrics["generation"]
@@ -626,26 +662,46 @@ class ControllerCallback(BaselineMonitor):
             event = {
                 "generation": metrics["generation"], "trigger": reasons,
                 "state": packet, "roles": role_records,
+                "metadata": {"schema_version": SCHEMA_VERSION, "instance": self.instance.name,
+                    "seed": self.seed, "run_id": getattr(self, "run_id", None),
+                    "packet_sha256": None if packet is None else packet_hash(packet),
+                    "controller_settings_sha256": packet_hash(asdict(self.settings)),
+                    "source_fingerprints": {r.region_id: r.screening["source_hash"] for r in regions if r.screening},
+                    "diagnostics": {"elapsed_seconds": extraction_seconds, "local_checks": local_checks,
+                                    "full_evaluations": region_calls, "context": context_status}},
+                "review_started_elapsed_seconds": review_started,
+                "review_completed_elapsed_seconds": time.perf_counter()-self.started,
                 "decision_status": decision_status, "validation": validation,
                 "action": asdict(plan),
                 "outcome": None if outcome is None else asdict(outcome),
                 "population_after": {"best_hard": after["best_hard"],
                                      "best_internal_total": after["best_internal_total"]},
                 "incumbent_after": {"hard": self.best_observed[0], "internal_total": self.best_observed[1]},
+                "incumbent_before": {"hard": metrics["incumbent_hard"], "internal_total": metrics["incumbent_internal_total"]},
             }
             self.events.append(event)
+            def q(hard, total, weighted=None):
+                return {"hard": hard, "internal_total": total, "weighted_objectives": weighted}
             self.outcomes.append({"generation": metrics["generation"],
-                                  "region_id": plan.region_id,
-                                  "operator_id": plan.operator_id,
-                                  "validation": validation,
-                                  "outcome": None if outcome is None else outcome.status,
-                                  "attempts": 0 if outcome is None else outcome.attempts,
-                                  "evaluations": 0 if outcome is None else outcome.evaluations,
-                                  "elapsed_seconds": 0 if outcome is None else
-                                  round(outcome.elapsed_seconds, 3),
-                                  "best_hard_change": self.best_observed[0] - metrics["incumbent_hard"],
-                                  "best_internal_total_change": (
-                                      self.best_observed[1] - metrics["incumbent_internal_total"])})
+                "source_hash": None if region is None or region.screening is None else region.screening["source_hash"],
+                "target": {k: getattr(plan,k) for k in ("solution_id", "region_id", "boundary_id")},
+                "action": {k: getattr(plan,k) for k in ("operator_id", "execution_budget", "next_review_interval")},
+                "execution": {"attempts": 0 if outcome is None else outcome.attempts,
+                    "full_evaluations": 0 if outcome is None else outcome.evaluations,
+                    "scoring_rechecks": 0 if outcome is None else outcome.scoring_rechecks,
+                    "elapsed_seconds": 0 if outcome is None else outcome.elapsed_seconds,
+                    "stop_reason": decision_status if outcome is None else outcome.stop_reason},
+                "result": {"decision_status": decision_status, "validation": validation,
+                    "operator_status": None if outcome is None else outcome.status,
+                    "selected": False if outcome is None else outcome.selected,
+                    "source_quality": None if outcome is None else q(outcome.source_hard, outcome.source_total, outcome.source_weighted),
+                    "best_trial_quality": None if outcome is None or outcome.best_trial_hard is None else
+                        q(outcome.best_trial_hard, outcome.best_trial_total, outcome.best_trial_weighted),
+                    "candidate_quality": None if outcome is None or outcome.candidate_hard is None else
+                        q(outcome.candidate_hard, outcome.candidate_total, outcome.candidate_weighted),
+                    "incumbent_before": event["incumbent_before"], "incumbent_after": event["incumbent_after"],
+                    "incumbent_change": {"hard": self.best_observed[0]-metrics["incumbent_hard"],
+                        "internal_total": self.best_observed[1]-metrics["incumbent_internal_total"]}}})
             self.last_review = metrics["generation"]
             self.next_review = metrics["generation"] + plan.next_review_interval
         super().notify(algorithm, room_chain_checked=True, room_plateau_checked=True,
@@ -688,4 +744,10 @@ class ControllerCallback(BaselineMonitor):
                      "selected_interventions": self.selected_interventions})
         base["region_scoring_calls"] = self.region_builder.scoring_calls
         base["operator_scoring_rechecks"] = self.operator_scoring_rechecks
+        base["state_packet_schema_version"] = SCHEMA_VERSION
+        base["diagnostics"] = {"elapsed_seconds": self.diagnostic_seconds,
+            "local_checks": self.diagnostic_local_checks, "full_evaluations": self.region_builder.scoring_calls,
+            "context_skipped_reviews": self.context_skipped_reviews}
+        base["unknown_usage_requests"] = self.unknown_usage_requests
+        base["native_token_usage_complete"] = self.unknown_usage_requests == 0
         return base

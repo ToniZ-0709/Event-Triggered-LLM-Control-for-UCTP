@@ -151,6 +151,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
                              source_score: Score | None = None,
                              seed_classes=None, require_room_improvement: bool = True,
                              allowed_classes=None, allow_soft_improvement: bool = False,
+                             target_distribution_index: int | None = None,
                              max_full_scoring_calls: int = 5, score_fn=None
                              ) -> tuple[np.ndarray | None, dict]:
     """Solve a small hard-cost model, then check the entire modified timetable.
@@ -270,6 +271,48 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         return None, stats
     baseline_local += global_before
     stats["modeled_global_constraints"] = global_count
+    if target_distribution_index is not None:
+        rule = instance.distributions[target_distribution_index]
+        target_before = distribution_violations(instance, rule, neighborhood.times, neighborhood.rooms)
+        target_costs = []
+        try:
+            if rule.kind in _GLOBAL:
+                original_globals = neighborhood.globals
+                neighborhood.globals = [rule]
+                try:
+                    _global_costs(model, variables, domains, originals, active_set,
+                                  neighborhood, target_costs, deadline)
+                finally:
+                    neighborhood.globals = original_globals
+            else:
+                for left, right in combinations(rule.classes, 2):
+                    if time.perf_counter() >= deadline:
+                        raise _BuildDeadline
+                    if left not in active_set and right not in active_set:
+                        fixed = distribution_violations(instance, replace(rule, classes=(left,right)),
+                                                        neighborhood.times, neighborhood.rooms)
+                        if fixed:
+                            target_costs.append(fixed)
+                        continue
+                    a_values = range(len(domains[left])) if left in active_set else [None]
+                    b_values = range(len(domains[right])) if right in active_set else [None]
+                    table = []
+                    for a in a_values:
+                        for b in b_values:
+                            times, rooms = neighborhood.times.copy(), neighborhood.rooms.copy()
+                            for i, value in ((left,a), (right,b)):
+                                if value is not None:
+                                    times[i], rooms[i] = neighborhood.placement(i, domains[i][value])
+                            value = distribution_violations(instance, replace(rule, classes=(left,right)), times, rooms)
+                            table.append(tuple(v for v in (a,b) if v is not None) + (value,))
+                    cost = model.new_int_var(0, max(row[-1] for row in table), f"target_{left}_{right}")
+                    model.add_allowed_assignments([variables[i] for i in (left,right) if i in active_set] + [cost], table)
+                    target_costs.append(cost)
+            model.add(sum(target_costs) < target_before)
+            stats["targeted_rule"] = f"distribution:{target_distribution_index}"
+        except _BuildDeadline:
+            stats["status"] = "target_model_budget_exhausted"
+            return None, stats
     if baseline_local == 0 and not (allow_soft_improvement and source_score.hard == 0):
         stats["status"] = "no_modeled_violation"
         return None, stats
@@ -323,11 +366,22 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
             candidate[index], candidate[n + index] = domains[index][choice]
         score = score_fn(candidate) if score_fn else evaluate(instance, candidate[:n], candidate[n:])[0]
         stats["full_scoring_calls"] += 1
+        if (stats.get("best_trial_quality") is None or
+                (score.hard, score.total) < tuple(stats["best_trial_quality"])):
+            stats["best_trial_quality"] = [score.hard, score.total]
+            stats["best_trial_weighted"] = list(score.weighted)
         stats["local_hard_after"] = sum(solver.value(cost) for cost in costs)
         hard_improved = score.hard < source_score.hard
         soft_improved = (allow_soft_improvement and source_score.hard == score.hard == 0
                          and score.total < source_score.total)
-        if ((hard_improved or soft_improved) and (not require_room_improvement or
+        target_improved = True
+        if target_distribution_index is not None:
+            times = [c.times[int(candidate[i])] for i,c in enumerate(instance.classes)]
+            rooms = [None if c.no_room else c.room_options[int(candidate[n+i])][0]
+                     for i,c in enumerate(instance.classes)]
+            target_improved = distribution_violations(instance, instance.distributions[target_distribution_index],
+                                                      times, rooms) < target_before
+        if ((hard_improved or soft_improved) and target_improved and (not require_room_improvement or
                 score.room_conflicts + score.room_unavailable <
                 source_score.room_conflicts + source_score.room_unavailable)):
             stats["changed_classes"] = int(sum(
