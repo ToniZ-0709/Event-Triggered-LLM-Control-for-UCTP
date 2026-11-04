@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "recoveries": [
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "single",
+      "attempt": 5,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "user_instruction": "Thử lại đi",
+      "authorization_context": "On 21 October the user directly requested another try after attempt 4 HTTP 504, the stopped runner, four retained failures and absence of attempt-5 authorization were reported. Exactly one additional recovery of single seed 42 with the same frozen configuration; no automatic retry of attempt 5 and no authorization for attempt 6.",
+      "automatic_retry_limit_unchanged": true
+    },
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "single",
+      "attempt": 6,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "previous_unpublished_attempts": [
+        {
+          "instance": "tg-spr18",
+          "seed": 42,
+          "method": "single",
+          "attempt": 5,
+          "status": "user_interrupted_unpublished_attempt",
+          "log": "solver_checks/tg_no_timecap/s42_tg-spr18_single_attempt5.log",
+          "partial_output": "Single-Agent Controller/results_itc2019/t/42-5/single/.run_n1_p20_g200_r3_s42_57d82337e0d0a305.tmp-exjbiuth",
+          "user_instruction": "Thôi ngắt đi, nay không chạy",
+          "stopped_on_local_date": "2026-10-21",
+          "timezone": "Asia/Saigon",
+          "comparison_eligible": false,
+          "retry_authorized": false,
+          "api_calls": null,
+          "reported_native_tokens": null,
+          "runtime_seconds": null,
+          "usage_note": "Explicitly stopped by the user before a result was published; this is not a storage or service failure. Logs and staging directory are retained. No durable generation, score or API-usage checkpoint is available, so calls/tokens/runtime are unknown rather than zero. Do not replay or resume without new user instructions."
+        }
+      ],
+      "user_instruction": "Tiến hành chạy",
+      "authorization_context": "On 22 October the user directly requested execution after stopping attempt 5 on 21 October. Exactly one new whole-run recovery, attempt 6, with the frozen solver/profile/model/budgets. Keep the interrupted attempt-5 log, staging directory and unknown usage; no replay of attempt 5, automatic retry of attempt 6 or authorization for attempt 7.",
+      "automatic_retry_limit_unchanged": true
+    },
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "multi",
+      "attempt": 11,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "previous_unpublished_attempts": [],
+      "user_instruction": "Thử lại cho tới khi nào được thì thôi",
+      "authorization_context": "On 22 October 2026 the user authorized the completed Multi seed 42 recovery with frozen configuration; prior failed API attempt details were removed at user request.",
+      "automatic_retry_limit_unchanged": true
+    }
+  ]
+}

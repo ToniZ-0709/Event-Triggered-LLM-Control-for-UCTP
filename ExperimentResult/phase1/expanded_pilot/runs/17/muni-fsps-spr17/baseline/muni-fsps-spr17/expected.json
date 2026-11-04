@@ -1,0 +1,32 @@
+{
+  "instance": "muni-fsps-spr17",
+  "classes": 561,
+  "score": {
+    "hard": 0,
+    "time": 36,
+    "room": 204,
+    "distribution": 376,
+    "student": 1936,
+    "weighted": [
+      900,
+      204,
+      5640,
+      193600
+    ],
+    "total": 200344,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "009034e5c924a5f5d75163f990eb5011e7eefe979274c43e87d43536d21e61a3",
+  "dataset_sha256": "89ce17b3f8e8a1052c63b4b2d2f7012f052e5cb9790bdedf713a0e9a6579b8d6",
+  "weights": [
+    25,
+    1,
+    15,
+    100
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}

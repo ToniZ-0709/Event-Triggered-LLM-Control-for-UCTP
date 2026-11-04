@@ -1,0 +1,258 @@
+{
+  "instance": "bet-spr18",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\bet-spr18.xml",
+  "classes": 1083,
+  "rooms": 63,
+  "courses": 357,
+  "students": 2921,
+  "distributions": 1418,
+  "runtime_seconds": 1314.2358118999982,
+  "evaluations": 2300,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 1700,
+    "routine_repair": 600,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 2300,
+    "physical_calls": 1623,
+    "cache_hits": 677,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 115.955,
+      "offspring_repair": 611.554,
+      "objective_evaluation": 382.213
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 1528,
+      "objective_evaluation": 1643
+    }
+  },
+  "feasible": false,
+  "score": {
+    "hard": 28,
+    "time": 358,
+    "room": 10206,
+    "distribution": 11836,
+    "student": 5284,
+    "weighted": [
+      21480,
+      10206,
+      355080,
+      31704
+    ],
+    "total": 418470,
+    "room_conflicts": 19,
+    "room_unavailable": 2,
+    "hard_distributions": 7,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 230,
+    "partitions": 3,
+    "seed": 17,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 2300
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": false,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g230_r3_s17_3a919e7c6276907b",
+  "monitor": {
+    "generations_recorded": 78,
+    "time_limit_seconds": 2880.0,
+    "elapsed_seconds": 1314.617,
+    "best_observed_hard": 28,
+    "best_observed_internal_total": 418470,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 11,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 15,
+    "room_plateau_events": [
+      {
+        "generation": 5,
+        "source_hard": 65,
+        "source_room_conflicts": 53,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 10,
+        "search_steps": 2,
+        "restarts": 2,
+        "scoring_calls": 3,
+        "elapsed_seconds": 1.723,
+        "status": "selected",
+        "candidate_hard": 63
+      },
+      {
+        "generation": 10,
+        "source_hard": 57,
+        "source_room_conflicts": 41,
+        "source_room_unavailable": 3,
+        "source_hard_distributions": 13,
+        "search_steps": 32,
+        "restarts": 4,
+        "scoring_calls": 2,
+        "elapsed_seconds": 4.154,
+        "status": "selected",
+        "candidate_hard": 56
+      },
+      {
+        "generation": 15,
+        "source_hard": 47,
+        "source_room_conflicts": 37,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 9,
+        "search_steps": 19,
+        "restarts": 4,
+        "scoring_calls": 2,
+        "elapsed_seconds": 2.64,
+        "status": "selected",
+        "candidate_hard": 46
+      },
+      {
+        "generation": 20,
+        "source_hard": 41,
+        "source_room_conflicts": 30,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 9,
+        "search_steps": 25,
+        "restarts": 4,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 25,
+        "source_hard": 38,
+        "source_room_conflicts": 28,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 8,
+        "search_steps": 55,
+        "restarts": 9,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 30,
+        "source_hard": 36,
+        "source_room_conflicts": 25,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 9,
+        "search_steps": 33,
+        "restarts": 10,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 35,
+        "source_hard": 33,
+        "source_room_conflicts": 23,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 8,
+        "search_steps": 48,
+        "restarts": 11,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 40,
+        "source_hard": 31,
+        "source_room_conflicts": 21,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 8,
+        "search_steps": 69,
+        "restarts": 15,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 45,
+        "source_hard": 30,
+        "source_room_conflicts": 21,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 7,
+        "search_steps": 54,
+        "restarts": 13,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 50,
+        "source_hard": 29,
+        "source_room_conflicts": 20,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 7,
+        "search_steps": 45,
+        "restarts": 11,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 60,
+        "source_hard": 28,
+        "source_room_conflicts": 19,
+        "source_room_unavailable": 2,
+        "source_hard_distributions": 7,
+        "search_steps": 32,
+        "restarts": 6,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      }
+    ]
+  },
+  "controller": {
+    "mode": "multi_agent",
+    "status": "active",
+    "completion_status": "completed",
+    "comparison_eligible": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "models_returned": [
+      "gemini-3.5-flash-lite"
+    ],
+    "reviews": 12,
+    "budget_skipped_reviews": 1,
+    "no_op": 0,
+    "model_no_op": 0,
+    "fallback_no_op": 0,
+    "api_calls": 24,
+    "input_tokens": 187232,
+    "output_tokens": 3699,
+    "thinking_tokens": 0,
+    "total_native_tokens": 190931,
+    "cached_input_tokens": 0,
+    "api_failures": {},
+    "api_disabled_reason": null,
+    "api_pacing_wait_seconds": 96.607,
+    "api_latency_seconds": 137.738,
+    "api_disabled_after_configuration_error": false,
+    "interventions": 12,
+    "selected_interventions": 5,
+    "region_scoring_calls": 22,
+    "operator_scoring_rechecks": 5
+  }
+}

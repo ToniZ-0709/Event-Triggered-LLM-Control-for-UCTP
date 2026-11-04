@@ -1,0 +1,7 @@
+{"status": "output_path_preflight", "longest_predicted_path": 247}
+{"job": 1, "status": "reuse_completed", "seed": 17, "instance": "tg-spr18", "method": "baseline"}
+{"job": 2, "status": "reuse_completed", "seed": 17, "instance": "tg-spr18", "method": "single"}
+{"job": 3, "status": "reuse_completed", "seed": 17, "instance": "tg-spr18", "method": "multi"}
+{"job": 4, "status": "reuse_completed", "seed": 42, "instance": "tg-spr18", "method": "baseline"}
+{"job": 5, "status": "start", "seed": 42, "instance": "tg-spr18", "method": "single", "attempt": 6, "log": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\solver_checks\\tg_no_timecap\\s42_tg-spr18_single_attempt6.log", "human_authorized_recovery": true}
+{"job": 5, "status": "finished", "exit_code": 0, "completed_cells": 5, "completed_triples": 1}

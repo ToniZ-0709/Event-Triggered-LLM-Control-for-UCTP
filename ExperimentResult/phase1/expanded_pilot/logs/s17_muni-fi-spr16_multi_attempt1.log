@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "G:\Other computers\My Laptop\HCMUT\Projects\GA\Literature Review\Experiment\Multi-Agent Controller\main.py", line 36, in <module>
+    main()
+  File "G:\Other computers\My Laptop\HCMUT\Projects\GA\Literature Review\Experiment\Multi-Agent Controller\main.py", line 23, in main
+    baseline_cli.main(
+  File "G:\Other computers\My Laptop\HCMUT\Projects\GA\Literature Review\Experiment\NSGA-III\main.py", line 344, in main
+    (folder / "controller_trace.jsonl").write_text(
+  File "C:\Users\black\AppData\Local\Python\pythoncore-3.11-64\Lib\pathlib.py", line 1078, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\black\AppData\Local\Python\pythoncore-3.11-64\Lib\pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\muni-fi-spr16\\attempt_1\\multi\\.run_n1_p20_g200_r3_s17_6a5642e264eb9f3d.tmp-az_j727y\\muni-fi-spr16\\controller_trace.jsonl'

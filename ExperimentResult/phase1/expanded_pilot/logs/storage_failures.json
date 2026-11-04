@@ -1,0 +1,27 @@
+{
+  "failures": [
+    {
+      "instance": "muni-fi-spr16",
+      "seed": 17,
+      "method": "multi",
+      "attempt": 1,
+      "status": "incomplete_output_failure",
+      "phase": "writing_controller_trace_after_search_and_final_score_check",
+      "log": "solver_checks/expanded_pilot/s17_muni-fi-spr16_multi_attempt1.log",
+      "error_type": "FileNotFoundError",
+      "failed_path_characters": 261,
+      "windows_long_paths_enabled": false,
+      "cause": "Nested output and staging paths exceed the legacy Windows path limit.",
+      "staging_retention": "The existing main.py finally block removed the unpublished staging directory after failure. No completed run_config.json/summary.json was published for this attempt; the error log remains.",
+      "comparison_eligible": false,
+      "score": null,
+      "evaluations": null,
+      "api_calls": null,
+      "reported_native_tokens": null,
+      "usage_note": "The attempt may have used Gemini before output failed. Its call/token totals were not preserved; aggregate usage from published attempts excludes this unknown amount.",
+      "retry_authorized": true,
+      "authorization": "The user explicitly approved shorter output paths, rerunning this failed cell, and continuing the same campaign.",
+      "continuation": "One approved retry under a new attempt number and compact output root. Retain this failure/log, do not count it as a model loss, and do not change solver/model/profile/prompt."
+    }
+  ]
+}

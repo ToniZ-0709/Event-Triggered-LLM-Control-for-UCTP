@@ -1,0 +1,128 @@
+{
+  "git_reference": "bfff8a9",
+  "checks": [
+    {
+      "path": "NSGA-III/main.py",
+      "expected_sha256": "8f04483ce87a90c0ea51bc1bc0e025885d549f50ed45a20d52529c8c60ff99ce",
+      "actual_sha256": "8f04483ce87a90c0ea51bc1bc0e025885d549f50ed45a20d52529c8c60ff99ce",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/instance.py",
+      "expected_sha256": "d5953d5ab4dbac848c9881e21afd1f7465b2a6002916766c5e915190417e78fc",
+      "actual_sha256": "d5953d5ab4dbac848c9881e21afd1f7465b2a6002916766c5e915190417e78fc",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/nsga3.py",
+      "expected_sha256": "53408ccd2d21818fe9633930133184b0be6131e61fc5e91dda580de75b74dcda",
+      "actual_sha256": "53408ccd2d21818fe9633930133184b0be6131e61fc5e91dda580de75b74dcda",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/scoring.py",
+      "expected_sha256": "eed7640d158ae32ef9eae4349b59680a721c9916dc9119b794f20494762725c2",
+      "actual_sha256": "eed7640d158ae32ef9eae4349b59680a721c9916dc9119b794f20494762725c2",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/controller.py",
+      "expected_sha256": "d44b85dde8446f3b95ec5bd6fd16bca8cc92743950aa21cd97fc5e0dcffe2aca",
+      "actual_sha256": "d44b85dde8446f3b95ec5bd6fd16bca8cc92743950aa21cd97fc5e0dcffe2aca",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/regions.py",
+      "expected_sha256": "b472beeb2414f6cc0fabc86b8cc7c384d7cc890bb99340a221ed371bac39c3f2",
+      "actual_sha256": "b472beeb2414f6cc0fabc86b8cc7c384d7cc890bb99340a221ed371bac39c3f2",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/operators.py",
+      "expected_sha256": "557a712dc10d89c86292de7964ab59f5fecdaa94b2a382b622bee6d800d40f1e",
+      "actual_sha256": "557a712dc10d89c86292de7964ab59f5fecdaa94b2a382b622bee6d800d40f1e",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/room_search.py",
+      "expected_sha256": "f35c68c0c0d744d7e1e1e0ca5e0d5005dbe69c6cd94d379a8c3be582f3f25215",
+      "actual_sha256": "f35c68c0c0d744d7e1e1e0ca5e0d5005dbe69c6cd94d379a8c3be582f3f25215",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/neighborhood.py",
+      "expected_sha256": "af377fb392b6d5747b4b7c3cdbdf27ab4cf3ba433c6d232737a0b43c0183bb5a",
+      "actual_sha256": "af377fb392b6d5747b4b7c3cdbdf27ab4cf3ba433c6d232737a0b43c0183bb5a",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/repair_policy.py",
+      "expected_sha256": "9456e26864b8ed3a396758cc8a4acd65f9fb387702e7d63aa9690c20b9285c1c",
+      "actual_sha256": "9456e26864b8ed3a396758cc8a4acd65f9fb387702e7d63aa9690c20b9285c1c",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/construction.py",
+      "expected_sha256": "7bfbc7f86c8122903a8e32d20c70ef9e2cb9720eb144815ca8478a0fd9abf0dd",
+      "actual_sha256": "7bfbc7f86c8122903a8e32d20c70ef9e2cb9720eb144815ca8478a0fd9abf0dd",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/sectioning.py",
+      "expected_sha256": "220354b8f85cd4f4737c9310e1660f9e488d072d2709f67654f30de7918e2bef",
+      "actual_sha256": "220354b8f85cd4f4737c9310e1660f9e488d072d2709f67654f30de7918e2bef",
+      "matches": true
+    },
+    {
+      "path": "Single-Agent Controller/main.py",
+      "expected_sha256": "d5a2bef6710fe38cb0d4bd3a780abf64e3a269555c8baa71446c81787d6ba036",
+      "actual_sha256": "d5a2bef6710fe38cb0d4bd3a780abf64e3a269555c8baa71446c81787d6ba036",
+      "matches": true
+    },
+    {
+      "path": "Single-Agent Controller/controller.py",
+      "expected_sha256": "1ed24ff7dc2a80c22ddd2dcad16af56a14b3606584d0e11e3c7c443be16e2114",
+      "actual_sha256": "1ed24ff7dc2a80c22ddd2dcad16af56a14b3606584d0e11e3c7c443be16e2114",
+      "matches": true
+    },
+    {
+      "path": "Multi-Agent Controller/main.py",
+      "expected_sha256": "e1998ff601c41de148a288bf39784f6cc13279c22bef46744a9645845d3f42b7",
+      "actual_sha256": "e1998ff601c41de148a288bf39784f6cc13279c22bef46744a9645845d3f42b7",
+      "matches": true
+    },
+    {
+      "path": "Multi-Agent Controller/controller.py",
+      "expected_sha256": "167ac0d698cb6427277017310cab705b2ca8d144e9c40eff3a1dbf10211d5993",
+      "actual_sha256": "167ac0d698cb6427277017310cab705b2ca8d144e9c40eff3a1dbf10211d5993",
+      "matches": true
+    },
+    {
+      "path": "NSGA-III/itc2019/llm.py",
+      "expected_sha256": "f8d23981b44ed6c0d17c2643559eea777a8068dfd788cdad314c1852793a9e8e",
+      "actual_sha256": "dea0ab7325753416c0d578400fe954e72840e3ae8e1e796b063edecf3967bad8",
+      "matches": false
+    },
+    {
+      "path": "profiles/expanded_pilot.json",
+      "expected_sha256": "597577b1cfccf6028554281a8263979d362b81d866b897e40d29832ac8ebc96d",
+      "actual_sha256": "597577b1cfccf6028554281a8263979d362b81d866b897e40d29832ac8ebc96d",
+      "matches": true
+    }
+  ],
+  "mismatched": [
+    "NSGA-III/itc2019/llm.py"
+  ],
+  "scope": "SHA-256 values from the phase-one frozen inputs; profile is included alongside 17 source files.",
+  "llm_trace_comparison": {
+    "calls_compared": 389,
+    "roles": {
+      "single_agent": 121,
+      "inspector": 134,
+      "planner": 134
+    },
+    "prompt_and_response_schema_hashes": "all match the bfff8a9 implementation",
+    "file_hash": "does not match the frozen phase-one value",
+    "implication": "the original exact API adapter is unavailable; transport and other implementation details cannot be claimed identical"
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "instance": "muni-fi-spr16",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\muni-fi-spr16.xml",
+  "classes": 575,
+  "rooms": 35,
+  "courses": 228,
+  "students": 1543,
+  "distributions": 740,
+  "runtime_seconds": 229.42463320004754,
+  "evaluations": 1200,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 826,
+    "routine_repair": 374,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 1200,
+    "physical_calls": 1112,
+    "cache_hits": 88,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 27.181,
+      "offspring_repair": 83.575,
+      "objective_evaluation": 116.476
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 802,
+      "objective_evaluation": 822
+    }
+  },
+  "feasible": true,
+  "score": {
+    "hard": 0,
+    "time": 204,
+    "room": 386,
+    "distribution": 77,
+    "student": 2184,
+    "weighted": [
+      612,
+      386,
+      770,
+      10920
+    ],
+    "total": 12688,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 200,
+    "partitions": 3,
+    "seed": 17,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 1200
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": true,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g200_r3_s17_30c1b4d47c37ec2e",
+  "monitor": {
+    "generations_recorded": 42,
+    "time_limit_seconds": 840.0,
+    "elapsed_seconds": 229.572,
+    "best_observed_hard": 0,
+    "best_observed_internal_total": 12688,
+    "room_chain_scoring_calls": 2,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [
+      {
+        "generation": 5,
+        "source_hard": 1,
+        "source_room_conflicts": 1,
+        "scoring_calls": 2,
+        "elapsed_seconds": 1.22,
+        "neighborhood": {
+          "status": "improved",
+          "full_scoring_calls": 2,
+          "active_classes": 16,
+          "options": 215,
+          "pair_tables": 95,
+          "changed_classes": 3,
+          "solver_deterministic_time": 0.003371020000000006,
+          "active_class_ids": [
+            "36",
+            "46",
+            "53",
+            "54",
+            "67",
+            "69",
+            "70",
+            "83",
+            "87",
+            "89",
+            "93",
+            "132",
+            "171",
+            "190",
+            "500",
+            "515"
+          ],
+          "external_zero_options": {
+            "36": 1,
+            "46": 11,
+            "53": 16,
+            "54": 16,
+            "67": 16,
+            "69": 16,
+            "70": 16,
+            "83": 8,
+            "87": 3,
+            "89": 3,
+            "93": 7,
+            "132": 2,
+            "171": 3,
+            "190": 7,
+            "500": 16,
+            "515": 4
+          },
+          "table_cells": 20907,
+          "modeled_global_constraints": 3,
+          "local_hard_before": 1,
+          "build_seconds": 0.165,
+          "local_hard_after": 0,
+          "candidate_hard": 0,
+          "attempts": [
+            {
+              "status": "improved",
+              "full_scoring_calls": 1,
+              "active_classes": 16,
+              "options": 215,
+              "pair_tables": 95,
+              "changed_classes": 3,
+              "solver_deterministic_time": 0.003371020000000006,
+              "active_class_ids": [
+                "36",
+                "46",
+                "53",
+                "54",
+                "67",
+                "69",
+                "70",
+                "83",
+                "87",
+                "89",
+                "93",
+                "132",
+                "171",
+                "190",
+                "500",
+                "515"
+              ],
+              "external_zero_options": {
+                "36": 1,
+                "46": 11,
+                "53": 16,
+                "54": 16,
+                "67": 16,
+                "69": 16,
+                "70": 16,
+                "83": 8,
+                "87": 3,
+                "89": 3,
+                "93": 7,
+                "132": 2,
+                "171": 3,
+                "190": 7,
+                "500": 16,
+                "515": 4
+              },
+              "table_cells": 20907,
+              "modeled_global_constraints": 3,
+              "local_hard_before": 1,
+              "build_seconds": 0.165,
+              "local_hard_after": 0,
+              "candidate_hard": 0
+            }
+          ]
+        },
+        "fallback_scoring_calls": 0,
+        "status": "selected",
+        "candidate_hard": 0,
+        "retry_after_generations": 5
+      }
+    ],
+    "coordinated_repair_scoring_calls": 1,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 1,
+    "room_plateau_events": []
+  }
+}

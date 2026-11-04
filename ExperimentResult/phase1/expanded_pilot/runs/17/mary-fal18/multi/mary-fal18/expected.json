@@ -1,0 +1,32 @@
+{
+  "instance": "mary-fal18",
+  "classes": 951,
+  "score": {
+    "hard": 0,
+    "time": 871,
+    "room": 1000,
+    "distribution": 298,
+    "student": 1853,
+    "weighted": [
+      1742,
+      1000,
+      1490,
+      18530
+    ],
+    "total": 22762,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "b8c11f17c4a4940390c7ddc54210e3f9d0cd31bd5312964c684cbdaae3467cfc",
+  "dataset_sha256": "cf3c60edd73c6f82c8bbde7d8c29e6793dff3640128392582763f681567c4036",
+  "weights": [
+    2,
+    1,
+    5,
+    10
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}

@@ -1,0 +1,2022 @@
+{
+  "scope": "Phase 1: retained published attempts and available campaign logs; follow-up has no global time cap.",
+  "campaigns": [
+    {
+      "name": "expanded_pilot",
+      "published_attempts": [
+        {
+          "seed": 17,
+          "instance": "muni-fi-spr16",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p20_g200_r3_s17_30c1b4d47c37ec2e",
+          "archive": "expanded_pilot/runs/17/muni-fi-spr16/baseline",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "687151a9f68e69a3d4f241d746e4bf1eb9366c8df69243942f79f419c9ee258f"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "f12116ae9be47e12d19561468d5387ed132df325f97fa1531a8bc7ffee741181"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "1681d10e9754d4469e2a6896a313b7e06a6ae472c1a845892bb6a39198ae51c9"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "184913d776ecc7e9ef60f2d78bbbff350d575e45b5cab8efd0e4a552d35836a7"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "09b5a8d12c79363b19c8a3d6ed8718ddb294afe4e5bad5dfee9e9aa0fbb85d2a"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "669a341b98ddc1190481e22dfd57cb7c1eee7c3b3f98b4f8d75cbe1132ffd622"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "98c04b84be5c1bbf55e6434f6734392631c3f09cb2d438326486a8e1e569a311"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "muni-fi-spr16",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p20_g200_r3_s17_48260d3f0edaa474",
+          "archive": "expanded_pilot/runs/17/muni-fi-spr16/single",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "5258a05a463d62c3b5941ba85b1ee89f780695969c2ce014f950ad67cea389a1"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "d878ad55d71b55b2c4e8302a1f3b8509a53244b3744b3f7414f9f95cca0e650d"
+            },
+            {
+              "path": "muni-fi-spr16/controller_trace.jsonl",
+              "sha256": "d440f6e83d06743c91030bcf369995b0543800a316e1ccb4e0a560bbe87e61dd"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "c120a6ad983e0cf351de03d5ec43f9f36550a4655ce61b49a7b633cd5e6854ad"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "b7914ee864ccacdd7ad840124aac3c0476df333e7c89302d0bb1bb91476c07e0"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "e94a6d119709420ba4f01a7393c3d74240543a78275464c1c61e3ccf85e922ea"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "a3f141b17cb4f784ac45ade7c349bb24c67a2c916dc1a8417b7046df70d9199e"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "d1538521249ca731560282c8a145519cd2981b99390b651d11dd50d28092394a"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "muni-fi-spr16",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-2/multi/run_n1_p20_g200_r3_s17_6a5642e264eb9f3d",
+          "archive": "expanded_pilot/runs/17/muni-fi-spr16/multi",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "f4a7011eab67857527c455cdc0891103261d5eb23888c7d5b90a7febdc720b69"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "98f2d3a0e6c76e093e5570c8a64d317f74616fdb5defa033e6bc56a93a154336"
+            },
+            {
+              "path": "muni-fi-spr16/controller_trace.jsonl",
+              "sha256": "f1d6a2bcb1aeb94030bae3260ea7c3dd195b32ed8e36453e3d35327d5c9e1f45"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "2232c2e1b0651225b900f0b28049137756fc052aadd4990040eccb9943f4e95a"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "75c7faf1733cd22e0d898330ca71760a587eae9ff3b18c314b8ee2ba04db61ac"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "2ff51f23dbe8525df87f29eb65b851bba70c14d106e7b7d5b19e2dd2e371841d"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "d6c4e0c60704a93cef419b560e28e3b33039e2429a1c9bb53784ca5641e39cd8"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "9f8123fd12c08091f4aa58fe32d22f3062861418e8188cb7af6e25fb0a00027f"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "muni-fsps-spr17",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p20_g200_r3_s17_212f6c5e836fd646",
+          "archive": "expanded_pilot/runs/17/muni-fsps-spr17/baseline",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "61a78e396ada065a418ee73649b71fc4477fe7e1e996aab94f1fa4f3c8eecde4"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "dfc1d60ca9a9486e1f56753b1f9d54b6213de9fbb08aeaac875fd1e32db25814"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "beb97ade37e29e1973dc3c5cbf536d71bc0867364fb54f937d32aa3ed447a6b3"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "acb7e635bae60d87789d6043e7df1a96ac06c1db812610ceca9293e1506d95e9"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "009034e5c924a5f5d75163f990eb5011e7eefe979274c43e87d43536d21e61a3"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "48cf5cbf48d026db962c0e056883e30c8400c8f325bfab7f67c3bb11f439464a"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "3c481246987fba6d00ab8201284d20b4ffc6e4df411c22f3902c2f50020de65e"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "muni-fsps-spr17",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p20_g200_r3_s17_c01e3cf78dce010c",
+          "archive": "expanded_pilot/runs/17/muni-fsps-spr17/single",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "ccfc065c8ef0d7080dd810b39a35f3eaf9e442143d39b21e10b7d8aec61ea273"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "19c7caf7bf1f6430519230c0c91f4793f12731e4c42ebfa5e99dc59989ff2b4a"
+            },
+            {
+              "path": "muni-fsps-spr17/controller_trace.jsonl",
+              "sha256": "f38e37bf8aaf5cf839f3184c37c055dec8848b81615fb2911368dae764dfec12"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "4652e09a19b2ccc598accc3eae3d94466582fc1838ea253c1bc130f65af69e2d"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "817f1590a446a70cb5592384c592b79a0c22b81147913a7bef3ab160782b4cdc"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "d1e47e777f7b03c007cdb475e022e14483fce69b47597f5475596726fa971c6d"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "49aab4986dabebd7c8cffb60bcad7969c2d342ece9693fc2eaa0b11ec19c362a"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "3461d3d7bf4ad8fa4c9822afa49e809df92c60f4cbb1d6fe4cd0b91f003559b8"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "muni-fsps-spr17",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-2/multi/run_n1_p20_g200_r3_s17_1b10f10367e3140e",
+          "archive": "expanded_pilot/runs/17/muni-fsps-spr17/multi",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "c57400c460a23cd31485815df27910e87420168296fed8c03cd4ee71a37c267d"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "f02cd8d03d62a2d13181c5bb1626de82c55baecb3dece60201b07144a8c4763d"
+            },
+            {
+              "path": "muni-fsps-spr17/controller_trace.jsonl",
+              "sha256": "c2c8fb3edb5b195ea8a2c0cf7f80b265171947a8ff0e77b5a4aaea4490ed7c65"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "359c5bde742405f21fd691dfd8c97714a857da59bad3f10c8cb030ccea0b9536"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "ffefede36545b235e0d5c78e128483c3f27f8506223c3684fafac141224ec66b"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "ab2ef9bd4fe36d253c374a4d707b45089c73f009c4abcaab104170a85225ebe9"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "853c07dc8b71c0cd320e3f49ae83810e198be544cfc5d5ca14c970fe34b5bf3b"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "b49cb947a682d4130ff11474382680304340eed6adddec2bc3c97ff71423f722"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "yach-fal17",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p12_g200_r2_s17_05fdc8a40af5a560",
+          "archive": "expanded_pilot/runs/17/yach-fal17/baseline",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "2a144593ebf7cfd86b723a12ab817afa3671b10d1341241ca186bb5508235869"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "36081214418fa5bd9d6b3ad6a8f3429de5902125dba27fb6e3c26fabce3bc73d"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "f3ca2190a264d714a53bae6616ca6c6d7eaf83b5921ef60361f0337a99bf357e"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "d442c6f3a8104263ebae3e621d7760eed805a7ffb93e5ad67d2938573f731078"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "bbe7bfc8604dd99e44ee783affaf9bd986ce637b8736198c2ffce866e5f8b9c6"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "yach-fal17",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p12_g200_r2_s17_c59718f074c0d395",
+          "archive": "expanded_pilot/runs/17/yach-fal17/single",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "8537700f0cc365d8145eb9fe848e80e2833bea9eaeaac57b4f0417b52f1f8482"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "3a397077162f73e3b6381773464ac74cb30e7122feb1732ca93d908e4244cd68"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "4a322c63dc90f57f2362f5051a1dbbcab62b20186fb8d84bb60ea58342f9ed4b"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "d442c6f3a8104263ebae3e621d7760eed805a7ffb93e5ad67d2938573f731078"
+            },
+            {
+              "path": "yach-fal17/controller_trace.jsonl",
+              "sha256": "8529eaf5326cc62ad5bcb26078b8e1d01da0e7ff06e6fff888795c87db1a2896"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "e429cd977b08265b95a4b858e2d3c1c8da514c34755fb4fba0b7cfbc257b18ec"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "yach-fal17",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-1/multi/run_n1_p12_g200_r2_s17_0486a2bdd5ee292c",
+          "archive": "expanded_pilot/runs/17/yach-fal17/multi",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "44baa1e3db14b9895eb653d9c3ced6705bb2441b6a0b31f066c8cb0e062c04a4"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "ee1d14414e5378eb1e0f1eaf981c7d9cd877225df7f6559ab772ae1667370a20"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "eb8b1a71ea440d26db52c61d9b3e8b60e4d55f298bf5a0492c7d466af2cb97d7"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "b4be1108d12bf365a210b3c2016abd853dc555f1f41b582cbc70cac3c30b04b8"
+            },
+            {
+              "path": "yach-fal17/controller_trace.jsonl",
+              "sha256": "1de4fe0d7a7fb0bccf12a977ffd76701206e3a038e7e19938aee49c22a984a7d"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "ffdb2b8b5e60dfb4ff502a43b546a76446efaa1ba37dfa30cf9255aa093ba18d"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "nbi-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p12_g200_r2_s17_e485a747fba90d00",
+          "archive": "expanded_pilot/runs/17/nbi-spr18/baseline",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "b809dd95ee72a935a0d356d3925f98847eb8ffeb1b55bb79e4047de038e3e33f"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "6620779f8ca48b628b910651f94d32b47c8b91e4d3fa07edfe684b79a7d001c0"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "b7294d73656c7e4fad17e4390f0cdb160c6f14e1599dadef09e904734421dade"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "8d79b18c00545ced52e1061e7fdfcd9833639aa7fc836efb6631ce4d7e8e7512"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "4de8b7112a866c26a328ba614f1c9cbeb2fa0b6d9b3c0751e0d19886b6c28616"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "4fadb076a2509a2b83fc71e3282a1a545b46d66eed653a063db2709839a5821c"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "0ce43b35417bc51797468882a246c70bf9a3efddc99f644fa0f54e3c0ebcd969"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "nbi-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p12_g200_r2_s17_c4eec41981ba238c",
+          "archive": "expanded_pilot/runs/17/nbi-spr18/single",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "86347eb66f820f4f83a41f4a6d24d2106428b8b6cc399812758e729d53cf31bc"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "423396434da7d52fe8425b8eccb3b6c290cd9e7a8590350e3c836731841d6efb"
+            },
+            {
+              "path": "nbi-spr18/controller_trace.jsonl",
+              "sha256": "ebf8be6b54272f632ec78874eb4b6e1bba32c4a6049633e0152135611c479ca3"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "4c86c1a354afde99ce1291b9dc6369cdd62607c5cffaaf7d3abdaefbf5bc1792"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "1404780805d8508524deea88173c62219597a518658c29532886eb168ad87348"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "592988ea0c9b11a5dfeeead74ac11142bfa54d5514e2f19bb1bbbd5275d91daf"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "6c3416d7bcd263590151dd3dd7ecf3ebc134ff004a2d24546d1dd74fae6578d3"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "11218320f00e73be335935588d619f91a6dd5305419ba149514bb77260806af8"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "nbi-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-1/multi/run_n1_p12_g200_r2_s17_12dd82305b847162",
+          "archive": "expanded_pilot/runs/17/nbi-spr18/multi",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "0588511185814f3a22ecf1a302c97f48e3180e54d69c7c61bb6a018f59cd6948"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "26d83bc54f8241479ee1f5b6ba00e2b43927f69ec7be2d51cc90f9071f989fde"
+            },
+            {
+              "path": "nbi-spr18/controller_trace.jsonl",
+              "sha256": "9cec827aded487296c23f48d2ab9c1cf0be447b1c152d495d09aee055382f89e"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "5a0559467548167deb345a6e1c1fd3de013bedfc9b5f0f93c903dc991f6b583b"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "416a44b409dafaab59b97bfd1b4085b51dc1bd7aa84acd65bd5c26cacd5b2b37"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "bb4f497bcddb91958fc986e9e41bafef25ca112847d0237578c78706e91fee13"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "be3af36aecbcc996ae08eadf0e5dc7b513c094c94a2ab0f131299b61093cb1f8"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "d28e0f1e9776020fa27e2655fdd53ddb80fbc23c4734a2b835e46b2f6cf370e8"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "mary-fal18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p20_g200_r3_s17_d4faf35661931be8",
+          "archive": "expanded_pilot/runs/17/mary-fal18/baseline",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "e53d4691889eff21508b966bb878880be324a64b57caa020d015b2e6804d8be6"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "f22ebe151c9275e7ee4c5d0cc479532710d7142ffb34afb4c2e9f3465b7f8a18"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "5bf3a31f398e8be5575d450a7b5c772f690a2fabf086acfbbdf1d1190179e7e5"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "5398287b98c4ffdad041cbf5556eda5d2aadaf72689efc0b4550d216f19fcc22"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "1a2d797db4df3d315fb00d5e8cc868eecb6413964bcfd4040550c25a4f63c42c"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "9f83fd6fb93af4a583c057029e76dcd36e4cafd52df6b99119ce808f39ab392b"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "44d6b342b30a780b782a3cf7897415fe19e7297e9493cf2766bb827f4e16c336"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "mary-fal18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/retry_1/single/run_n1_p20_g200_r3_s17_1339518f78c45d89",
+          "archive": "expanded_pilot/runs/17/mary-fal18/single",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "64fa7280a11dff09dea73c32ddad5423ba9af485b8cf7ec36824e508791db406"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "afd62af7633a362f75075db439e642943809fce21dd89254ec2a2b7dba357a45"
+            },
+            {
+              "path": "mary-fal18/controller_trace.jsonl",
+              "sha256": "cb15afc753c9ea4591fad98b8f421df28d63283496bc11eac76673c00a132319"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "00e146a4d63a419580c3811d3ff18a0d62bad9e8f87d7f3861727cc03636a161"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "604a2db0e1981feeb3438dbf71541d15479ec14316d4f0b9344550ec8e239c91"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "10e4996de03742d6102eb716be040aa625d1aa9069d350189f149b85a084e454"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "0a3bf2186e1400c9e672d96155a9a69453cfedc76eaed2acad8ff416fb142f2d"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "2fca9b5edded2d9546183d3455e7b5781bafad18c8437d60b93d6b4d0366be42"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "mary-fal18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-1/multi/run_n1_p20_g200_r3_s17_187969c2a2fb6c5f",
+          "archive": "expanded_pilot/runs/17/mary-fal18/multi",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "0f05d7dc1766075a57cf320bda3c304b6e74b43956c995eeec27af51170d4a23"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "31e69b3463ded9e00a72a29c8fcaf210600d14ff5bd4e070bfdb9bc03a86b8dc"
+            },
+            {
+              "path": "mary-fal18/controller_trace.jsonl",
+              "sha256": "8844aa4c6b7c8035e508d115f11ad17c945d126ca77ca8efdf881a08548b62cd"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "a5e94b2e5559dc037be9146cdf09574e123b0c91ad55419f888430aa269975cd"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "444c89909f094a725e7a88bdcac8b227cf810395ec8df29a2f17021daad16d0b"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "b8c11f17c4a4940390c7ddc54210e3f9d0cd31bd5312964c684cbdaae3467cfc"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "c78cf5294f9c04deec0c39fd96c798409777980b7e648db7acf900a69d799e4a"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "ee1683a74f4844505055a904ccacb98d92d17ac408dafb915c33c94eb0f3d886"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "bet-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p20_g230_r3_s17_21ce0e0e9d8bfab6",
+          "archive": "expanded_pilot/runs/17/bet-spr18/baseline",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "89392bbd224c859a58b24e2269588cf612077c97a136a96cd7695a57aa4a4c2e"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "76a27d2c3d37f7a4c394343df31e0425290e6be57bd1b0a67c64c03d17ebf684"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "3426f14644f4578acd94a359fe7faac59b63ee135acd17f2e379803eb9002841"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "fa6b8edba4d4aebfbdef92c2aee7b405dedb6a0a71b25230689c8400f7bf8627"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "fc090d8f8f95f72f3c66f0caa8cdc5f54bbf7535a19790010be01812a7644f84"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "bet-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p20_g230_r3_s17_90c0113e361b7195",
+          "archive": "expanded_pilot/runs/17/bet-spr18/single",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "728d9dabc37786df09ec8737f28b5d9a32acb3dfe8e703ca2adea7119d06f35b"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "a670dfc9cc1909da3ccd2b12ecbcfc4600ab9a201be773fe4c264442db4927e9"
+            },
+            {
+              "path": "bet-spr18/controller_trace.jsonl",
+              "sha256": "0320fc15ca2d71790ab5bc8307afd1372cf9cc422f9c2fcfffa07093202c6ae6"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "bbcba6497aacd03ba42ce8a2ae88fec05bc731440ba47696452aafc9c7b9e5a3"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "49a4bd63511a792cc250522a6c1bfd7bb194b7372ec86919d259324de1f90955"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "f343cb2d51d91bb46bdfb25e31d92d5b79131deb238ffd2adc9f2aa0daa00a1c"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "bet-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/17-1/multi/run_n1_p20_g230_r3_s17_3a919e7c6276907b",
+          "archive": "expanded_pilot/runs/17/bet-spr18/multi",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "d261517d20784bd4c353b3d15427b0bc67ff010b2b73528a2902b40b30f3f285"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "409637a83cd98cbc6b37e13b3f829fbf649ca351020390130615864353449db2"
+            },
+            {
+              "path": "bet-spr18/controller_trace.jsonl",
+              "sha256": "c1c681776b2fa30160eb5831fe6203cff8fa58875bead2522fa6bbfb322915b9"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "9bd3bd61c192faa8f95af57f405b299a39d00eb87e2840d1348813176d132f60"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "eef25e44dd6173589e7b527f18950d2a53adeb4a9940129a4b414b2570075485"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "88122549d6baab19b86802f08302342b4a4bbd7e9e726a4928e46d045e33bcdd"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "pu-cs-fal07",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/run_n1_p20_g200_r3_s17_e03cf89e0e4480e1",
+          "archive": "expanded_pilot/runs/17/pu-cs-fal07/baseline",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "b071729e698d248da7dbe11815f07b7c769f7277ed21db9ce7dcbfbe283e8e8b"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "cce74a90117012180ec4492a0a3ff3b222c7622e13845e4f3a7ea373c5467a57"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "32d35cf575c8edf28544f4c9fb413cfc25382358aac5828d97da366d240d0056"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "c24b3aefba5cb6790351fdf638b1265242ee348ce4fa7139172e102f989a3e89"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "543953909f684b480a20853dee7dce77b0d16662508a976e9350cfd8542f1072"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "1519e6d9d3452eeabc7075aa99dd733bda6ca35d79411ea0b339ea5d8f2525c5"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "d3083d5d854e44ee603496d5abf2c49c3971255acb697f12a4a19eafba2f7c03"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "pu-cs-fal07",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/run_n1_p20_g200_r3_s17_66115f1db867335c",
+          "archive": "expanded_pilot/runs/17/pu-cs-fal07/single",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "d06985cdf85d380d0be909a4584a7b8c03a60245bda2588a70e855ce00d6dfc1"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "26fd2b6c989e40748d2408b4def59a77375a602e7baf50b0d84807feac9c5ba2"
+            },
+            {
+              "path": "pu-cs-fal07/controller_trace.jsonl",
+              "sha256": "64511b4c8e16314dd583f1564cfd0ca6e8c55f674a7081cbee979dddae536a43"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "2d879a9ecdccb3f3ef664e0721c4d6311e3e137210bb26c11fea680105be67c5"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "d27402307d00917ce70dadd76169937bb45e477bc2501dd0640a80d265e5af9f"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "ec423a6699ef89df11561b6d24503b4964d706f2cd764a050d479481a07528d0"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "6e48e02d84be4bf6790b7d4d196c2ae6ca1a4f83c76d3b7dafaa6d4ac56773ca"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "0cbd52c3def510156bc54af455a7805ab252d525894936d08a5b6c5296396a5e"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "pu-cs-fal07",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/expanded_campaign/seed_17/pu-cs-fal07/attempt_1/multi/run_n1_p20_g200_r3_s17_80487921bd3e43c5",
+          "archive": "expanded_pilot/runs/17/pu-cs-fal07/multi",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "0ebea77dc9aa623571adf9cfbf1cb8ed6bc4578bb97fe9bd3a39df145499d707"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "a6655614064e5097c379cff361a2044dd78353ac1d34284af9f6ee051257e2ca"
+            },
+            {
+              "path": "pu-cs-fal07/controller_trace.jsonl",
+              "sha256": "85fbd6d45e843c8e91d3be569ea8d4a61b01930d5e9e8ad2b92ba63f574f45fb"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "64b7ce9c7659b1dd6229edabd2ef045f9b341ab304c9e807bdd1194878edfb0f"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "7dfef20f4fb6d2afaac271f475afd87abd02e01f2daed03c595ed36662a1d02b"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "13e4318ca9852111fbce000e5fa5aa6e986a6e1116f744a06ffe7a5613ecb3b9"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "396b28d31bffcffa26ce5df0bdb218d1e9098186e98163dbd56e8480247a86e6"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "110f135d583dab3501c7ed16ea9db26ba68c44e9a210d5e15cbcdd18cbbdb8c2"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "lums-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/expanded_campaign/seed_17/lums-spr18/attempt_1/baseline/run_n1_p20_g200_r3_s17_ac9c08f3351bcb1d",
+          "archive": "expanded_pilot/runs/17/lums-spr18/baseline",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "745c18e47223bdafe4091303b3a0bb5270f6fc411d62a346a26f72f8ad4bbff9"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "aed027f8f73dd6b78312d905661d28ef471ae567d60d75843ea5d1c8342da589"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "4cc052f163f4117d4ec1fdde1b47836a4100ece171798c7461cb2ca326db2579"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "b08fd0679a46da6c1af21b9285a474b645c641d339eb48d28de16e819c3ccdae"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "6176b28ede582cea7b8b75140da6d62a969c042407b10926ae0e40cdccdbcb88"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "lums-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/expanded_campaign/seed_17/lums-spr18/attempt_1/single/run_n1_p20_g200_r3_s17_f0026a59876b62be",
+          "archive": "expanded_pilot/runs/17/lums-spr18/single",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "0d06567c4ab8dbd99ab062af403857c6b5bfdc23efd6bd94c64d75f3819438ec"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "f85e709bcb368508ee3f434923194808025564cd097a8330204001984ec6f37e"
+            },
+            {
+              "path": "lums-spr18/controller_trace.jsonl",
+              "sha256": "a8b7c52db92dcd2991b02b96eda3351bc2397ae38873d5b58fa0b1394ca51262"
+            },
+            {
+              "path": "lums-spr18/expected.json",
+              "sha256": "3083f988117f2d8e530d87800eaa514fbb840c1afc09ecd007a3d2cf426a0224"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "3da3b89a3dd8daf240efcd75705fece82a2760d795a6077c0832aba4370694c8"
+            },
+            {
+              "path": "lums-spr18/solution.xml",
+              "sha256": "7cbbab6ff431f17a91af9710e1b3e467d51970e5bed6cad75dfd0d1368e99271"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "ae05a1ee1b74a783683268ef690ea702e019d8bf939549552550342f4cbce207"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "91b465deb0d0ec13ef0c85bc59044ae270a42351e1be42af1939b258e9f40351"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "lums-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/expanded_campaign/seed_17/lums-spr18/attempt_1/multi/run_n1_p20_g200_r3_s17_f557ea8835eab883",
+          "archive": "expanded_pilot/runs/17/lums-spr18/multi",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "89bb56c38c033b9aba68a1995d3e7120bcce2fa3dfe2c4522c82558c1b6e2833"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "aed027f8f73dd6b78312d905661d28ef471ae567d60d75843ea5d1c8342da589"
+            },
+            {
+              "path": "lums-spr18/controller_trace.jsonl",
+              "sha256": "347f3e8f2d0b278658bfb588a46d29fba34aea9a97dc0f09a09e44a8472ebaea"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "b89d4968ccbdb4f9a3a882ac28b4da090208b456b9941bcc2a554b3d3552ddad"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "08cd97f0dc22552721c67cb08715729d7fcc6712a21c8c52ef408c2aeb6692b0"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "3845449ac2227e56b7bc975947b0c7fb9ed32b24d12cba45ad6d15096548cd3e"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fi-spr16",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g200_r3_s42_e852a55644a90c74",
+          "archive": "expanded_pilot/runs/42/muni-fi-spr16/baseline",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "d9707be2974777ab95d8fd271f59a35bf3494d25434ccff63ed45c8daf0a0d3a"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "c8e28319b45aaff7e2630aa4e077a354f7bc74c5b0fc9946fb51ddd901de0786"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "3a150b0b8a4bc6d294673ca6e6e751e421b5e8ce8b6ed8cc7133461d37477282"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "c1474f8d9cb7a5aea764a85dc4a6aa1ca033bdba079801909181760dca7377e0"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "591be07ac18dd457c878c0ae8cee5e0578ecc0cfbcd4aee0c8f836309a90a387"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "d6672c015c2c70a27d1da216e9fe609596727f62d02fd32a130107640ace0540"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "8305bf842b12948680bf93290fcf75a559382ba1b85afe1884b233cf86435d1e"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fi-spr16",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g200_r3_s42_e0572547388be96e",
+          "archive": "expanded_pilot/runs/42/muni-fi-spr16/single",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "16f60e9d3abe1dacba419b447c5a69b01b2d71b27b9d99a01975778f491a5acf"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "79cbb37ddd354f49b69c18cc094233ae312897289b977fac3e216f2dfc52e299"
+            },
+            {
+              "path": "muni-fi-spr16/controller_trace.jsonl",
+              "sha256": "7e6f2c52eeb20ec7f20759f5066190843f73d90be4e35a4063b8c50f25428fea"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "f2bffec7cff5c90033221e15aba8e182602138b82998db55c6ee598107b4128d"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "8f40ad8a85e08f76519911fb9cf5cc2cdb8fb31e074863261a1caa485c5e2ce0"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "38c8fb3842ba69498958d453ee0bbdef48f22bc87875212f4f50aea748a8e683"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "4f520e9a8bf81abd43edd6b1d913c5bdd90d0eaf370a7a833bafe83cf7eca98e"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "08ea0654483c98a6241190a6f9c55febabbf23a51f2a4ea14eb99339a576c53d"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fi-spr16",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-1/multi/run_n1_p20_g200_r3_s42_ad7c09139febdc94",
+          "archive": "expanded_pilot/runs/42/muni-fi-spr16/multi",
+          "files": [
+            {
+              "path": "muni-fi-spr16/anytime_trace.jsonl",
+              "sha256": "e4b01bc88a8ba7f0b441a85dcc99d42ed2fb6200e04b2de02b005ba572b552bd"
+            },
+            {
+              "path": "muni-fi-spr16/choices.npz",
+              "sha256": "75ddcf5406c0fa806267d5cfc6683a883b9f30d3acbf249af4067307522447ad"
+            },
+            {
+              "path": "muni-fi-spr16/controller_trace.jsonl",
+              "sha256": "54adbc05d93fbd9899aca708cdc07c65a42b037b2b34e10a6da6da1f1636a8ed"
+            },
+            {
+              "path": "muni-fi-spr16/expected.json",
+              "sha256": "0910afa23d2fdedb8f60f1d7b866031290600ef1f38cd5dc4c94c0d110174819"
+            },
+            {
+              "path": "muni-fi-spr16/result.json",
+              "sha256": "234eb05773218b8b2b3299a5b755789a27fdb404293106e1411a197729d98f88"
+            },
+            {
+              "path": "muni-fi-spr16/solution.xml",
+              "sha256": "99a7a00b35a89facb452dfb7272f8f18a51be13052b892f2f533d4da3a944900"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "1502602ca4183274d07a2aebd9210899519bc5daec84aa3ffa9cb23d3116d502"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "049f2cb95c25afcd415b29340df8809f218a894e7fcd8e7d2d1b12779c8c309f"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fsps-spr17",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g200_r3_s42_f516ae9edc64fadb",
+          "archive": "expanded_pilot/runs/42/muni-fsps-spr17/baseline",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "e1cd5e036c414dae777f111d09d3a7f61cb6fb63b171e4b0cdba7c438b09a8d5"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "9cd7f697978b0ced1df0f65590b754bd7ba6e9040560effed79162124b260179"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "b273c8f8e877dbb9af5732a1c069403572779cf6c44aca32b78f3fc300ef7932"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "492667453fa833d8ca91b922ede2057c6ee10c1f1002eef08b864404acd3ad2e"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "c3fa4e294bf892750dccdd557f524af8e9bfe849177ec152f9d58541ad276c04"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "3f7cda5cbaae3e4e35642f933f9f812e6e4427424e09e331056a399f94369b02"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "5a3bf14ee67c549dc7644d69481c65ad2d08fc61c2d4ab47fb201a5007d5da3d"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fsps-spr17",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g200_r3_s42_19ac99b454a03428",
+          "archive": "expanded_pilot/runs/42/muni-fsps-spr17/single",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "41de2ac2ffaf17a45f1f0622067e55acd63600b4ca4c7ea2a0dec4f617c33f6a"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "17e0f40fc44356f47b414a212abd178931cad9968e7fc763e7013dba4f02f3e1"
+            },
+            {
+              "path": "muni-fsps-spr17/controller_trace.jsonl",
+              "sha256": "2129617e6b02d43db62296f036ed215067d32a6f3503857cc149eb7cda624a21"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "745ab605981e4891a79a98296fe8fd1122da63cd5129bf26d8648de539dd9fd2"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "b4843cc4ec814224e66b7723b7836137d373744d9fc2b53a6e92c343fc9f6af2"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "87cb17214b6579da4322194a51feb891b162864123898329965340908ff6354e"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "669a8bb64a66d84363f0810b1a90a16e8e276f2336211fefca26edb907f86deb"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "8aeb256268cd99aa662813ecb0e1fcaa7310f6acf177b1a17eb0857c91e4927d"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "muni-fsps-spr17",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-1/multi/run_n1_p20_g200_r3_s42_b6ea2d8e5fdeda31",
+          "archive": "expanded_pilot/runs/42/muni-fsps-spr17/multi",
+          "files": [
+            {
+              "path": "muni-fsps-spr17/anytime_trace.jsonl",
+              "sha256": "c3920d48a1d4b0eeb57159ca61bd888109ce2dcd6275d8deb7ea541a6b6ea0d4"
+            },
+            {
+              "path": "muni-fsps-spr17/choices.npz",
+              "sha256": "7044530fee474b542065b9ca12dfc8d2e809e5aff90f7c854d4ba6ac5653c841"
+            },
+            {
+              "path": "muni-fsps-spr17/controller_trace.jsonl",
+              "sha256": "b5a582da6c9a1ce276d04457a09240749f49616c34194b634fddddc3fd8d2979"
+            },
+            {
+              "path": "muni-fsps-spr17/expected.json",
+              "sha256": "f3e412c42269063b87949db195077036c187f7d9516d65de92cf0077abd5f0c8"
+            },
+            {
+              "path": "muni-fsps-spr17/result.json",
+              "sha256": "2df2132974f6a3014e6c4eaddcca77c53ada7d3e95f049123a710af37fc3bd51"
+            },
+            {
+              "path": "muni-fsps-spr17/solution.xml",
+              "sha256": "af999146560f08971aac0e6fa88d5041ecfa3e7bf5bfe23e10b6807ac8ce45f1"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "eda4d3ccd2f6e7c58d94311a8f262dbae301af135670b17c80a5a1eaaba0d801"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "10a13fe17ec34817d83a9346630a267852eb3aeae96265070f9cbe6cf3faed1d"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "yach-fal17",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p12_g200_r2_s42_a7bd3458d98c018c",
+          "archive": "expanded_pilot/runs/42/yach-fal17/baseline",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "ea34fe1722258bb0bfd92b6e7ceb7577063d0677e1afea739ce7f86d3f19abe9"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "5ff4b949e792e6f0e1774d82aa7980415c960e50cbd1bd228358cd26d416989a"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "4306fd7a286ad41fd74343b49660e29b2af0665794c1f7bbc7c49c795b188eec"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "3a26eadfd0dce050251e4a0be75502d08b65d672cac1c8ccbc612c8aa951ab3c"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "c66d29f10915d918f8be27214e226357ba722bb5fec38151bf74d8f9cc748eb4"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "yach-fal17",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p12_g200_r2_s42_90fad61aee51c7c9",
+          "archive": "expanded_pilot/runs/42/yach-fal17/single",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "0aaddef5dc4390e2ce0900f6375ea69ebda98ce4cad49bea82906452660d02c5"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "ce55be0e6b75d8191c2634ab8e1bf274b29c4942eefa51f49bc14e7266411cb9"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "1636026e4bfda7d0bc124128b82705b4071bde7988404312d05bb20f5726ec92"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "d62872b77fb75ddd25626218b13a1968699b6424e8d3ffe8696917b5ccbe4660"
+            },
+            {
+              "path": "yach-fal17/controller_trace.jsonl",
+              "sha256": "8330d1ce983341e7d7e4e61b802646287b27ccf7f9ac74b3c618910e58f7b18c"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "01a348c2d7e0a2babcf00b08355b00bbd30496ba3cf81e3251df69e57150491f"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "yach-fal17",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-1/multi/run_n1_p12_g200_r2_s42_96d01a054bd889d8",
+          "archive": "expanded_pilot/runs/42/yach-fal17/multi",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "669b116a364d5899fda97114eea6cefce6b7a4f7c758d3bed28becacb5c9df31"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "8a3e121f70a63c13b95568e681529c5c25a53b67c3b91eef674a77c65ed2a5f3"
+            },
+            {
+              "path": "yach-fal17/anytime_trace.jsonl",
+              "sha256": "35deefddf1a8a54dc765ded6fa5718b257d428b6dec808b78fa18caada479e1c"
+            },
+            {
+              "path": "yach-fal17/choices.npz",
+              "sha256": "116b69c2dada1e829fc0f04831096b715c87d054bc91b984734e6276933d4b51"
+            },
+            {
+              "path": "yach-fal17/controller_trace.jsonl",
+              "sha256": "e19a8f95384be8441f33927a1578b2c28357677ec1aa8a1c0da6f6fb8b835519"
+            },
+            {
+              "path": "yach-fal17/result.json",
+              "sha256": "d8f1720a69f8a5b9ca88e6d53a0e55f6489c6687b4d195108078a9b87f9284a5"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "nbi-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p12_g200_r2_s42_4383348ccf08c7c3",
+          "archive": "expanded_pilot/runs/42/nbi-spr18/baseline",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "507c4123a2ff347c5a00082df72086ff0de18a015e1540a1458f174b17b79ca9"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "c7f2f292a959966f1e3272e00e17830db0e3f2ed71174a59558eb367385f1257"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "25d561eb82e108adbb64df1ef2079631be25cb12138bf0d9728bfed0d47463a1"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "a05a1a22d20a3b877e5326e7aa56bd5b10f00c17a1e957e83844d12d98a915c4"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "5cb75f54561febd9220556f4f255716156d277393aa53d0346334d47e86c181a"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "74ddf3bccfa25b5e0c5b67247794f6fe9ab1d9837379ff3c0b21e921afd40ebb"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "7088ffc56e3a1bad7eabfa391180a50f1aa24da5c95b0f22920d28490e507279"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "nbi-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p12_g200_r2_s42_333a2e99780f979a",
+          "archive": "expanded_pilot/runs/42/nbi-spr18/single",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "4565dfbcd8818539cf53e479b1bfb582bc4e78a7e91f9a7b8a90fa699b1be971"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "b2c018bffcae9cb4a2e66e75034823e7af46eb702c022d6a8c57f58b7de0b32c"
+            },
+            {
+              "path": "nbi-spr18/controller_trace.jsonl",
+              "sha256": "7607f4ea9aa3718b14296da3feb62dc8cb7205d39a8464864a13cbd9a4443c9d"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "d5fdf2f11402f8d0d5c45033f8a08a8e8f360a00f56bc32b1df01ccbf6d41f4e"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "aec8ebc0839ee10eadf1009df870bde23cebab5d6acfa2b7975485d3be674613"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "90454a8cd3a8ac19b031179bf93b0961263dc62a539628d18bddc2a9f080e7c7"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "69fd4da5e1959ffa80c81c2c265bc78c8b7b2a7955b8b7193e609da64b0bc46a"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "1d8bcdfd057bfe4db0015a097477b9de1fcbe6e127828bb0bd93c1e968aeecda"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "nbi-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-2/multi/run_n1_p12_g200_r2_s42_31f0e80c6a3ac42b",
+          "archive": "expanded_pilot/runs/42/nbi-spr18/multi",
+          "files": [
+            {
+              "path": "nbi-spr18/anytime_trace.jsonl",
+              "sha256": "d4da4bab3ac8da0a2d0556f65b9d7a476ecc547aef07b3d35400477ce3771106"
+            },
+            {
+              "path": "nbi-spr18/choices.npz",
+              "sha256": "4ab54bf7ff73367d587df7b59243c22cd829836d157329fbf30db8c6a5494756"
+            },
+            {
+              "path": "nbi-spr18/controller_trace.jsonl",
+              "sha256": "d45631bf67a455390c3318574113c37d835b39c24a15b676848c6b8ddf1add33"
+            },
+            {
+              "path": "nbi-spr18/expected.json",
+              "sha256": "0c6853ef87489a889c46d292cd8f15198a151bb2ed91e52759396fff2f3b30f3"
+            },
+            {
+              "path": "nbi-spr18/result.json",
+              "sha256": "19a12077199c1fd2e94dffaf0d768c3146fff210a1b43651ae79c5c90e9699b0"
+            },
+            {
+              "path": "nbi-spr18/solution.xml",
+              "sha256": "48452cebf08d8fd18e9b152a32be0f0732d6e11e23e1b3eb91dc2b701cf8480a"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "66056a0312c719407400d613c829f0678e1b67cb0e8bc24fa468cfae94b8f912"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "565da0bb19e698fd5038529eeea05a5c2e8d16ca44505d9df8473cfcc7b4d3c0"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "mary-fal18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g200_r3_s42_60cfcfe9f52d8044",
+          "archive": "expanded_pilot/runs/42/mary-fal18/baseline",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "357821de1d805af49c41e8ffcbc17b9fe94323002ad703195639db81bf611f16"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "599195c1ce058514c966894656e82411c6824bdc0119ecf0e8924026691a3520"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "843f44b5aebd6ae76c7c159e0aa7359e3aa4129301f7f801f2dd7ab0cf276d2c"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "3ae2c7ddcd64715e66790b44d829cf13bcc213e2cb9298e64c007ee0f8ba730c"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "ea125479d31e9c3a692f6494ceec76d1b309c8db20d8911edcea052e4b749273"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "d2e1617893a3f56d7e162eec9457e1028c9b348f3a1bc4095f102476f93c8ca5"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "7dd18bdb00ab5b9ed93ba0dc664d5987395148cbb9512b76b9c6c0d86c5de435"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "mary-fal18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g200_r3_s42_b4f6453a4ae35194",
+          "archive": "expanded_pilot/runs/42/mary-fal18/single",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "106641295a8e1b7f141fd569a23f6bb8de38d7b676b03b53eb00529818a36962"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "24c2fe420b7aca1c870a16eb0df48680e8c1233aa07f10218dcfb9cdd9904852"
+            },
+            {
+              "path": "mary-fal18/controller_trace.jsonl",
+              "sha256": "906a45e76d715c865e9ffff79062f640297cebe6aa5ebcec38d88ea229688759"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "ef77170de7f46ddad9895da90d23064730a300a01e6884cb5206cbe1809f2fd2"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "7111858f15cf5b72ebfc44d16e983830ad2f8e100023ea0c7762ae4ee814ce14"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "98a1b62bce7417aa1cf85ca2404091256ccc93c9ec9ffd8e261509b8ed74ff35"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "2f3d65d7c5263d4cff2633099d787c028d073ef885021567568afefb87c92bb6"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "9960173dcc46b49572148e95787b3d76a7d94646e87d25ec96de27ab69196638"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "mary-fal18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-1/multi/run_n1_p20_g200_r3_s42_ba892a0adf486809",
+          "archive": "expanded_pilot/runs/42/mary-fal18/multi",
+          "files": [
+            {
+              "path": "mary-fal18/anytime_trace.jsonl",
+              "sha256": "57b01f1f3b5a498337804c4bbadc5b94161ecfe574ff49f983b550a2b6f4326b"
+            },
+            {
+              "path": "mary-fal18/choices.npz",
+              "sha256": "9d27ac9ec4849eb17ee772b096d9ba86b8dab12ca2841c218b8d0a1a05bc573c"
+            },
+            {
+              "path": "mary-fal18/controller_trace.jsonl",
+              "sha256": "e2f00d2733538f2aed3d0729efc411806046a381e97ba6a8d649bdec991a02e2"
+            },
+            {
+              "path": "mary-fal18/expected.json",
+              "sha256": "2c4041420cc8c2147d79d3aea1713465b6df9d03245e54d4eb01258f8485cf0a"
+            },
+            {
+              "path": "mary-fal18/result.json",
+              "sha256": "64057cd56a73c86d6f31cefc138d42011c3f0b893b31bf24e84e835f79c7004c"
+            },
+            {
+              "path": "mary-fal18/solution.xml",
+              "sha256": "d88ff3eccec20b09c8ccb123ca90f2bc7da8b581405a787fe1458528ba1ffc4b"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "8442e8521628aa7938703b201358ec543c2d8b5c86c25b60bbc62e6f78c1f9bd"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "48e2c981308a3cfe128c0b5cebab3421041e59a54d1fe802f7ced7dcb9b547b6"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "bet-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g230_r3_s42_8bfaa8ba4ccd6ec2",
+          "archive": "expanded_pilot/runs/42/bet-spr18/baseline",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "927cee077210667f3041eb292ea636d50f5e85cfcc8d59ce36b9d9d69ae4de77"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "711052d3db5bad47adf74061b38c17187c4471053012105681dd59550f07295d"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "a72a4323ac309139d8819b6bbb6c1bd5f478ce0ddad50e6592823063157738d2"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "c0f32c9e425d1111508f6ecc7db36a4a5c94ea4108f5967f4b6adf6151e2b3a2"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "ec6f72037674a873be07e40aef25f0e0ee35ed060306c28e79ba4f715be70871"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "bet-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g230_r3_s42_065cb485d119ab4d",
+          "archive": "expanded_pilot/runs/42/bet-spr18/single",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "15a68e7ad86c524ac6b78f1a1a8e41c57cee83c6ac1ee921c845766e806dd914"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "b65b04a6fa8a6e37e6a69de730d74b382bb56d0a95aa3d0691a4894f6ccef019"
+            },
+            {
+              "path": "bet-spr18/controller_trace.jsonl",
+              "sha256": "e6e0c06ff3394a8ce486c5b83b9bb1618dd090cbb25f683ebf5c597886649ee6"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "f01e9f1177913b98b762aef49b286b739daded9a5b8f20d40ed38851f2990e9d"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "2b158a6bd165daa180d73e8f0766e34f70e1df16b3a745277ae212b3dec288ab"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "f5295d76b999470b90fb4c5cf3d4dd32d6e205e08687e3f6ff6bad9df742febb"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "bet-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-2/multi/run_n1_p20_g230_r3_s42_dbe19d55b8b089f2",
+          "archive": "expanded_pilot/runs/42/bet-spr18/multi",
+          "files": [
+            {
+              "path": "bet-spr18/anytime_trace.jsonl",
+              "sha256": "fccac44e9ac1c4d2922a0631a69ce8e71903d55385d732fbcea7351d20057821"
+            },
+            {
+              "path": "bet-spr18/choices.npz",
+              "sha256": "0ad4ca3e14ec257476659a0fb5c5283d93fdeb0d3db2c4de074aca695c125b22"
+            },
+            {
+              "path": "bet-spr18/controller_trace.jsonl",
+              "sha256": "8e86fe1a498730a045bbaf2763c8283374342645deed0d26fc68f4a768897dfe"
+            },
+            {
+              "path": "bet-spr18/result.json",
+              "sha256": "c271c1de136e27de98559ab27593d32ef0a1cc481f1d1675cb858c6791f59890"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "2cf1044214cb16395f3b73b596243e2673cbe9441140437224581951c22f3d89"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "6cb398e174d70ad79a7801bf783ff8832da882b41e5938d6562e17050801d9aa"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "pu-cs-fal07",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g200_r3_s42_8aa2d29cb3238299",
+          "archive": "expanded_pilot/runs/42/pu-cs-fal07/baseline",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "328a64a8743e75b64833917c8822a53e03dbd88dadb2676ffb30703d41607757"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "7fdb7e7ff1e6bb7715e2705dae8353e1a9f1b38e69d5198bc58b4662a28b4648"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "36f3d06b4c72b88cbd2973961b9b7edb4a920185321707cf2e1347ba11aa9742"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "241f168ebc86bbc5700002dc133e602b9bc704f2f5ac6aae0227007c5f3b9a8d"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "7270d4f71479294b3ae4c7cae9893faf85caaac079b88a1bfcf9ca25a4ec2bd1"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "97b52336cee2a510028d8b0c44180a2df3cbc88df5645914d8515909b011e5d5"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "09ed65b001530a6edf474d622c0b049899edb079fb632ec021b271c3ff2f47b7"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "pu-cs-fal07",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g200_r3_s42_4360b603ab7eaaf3",
+          "archive": "expanded_pilot/runs/42/pu-cs-fal07/single",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "66f3ff7f4103f9c8e8f387d2e5288f62315f5bc6732f0769a56402d4bc1a9d46"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "37cb88af32e12b3d1d0da1c1c69ab16042e27bb5b0ea6bff6dbd4f2680c39f29"
+            },
+            {
+              "path": "pu-cs-fal07/controller_trace.jsonl",
+              "sha256": "598ad1f15c7cc313ae2b19f71f522af886a15eca61f4b579d3b6ab21cef706dd"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "6d88dea1d86395d4451b21df4ec1ce217c6db4c21cd9661ad8806e9c4e01cded"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "20eaf15bf22583735f4003d96b34f464970779c641045b6429ed13515bf40625"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "8163698ee9b2ee117cd3707b4efc2cd9f940743c7cb606f31060efa9ecca9f16"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "356994a1d38dab747fabed8ddc7791aaa90e90ac07cbdb5afe55d95e928ee2a1"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "41dba5bc8cc717919db4d518f02b211cf94d8f3d62ab5908982eae87dfd465a4"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "pu-cs-fal07",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-2/multi/run_n1_p20_g200_r3_s42_b951436d21695c9d",
+          "archive": "expanded_pilot/runs/42/pu-cs-fal07/multi",
+          "files": [
+            {
+              "path": "pu-cs-fal07/anytime_trace.jsonl",
+              "sha256": "06bf193185d819973aab8ae329f218225140be20a8bcbc9b4c6aab73e97bc77f"
+            },
+            {
+              "path": "pu-cs-fal07/choices.npz",
+              "sha256": "164967173351a4e88bb368ab1816eb9ef33f6794699f92724cff6dccf4b10797"
+            },
+            {
+              "path": "pu-cs-fal07/controller_trace.jsonl",
+              "sha256": "71d56d8392db0502206dc1d84950c423be5a735408552d53a9edac4a57f94c53"
+            },
+            {
+              "path": "pu-cs-fal07/expected.json",
+              "sha256": "69c764b824d6828728bf3ef60657daaaa6eb8ca464c6bba8d77a406db1e4f11e"
+            },
+            {
+              "path": "pu-cs-fal07/result.json",
+              "sha256": "c5176bdb65f919752f1b3261d3d566d69ac19b196665de235b012e8b1d8dd446"
+            },
+            {
+              "path": "pu-cs-fal07/solution.xml",
+              "sha256": "9507581eb046529c6d08175bbe7f30acdabc1ff251d39cc80ca4e36441470cb9"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "6153d3deb2308e0c6868563e9a1f4d0cc49bbbe695b864fcd2eb0bc75abfb6d3"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "e5d08d54a5ef719218fb4fc339679fc8b28cd1855f293a70e1f25ff2436373a5"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "lums-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/x/42-1/baseline/run_n1_p20_g200_r3_s42_a3369db22dc734dd",
+          "archive": "expanded_pilot/runs/42/lums-spr18/baseline",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "13e09536d6dc853fe2c70145fdee65c662f0db323abb8eb591ed46f2cd64bb94"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "723b0dca67c52a33e3cf936f5c27d0c01ea28ce13ca09c6a58aa356c8dd99ccb"
+            },
+            {
+              "path": "lums-spr18/expected.json",
+              "sha256": "e420e766fcfa03b71b08c4e36cee6aec55cd3a64f912005a546a6e7333d68ab2"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "852b0e5a98467941c1bb7df448df699674e56db44af6dbc37c4d1929e3dfd271"
+            },
+            {
+              "path": "lums-spr18/solution.xml",
+              "sha256": "4b85a732b321190774712a02647964dc61fd840f70a2a503ea6d91936a4a8562"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "0cf8f5f5e199064fb3295abd3094ddacad300142cd197acf88d70f8a30c64560"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "78162139ecf7aab744b285c891322d1aef6d0138ed36929832c081b52fafdbfc"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "lums-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/x/42-1/single/run_n1_p20_g200_r3_s42_04548a86b77c7f29",
+          "archive": "expanded_pilot/runs/42/lums-spr18/single",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "9dd7bf3f0796f4f9e8fc81dda704114b85771e867087e7eb13fc8699ca27d860"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "c498a86af3e2b38f1bad40abb5f259bd8ff7a510165cf218eb00ea19a2fdaa26"
+            },
+            {
+              "path": "lums-spr18/controller_trace.jsonl",
+              "sha256": "7473ee0f5cb3d0d1fdcdbe612b0a74a77d6271b0df840e060d4876859f2b1cdc"
+            },
+            {
+              "path": "lums-spr18/expected.json",
+              "sha256": "db97f093cf7c6652059051ba74a36acce0317af63e091fe19112f96fcc5a84a4"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "60bc3db776cdf5a14640ed63940e2fc606c016434ff20e97d2122bf69d86bf08"
+            },
+            {
+              "path": "lums-spr18/solution.xml",
+              "sha256": "8fd699f8982184b3e47f71bbc48c54162e0ec160ce23608ac05b67299b4b5aae"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "2db6075c5b433bc05590a2af78581f81d4f4c23d0fc5f562a67af6e7bfcc9163"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "30589f0cf0412f72d869472bdc8e56d9b311619a5a1d0ad43d0afc88311bc047"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "lums-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/x/42-1/multi/run_n1_p20_g200_r3_s42_dfab50197e9ca2a7",
+          "archive": "expanded_pilot/runs/42/lums-spr18/multi",
+          "files": [
+            {
+              "path": "lums-spr18/anytime_trace.jsonl",
+              "sha256": "5ae5a8af289a528880a9addbe3740d87fc1612f167e8e4902a0a9d17d28bfd5e"
+            },
+            {
+              "path": "lums-spr18/choices.npz",
+              "sha256": "79a7548aed706d19921fb612baccce67d48f992888e277f8e6abaad8f54c7330"
+            },
+            {
+              "path": "lums-spr18/controller_trace.jsonl",
+              "sha256": "01a8376cc010707b4aa86ae05d0441c5a9fda574bff8a80d0282290e74b05e0c"
+            },
+            {
+              "path": "lums-spr18/expected.json",
+              "sha256": "6f99bd685ae5f6c9628840cd2a062459a0f0d62c55fa291d149addd53a2c7628"
+            },
+            {
+              "path": "lums-spr18/result.json",
+              "sha256": "b3884e2562771332f47a2b915ee0dca2dc2b2d36e9ac9cf6845719a69750868a"
+            },
+            {
+              "path": "lums-spr18/solution.xml",
+              "sha256": "c060f3d58b3de442b4a6a41b9c983c405234577126e7a879163bf180b7a38b91"
+            },
+            {
+              "path": "run_config.json",
+              "sha256": "f85d5410d5df7426e15229b484a985d8acf24e8d09a101d547e122372e538796"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "dee7ea367fe69277b9c860d67fc500860f22288418fafd0d28c174d7a02c3daf"
+            }
+          ]
+        }
+      ],
+      "missing": [
+        {
+          "instance": "tg-spr18",
+          "seed": 17,
+          "incomplete_or_missing": [
+            "baseline",
+            "single",
+            "multi"
+          ],
+          "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
+        },
+        {
+          "instance": "tg-spr18",
+          "seed": 42,
+          "incomplete_or_missing": [
+            "baseline",
+            "single",
+            "multi"
+          ],
+          "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
+        }
+      ],
+      "source_report": "expanded_pilot_comparison.json"
+    },
+    {
+      "name": "tg_no_timecap",
+      "published_attempts": [
+        {
+          "seed": 17,
+          "instance": "tg-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/t/17-1/baseline/run_n1_p20_g200_r3_s17_62bac9cb1f1ce824",
+          "archive": "tg_no_timecap/runs/17/tg-spr18/baseline",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "ca8a57a5e65a0b0f1485edf3addf334bdb3efd8f2ae368b05dedcb687902b7f9"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "1e613625b60e159897bdd025baa2c7763481d6889f25746527f5753b20991419"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "9c78f8a3dd25d979001f160d29f56990bb0adf6e40b2bd1e92b78de6b6101a90"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "1026f6d870115113d4444fc2253325653c1ac95daefc4b4560b0f41bcf4116c5"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "7f53483d664edcca1c06b5b9c5eb5993f89032bfbd1abfdec33fd568909507c9"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "tg-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/t/17-1/single/run_n1_p20_g200_r3_s17_1a2c22ecdb30ce48",
+          "archive": "tg_no_timecap/runs/17/tg-spr18/single",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "48baed83a9ec909bb200f3d71249978becf26fc696615fd78686b0ff86ceae1f"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "908fd553968a86f60c28e2829b18dd94a5f0133d90f792b7429d45269b479e2f"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "ecc969f718d27cc41ac024d6a288df505b5638489d14297e68cbc6364257be82"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "2a56a386d45da74463ccce9352fc9bc0d0e435822302eae935157c7f223775f4"
+            },
+            {
+              "path": "tg-spr18/controller_trace.jsonl",
+              "sha256": "9711b44c81ba59b33be6d458c8122f11bf55ba1842c826700fce28b8e162ae22"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "1aa50558ae95b3c3b9d8a2dfec32789504b35b8171f462ded0c1772a8dd69654"
+            }
+          ]
+        },
+        {
+          "seed": 17,
+          "instance": "tg-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/t/17-1/multi/run_n1_p20_g200_r3_s17_654cf84b9432e189",
+          "archive": "tg_no_timecap/runs/17/tg-spr18/multi",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "ab9f4cfa24a9704794f490f4e28fdb493e59e991975fb2d42febb897d791d44a"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "fba603b5daebc274f4cf87d211d137446537e5043c2fef5dfa785effb28b23f6"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "d6562c7f126aac66a237d11d9e4e8392908f266133d52fb4a5daddd16d76c625"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "f9f55a4e368c19606144f9b239264237a6037364476856e6410fe809d0d118d6"
+            },
+            {
+              "path": "tg-spr18/controller_trace.jsonl",
+              "sha256": "b35bcdff657bf3f4b0cd3e1451de27945c74b2b982c4cffab3f48febc6b216bc"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "e61895210d73c37b6002706a347704fb51801f13c8ec487b308fea0a6151120e"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "tg-spr18",
+          "method": "baseline",
+          "source_relative_to_repo": "NSGA-III/results_itc2019/t/42-1/baseline/run_n1_p20_g200_r3_s42_1cf72adfd81f6267",
+          "archive": "tg_no_timecap/runs/42/tg-spr18/baseline",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "8c9a28df1910f89dd0ab67ad6a428f5e4d879778e077a26d5aba9e70a003ec05"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "f75a77c92d539fbdf215b363bf45cd39bc81d87e1a8dbf5c702a61d2aaf4a0f6"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "18d329f6ba9438fbc75c9ac41e38d94c4be5dba7867c52a76adf2e10e4419d32"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "a155823a68eb13f0fc41197eb9ae907e9ce93510f8187eeb8f39510761b08779"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "b1da3d1d372b7cc9f1a8a325aa4ecf9c36b20958befab17a3f3226ad73114f15"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "tg-spr18",
+          "method": "single",
+          "source_relative_to_repo": "Single-Agent Controller/results_itc2019/t/42-6/single/run_n1_p20_g200_r3_s42_57d82337e0d0a305",
+          "archive": "tg_no_timecap/runs/42/tg-spr18/single",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "cbdc9e877b078dfacbd8cb953c9eed8fadd0d00263675a256fd43e66aa1310d9"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "bd685993edd50cb16aba5dffaaef956656b777d5d10b97a28dade7c32f453d1a"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "b7c150239d16780153f5bd3c278d9420ef15bc2e5ea134bca6d0db5a1c4dc910"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "f90984555e66b280a3d163eef227e6300650e822ac3b768ef66a57c941900f57"
+            },
+            {
+              "path": "tg-spr18/controller_trace.jsonl",
+              "sha256": "317062b0da37b050fa167fe54dad04ed3348858e20d0cf0d9bdbaa984772d379"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "f33ebf3d53d929aded2d39b0d59095c9a3a52f2639cf5b3e200ca99298fb96a5"
+            }
+          ]
+        },
+        {
+          "seed": 42,
+          "instance": "tg-spr18",
+          "method": "multi",
+          "source_relative_to_repo": "Multi-Agent Controller/results_itc2019/t/42-11/multi/run_n1_p20_g200_r3_s42_fbd2bd90f5d19cdc",
+          "archive": "tg_no_timecap/runs/42/tg-spr18/multi",
+          "files": [
+            {
+              "path": "run_config.json",
+              "sha256": "b3a863f53400227d967349856674cc7e6d8e64af8602b01ed08b519d9a4841da"
+            },
+            {
+              "path": "summary.json",
+              "sha256": "ae03664e54d70d1d3c86d42e3ac3ec2a5e08b40d0b52293c59634a4e3c85f905"
+            },
+            {
+              "path": "tg-spr18/anytime_trace.jsonl",
+              "sha256": "1f01d25d84865e2e5b0e9125e9a5aa8dd7c0501a59cfa9111f29429cc93f0028"
+            },
+            {
+              "path": "tg-spr18/choices.npz",
+              "sha256": "239883982b867bf55baf736ac400651994a044518ceb700a006e93021d1aa7c9"
+            },
+            {
+              "path": "tg-spr18/controller_trace.jsonl",
+              "sha256": "8f619ff29cd69dabcfc44fe2ca7d9f0ae95790d351ca78ef55d7d7b1fac3184c"
+            },
+            {
+              "path": "tg-spr18/result.json",
+              "sha256": "a66b3c420be6824a5a9caca875e552a1a335ff2c931b6db07f2bd288a61478cb"
+            }
+          ]
+        }
+      ],
+      "missing": [],
+      "source_report": "tg_no_timecap_comparison.json"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "instance": "pu-cs-fal07",
+  "classes": 174,
+  "score": {
+    "hard": 0,
+    "time": 174,
+    "room": 60,
+    "distribution": 33,
+    "student": 33,
+    "weighted": [
+      174,
+      60,
+      330,
+      330
+    ],
+    "total": 894,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "543953909f684b480a20853dee7dce77b0d16662508a976e9350cfd8542f1072",
+  "dataset_sha256": "394c92db206dae0e35c9db4967b24737244c85c5bb55adfdcdd1eb36eb0d7c2d",
+  "weights": [
+    1,
+    1,
+    10,
+    10
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}

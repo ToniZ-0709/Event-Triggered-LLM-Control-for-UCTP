@@ -1,0 +1,122 @@
+{
+  "instance": "pu-cs-fal07",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\pu-cs-fal07.xml",
+  "classes": 174,
+  "rooms": 13,
+  "courses": 44,
+  "students": 2002,
+  "distributions": 102,
+  "runtime_seconds": 62.346154500031844,
+  "evaluations": 1200,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 560,
+    "routine_repair": 640,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 1200,
+    "physical_calls": 1166,
+    "cache_hits": 34,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 1.796,
+      "offspring_repair": 32.086,
+      "objective_evaluation": 21.753
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 526,
+      "objective_evaluation": 549
+    }
+  },
+  "feasible": true,
+  "score": {
+    "hard": 0,
+    "time": 174,
+    "room": 60,
+    "distribution": 34,
+    "student": 17,
+    "weighted": [
+      174,
+      60,
+      340,
+      170
+    ],
+    "total": 744,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 200,
+    "partitions": 3,
+    "seed": 17,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 1200
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": true,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g200_r3_s17_66115f1db867335c",
+  "monitor": {
+    "generations_recorded": 28,
+    "time_limit_seconds": 1200.0,
+    "elapsed_seconds": 62.394,
+    "best_observed_hard": 0,
+    "best_observed_internal_total": 744,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 0,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 0,
+    "room_plateau_events": []
+  },
+  "controller": {
+    "mode": "single_agent",
+    "status": "active",
+    "completion_status": "completed",
+    "comparison_eligible": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "models_returned": [
+      "gemini-3.5-flash-lite"
+    ],
+    "reviews": 4,
+    "budget_skipped_reviews": 0,
+    "no_op": 0,
+    "model_no_op": 0,
+    "fallback_no_op": 0,
+    "api_calls": 4,
+    "input_tokens": 24637,
+    "output_tokens": 312,
+    "thinking_tokens": 0,
+    "total_native_tokens": 24949,
+    "cached_input_tokens": 0,
+    "api_failures": {},
+    "api_disabled_reason": null,
+    "api_pacing_wait_seconds": 0.0,
+    "api_latency_seconds": 5.83,
+    "api_disabled_after_configuration_error": false,
+    "interventions": 4,
+    "selected_interventions": 3,
+    "region_scoring_calls": 8,
+    "operator_scoring_rechecks": 3
+  }
+}

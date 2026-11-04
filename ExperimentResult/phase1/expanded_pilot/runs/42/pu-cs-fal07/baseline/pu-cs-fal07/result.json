@@ -1,0 +1,91 @@
+{
+  "instance": "pu-cs-fal07",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\pu-cs-fal07.xml",
+  "classes": 174,
+  "rooms": 13,
+  "courses": 44,
+  "students": 2002,
+  "distributions": 102,
+  "runtime_seconds": 59.036432399996556,
+  "evaluations": 1200,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 564,
+    "routine_repair": 636,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 1200,
+    "physical_calls": 1183,
+    "cache_hits": 17,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 1.032,
+      "offspring_repair": 33.294,
+      "objective_evaluation": 24.253
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 544,
+      "objective_evaluation": 564
+    }
+  },
+  "feasible": true,
+  "score": {
+    "hard": 0,
+    "time": 132,
+    "room": 108,
+    "distribution": 42,
+    "student": 22,
+    "weighted": [
+      132,
+      108,
+      420,
+      220
+    ],
+    "total": 880,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 200,
+    "partitions": 3,
+    "seed": 42,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 1200
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": true,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g200_r3_s42_8aa2d29cb3238299",
+  "monitor": {
+    "generations_recorded": 29,
+    "time_limit_seconds": 1200.0,
+    "elapsed_seconds": 59.098,
+    "best_observed_hard": 0,
+    "best_observed_internal_total": 880,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 0,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 0,
+    "room_plateau_events": []
+  }
+}

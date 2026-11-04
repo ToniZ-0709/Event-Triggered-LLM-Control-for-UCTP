@@ -1,0 +1,968 @@
+{
+  "experiment": "three_pipeline_no_timecap_followup",
+  "seeds": [
+    17,
+    42
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "expected_instances": [
+    "tg-spr18"
+  ],
+  "expected_cells": 6,
+  "completed_cells": 6,
+  "completed_triples": 2,
+  "evaluation_matched_triples": 2,
+  "quality_counts_evaluation_matched_only": {
+    "single_vs_baseline": {
+      "right_better": 2
+    },
+    "multi_vs_baseline": {
+      "right_better": 2
+    },
+    "multi_vs_single": {
+      "right_better": 1,
+      "infeasible_hard_tie": 1
+    }
+  },
+  "method_totals_completed_triples": {
+    "baseline": {
+      "feasible_internal": 0,
+      "runtime_seconds": 5818.255204499932,
+      "evaluations": 2400,
+      "reviews": 0,
+      "api_calls": 0,
+      "api_latency_seconds": 0.0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "thinking_tokens": 0,
+      "total_native_tokens": 0,
+      "interventions": 0,
+      "selected_interventions": 0,
+      "fallback_no_op": 0
+    },
+    "single": {
+      "feasible_internal": 0,
+      "runtime_seconds": 6945.563779399905,
+      "evaluations": 2400,
+      "reviews": 10,
+      "api_calls": 10,
+      "api_latency_seconds": 16.353,
+      "input_tokens": 68028,
+      "output_tokens": 787,
+      "thinking_tokens": 0,
+      "total_native_tokens": 68815,
+      "interventions": 10,
+      "selected_interventions": 4,
+      "fallback_no_op": 0
+    },
+    "multi": {
+      "feasible_internal": 0,
+      "runtime_seconds": 7626.814467000018,
+      "evaluations": 2400,
+      "reviews": 9,
+      "api_calls": 18,
+      "api_latency_seconds": 147.728,
+      "input_tokens": 123759,
+      "output_tokens": 2333,
+      "thinking_tokens": 0,
+      "total_native_tokens": 126092,
+      "interventions": 9,
+      "selected_interventions": 3,
+      "fallback_no_op": 0
+    }
+  },
+  "per_seed": {
+    "17": {
+      "completed_triples": 1,
+      "feasible_internal": {
+        "baseline": 0,
+        "single": 0,
+        "multi": 0
+      },
+      "quality_counts_evaluation_matched_only": {
+        "single_vs_baseline": {
+          "right_better": 1
+        },
+        "multi_vs_baseline": {
+          "right_better": 1
+        },
+        "multi_vs_single": {
+          "right_better": 1
+        }
+      }
+    },
+    "42": {
+      "completed_triples": 1,
+      "feasible_internal": {
+        "baseline": 0,
+        "single": 0,
+        "multi": 0
+      },
+      "quality_counts_evaluation_matched_only": {
+        "single_vs_baseline": {
+          "right_better": 1
+        },
+        "multi_vs_baseline": {
+          "right_better": 1
+        },
+        "multi_vs_single": {
+          "infeasible_hard_tie": 1
+        }
+      }
+    }
+  },
+  "controller_behavior_totals_completed_triples": {
+    "single": {
+      "operator_counts_valid": {
+        "move": 4,
+        "destroy_repair": 5,
+        "swap": 1
+      },
+      "next_review_interval_counts_valid": {
+        "10": 3,
+        "5": 7
+      },
+      "execution_budget_counts_valid": {
+        "10": 10
+      },
+      "trigger_counts": {
+        "deadline": 8,
+        "low_diversity": 2,
+        "stagnation": 1
+      },
+      "validation_counts": {
+        "valid_action": 10
+      },
+      "outcome_counts": {
+        "selected": 4,
+        "no_improving_candidate": 6
+      },
+      "reviews_before_feasibility": 10,
+      "reviews_after_feasibility": 0,
+      "interventions_improving_incumbent": 4,
+      "interventions_reducing_incumbent_hard": 4,
+      "interventions_improving_feasible_soft": 0,
+      "interventions_lowering_infeasible_soft_only": 0,
+      "interventions_improving_primary_progress": 4
+    },
+    "multi": {
+      "operator_counts_valid": {
+        "destroy_repair": 7,
+        "move": 2
+      },
+      "next_review_interval_counts_valid": {
+        "5": 7,
+        "10": 2
+      },
+      "execution_budget_counts_valid": {
+        "10": 9
+      },
+      "trigger_counts": {
+        "deadline": 6,
+        "low_diversity": 2,
+        "stagnation": 1
+      },
+      "validation_counts": {
+        "valid_action": 9
+      },
+      "outcome_counts": {
+        "selected": 3,
+        "no_improving_candidate": 6
+      },
+      "reviews_before_feasibility": 9,
+      "reviews_after_feasibility": 0,
+      "interventions_improving_incumbent": 4,
+      "interventions_reducing_incumbent_hard": 3,
+      "interventions_improving_feasible_soft": 0,
+      "interventions_lowering_infeasible_soft_only": 1,
+      "interventions_improving_primary_progress": 3
+    }
+  },
+  "instances": [
+    {
+      "instance": "tg-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 17,
+          "hard_components": {
+            "room_conflicts": 5,
+            "room_unavailable": 0,
+            "hard_distributions": 12,
+            "unassigned_requests": 0
+          },
+          "internal_total": 74300,
+          "weighted_objectives": [
+            1980,
+            1060,
+            71260,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 2052.920648999978,
+          "evaluations": 1200,
+          "physical_scoring_calls": 946,
+          "scoring_cache_hits": 254,
+          "generations": 30,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 16,
+          "hard_components": {
+            "room_conflicts": 5,
+            "room_unavailable": 0,
+            "hard_distributions": 11,
+            "unassigned_requests": 0
+          },
+          "internal_total": 74070,
+          "weighted_objectives": [
+            1980,
+            1070,
+            71020,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 3259.290776299953,
+          "evaluations": 1200,
+          "physical_scoring_calls": 998,
+          "scoring_cache_hits": 202,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 5,
+          "api_latency_seconds": 7.532,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 34597,
+          "output_tokens": 393,
+          "thinking_tokens": 0,
+          "total_native_tokens": 34990,
+          "interventions": 5,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 2
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 15,
+          "hard_components": {
+            "room_conflicts": 5,
+            "room_unavailable": 0,
+            "hard_distributions": 10,
+            "unassigned_requests": 0
+          },
+          "internal_total": 73870,
+          "weighted_objectives": [
+            1940,
+            1070,
+            70860,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 3624.252091500035,
+          "evaluations": 1200,
+          "physical_scoring_calls": 972,
+          "scoring_cache_hits": 228,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 10,
+          "api_latency_seconds": 85.082,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 70361,
+          "output_tokens": 1409,
+          "thinking_tokens": 0,
+          "total_native_tokens": 71770,
+          "interventions": 5,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 2
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": -1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 1206.3701272999751,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": -1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 364.961315200082,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\t\\17-1\\baseline\\run_n1_p20_g200_r3_s17_62bac9cb1f1ce824",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\t\\17-1\\single\\run_n1_p20_g200_r3_s17_1a2c22ecdb30ce48",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\t\\17-1\\multi\\run_n1_p20_g200_r3_s17_654cf84b9432e189"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            13,
+            18,
+            23
+          ],
+          "reviews_before_feasibility": 5,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "move": 3,
+            "destroy_repair": 2
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 3
+          },
+          "execution_budget_counts_valid": {
+            "10": 5
+          },
+          "trigger_counts": {
+            "deadline": 4,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 2,
+            "no_improving_candidate": 3
+          },
+          "operator_evaluations": 50,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 2,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            18,
+            23,
+            26
+          ],
+          "reviews_before_feasibility": 5,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 5
+          },
+          "next_review_interval_counts_valid": {
+            "5": 4,
+            "10": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 5
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 2,
+            "no_improving_candidate": 3
+          },
+          "operator_evaluations": 50,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 2,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 2
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -2,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "tg-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 22,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 20,
+            "unassigned_requests": 0
+          },
+          "internal_total": 77282,
+          "weighted_objectives": [
+            1816,
+            1126,
+            74340,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 3765.334555499954,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1018,
+          "scoring_cache_hits": 182,
+          "generations": 29,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 21,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 19,
+            "unassigned_requests": 0
+          },
+          "internal_total": 76682,
+          "weighted_objectives": [
+            1856,
+            1126,
+            73700,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 3686.273003099952,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1074,
+          "scoring_cache_hits": 126,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 5,
+          "api_latency_seconds": 8.821,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 33431,
+          "output_tokens": 394,
+          "thinking_tokens": 0,
+          "total_native_tokens": 33825,
+          "interventions": 5,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 2
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 21,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 19,
+            "unassigned_requests": 0
+          },
+          "internal_total": 76242,
+          "weighted_objectives": [
+            1816,
+            1126,
+            73300,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 4002.5623754999833,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1028,
+          "scoring_cache_hits": 172,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": null,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 8,
+          "api_latency_seconds": 62.646,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 53398,
+          "output_tokens": 924,
+          "thinking_tokens": 0,
+          "total_native_tokens": 54322,
+          "interventions": 4,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 1
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": -1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": -79.06155240000226,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 316.2893724000314,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\t\\42-1\\baseline\\run_n1_p20_g200_r3_s42_1cf72adfd81f6267",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\t\\42-6\\single\\run_n1_p20_g200_r3_s42_57d82337e0d0a305",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\t\\42-11\\multi\\run_n1_p20_g200_r3_s42_fbd2bd90f5d19cdc"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            9,
+            14,
+            19,
+            24
+          ],
+          "reviews_before_feasibility": 5,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "swap": 1,
+            "destroy_repair": 3,
+            "move": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 4
+          },
+          "execution_budget_counts_valid": {
+            "10": 5
+          },
+          "trigger_counts": {
+            "deadline": 4,
+            "low_diversity": 1
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 3,
+            "selected": 2
+          },
+          "operator_evaluations": 41,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 2,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            9,
+            14,
+            24
+          ],
+          "reviews_before_feasibility": 4,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "move": 2,
+            "destroy_repair": 2
+          },
+          "next_review_interval_counts_valid": {
+            "5": 3,
+            "10": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 4
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "low_diversity": 1
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 3,
+            "selected": 1
+          },
+          "operator_evaluations": 39,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 1,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    }
+  ],
+  "missing": [],
+  "excluded": [],
+  "all_attempts": [
+    {
+      "instance": "tg-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\t\\17-1\\baseline\\run_n1_p20_g200_r3_s17_62bac9cb1f1ce824",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 2052.920648999978,
+      "hard": 17,
+      "internal_total": 74300,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "tg-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\t\\17-1\\single\\run_n1_p20_g200_r3_s17_1a2c22ecdb30ce48",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 3259.290776299953,
+      "hard": 16,
+      "internal_total": 74070,
+      "api_calls": 5,
+      "reported_native_tokens": 34990,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "tg-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\t\\17-1\\multi\\run_n1_p20_g200_r3_s17_654cf84b9432e189",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 3624.252091500035,
+      "hard": 15,
+      "internal_total": 73870,
+      "api_calls": 10,
+      "reported_native_tokens": 71770,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "tg-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\t\\42-1\\baseline\\run_n1_p20_g200_r3_s42_1cf72adfd81f6267",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 3765.334555499954,
+      "hard": 22,
+      "internal_total": 77282,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "tg-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\t\\42-6\\single\\run_n1_p20_g200_r3_s42_57d82337e0d0a305",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 3686.273003099952,
+      "hard": 21,
+      "internal_total": 76682,
+      "api_calls": 5,
+      "reported_native_tokens": 33825,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "tg-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\t\\42-11\\multi\\run_n1_p20_g200_r3_s42_fbd2bd90f5d19cdc",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 4002.5623754999833,
+      "hard": 21,
+      "internal_total": 76242,
+      "api_calls": 8,
+      "reported_native_tokens": 54322,
+      "api_failures": {},
+      "seed": 42
+    }
+  ],
+  "all_attempt_totals": {
+    "api_calls": 28,
+    "reported_native_tokens": 194907,
+    "incomplete_runs": 0,
+    "unpublished_runs": 1,
+    "usage_has_unknown_unpublished_component": true,
+    "usage_has_unknown_removed_component": true,
+    "scope": "Remaining recorded attempts only; usage from deleted failed API attempts is unknown."
+  },
+  "interpretation": [
+    "Sequential local jobs at shared caps; not an equal-runtime comparison.",
+    "Original seed-17 baseline/single cells reused only with matching inputs, sources and settings.",
+    "Quality counts use archived representative endpoints, not Pareto-front dominance or hypervolume.",
+    "Do not rank soft scores at tied positive hard violations or average raw penalties across instances.",
+    "Two GA seeds and non-deterministic API responses: descriptive, not a significance claim.",
+    "Internal evaluator only; no official validator submission has been performed.",
+    "Failed API attempts were deleted at user request; comparisons use completed runs only; historical usage includes an unknown deleted component.",
+    "Reported tokens may omit usage from failed API requests.",
+    "Each separately recorded human authorization permits one specific additional attempt after transient failures; the default automatic retry limit is unchanged. Retain all failed attempts and their unknown request usage.",
+    "Separate follow-up without a solver wall-clock cap; generation/evaluation, repair and API budgets remain bounded. Do not overwrite or pool the original time-capped campaign.",
+    "Unpublished failures are retained separately, never counted as completed cells or quality losses. Their API calls/tokens may be unknown and are not included in the reported totals."
+  ],
+  "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+  "profile_snapshot": {
+    "schema_version": 1,
+    "name": "tg-spr18-two-seed-no-timecap-followup",
+    "solver": {
+      "population": 20,
+      "partitions": 3,
+      "mutation_rate": 0.35,
+      "mutation_fraction": 0.01,
+      "crossover_rate": 0.7,
+      "initial_repair_steps": 12,
+      "initial_pair_trials": 3,
+      "offspring_repair_steps": 8,
+      "offspring_pair_trials": 2,
+      "inner_partitions": null,
+      "inner_scale": 0.5
+    },
+    "repair": {
+      "interval": 5,
+      "near_feasible_hard": 12,
+      "neighborhood_classes": 32,
+      "neighborhood_options": 32,
+      "neighborhood_seconds": 8,
+      "neighborhood_deterministic_limit": 0.5,
+      "fallback_seconds": 2,
+      "fallback_evaluations": 128,
+      "failure_cooldown": 5,
+      "max_failure_cooldown": 20
+    },
+    "controller": {
+      "review_interval": 10,
+      "warmup_generations": 5,
+      "stagnation_window": 5,
+      "min_review_interval": 3,
+      "max_review_interval": 20,
+      "diversity_threshold": 0.2,
+      "diversity_recovery_threshold": 0.3,
+      "max_regions": 6,
+      "region_size": 5,
+      "max_operator_evaluations": 24,
+      "max_reviews": 12,
+      "api_timeout_seconds": 15,
+      "max_output_tokens": 1024
+    },
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "free_tier_only": true,
+      "min_request_interval_seconds": 10.0,
+      "max_input_characters": 60000
+    },
+    "instances": {
+      "tg-spr18": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": null
+      }
+    },
+    "provenance": {
+      "parent_profile": "profiles/expanded_pilot.json",
+      "change": "Only tg-spr18 solver time_limit_seconds changes from 1200 to null. All search, repair, controller, prompt, API model and transport budgets stay unchanged.",
+      "seeds": [
+        17,
+        42
+      ],
+      "pipeline_order": [
+        "baseline",
+        "single",
+        "multi"
+      ],
+      "stop_on_feasible": false,
+      "comparison_rule": "Keep the prior time-capped results separate. Compare completed endpoints at shared evaluation/generation limits and report actual runtime, calls and tokens.",
+      "retry_rule": "Retain all attempts. At most one whole-run retry for transient service/network/timeout failures, never quota/auth/billing or unclassified unpublished failures."
+    }
+  },
+  "unpublished_attempts": [
+    {
+      "instance": "tg-spr18",
+      "seed": 42,
+      "method": "single",
+      "attempt": 5,
+      "status": "user_interrupted_unpublished_attempt",
+      "log": "solver_checks/tg_no_timecap/s42_tg-spr18_single_attempt5.log",
+      "partial_output": "Single-Agent Controller/results_itc2019/t/42-5/single/.run_n1_p20_g200_r3_s42_57d82337e0d0a305.tmp-exjbiuth",
+      "user_instruction": "Thôi ngắt đi, nay không chạy",
+      "stopped_on_local_date": "2026-10-21",
+      "timezone": "Asia/Saigon",
+      "comparison_eligible": false,
+      "retry_authorized": false,
+      "api_calls": null,
+      "reported_native_tokens": null,
+      "runtime_seconds": null,
+      "usage_note": "Explicitly stopped by the user before a result was published; this is not a storage or service failure. Logs and staging directory are retained. No durable generation, score or API-usage checkpoint is available, so calls/tokens/runtime are unknown rather than zero. Do not replay or resume without new user instructions."
+    }
+  ],
+  "human_authorized_recoveries": [
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "single",
+      "attempt": 5,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "user_instruction": "Thử lại đi",
+      "authorization_context": "On 21 October the user directly requested another try after attempt 4 HTTP 504, the stopped runner, four retained failures and absence of attempt-5 authorization were reported. Exactly one additional recovery of single seed 42 with the same frozen configuration; no automatic retry of attempt 5 and no authorization for attempt 6.",
+      "automatic_retry_limit_unchanged": true
+    },
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "single",
+      "attempt": 6,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "previous_unpublished_attempts": [
+        {
+          "instance": "tg-spr18",
+          "seed": 42,
+          "method": "single",
+          "attempt": 5,
+          "status": "user_interrupted_unpublished_attempt",
+          "log": "solver_checks/tg_no_timecap/s42_tg-spr18_single_attempt5.log",
+          "partial_output": "Single-Agent Controller/results_itc2019/t/42-5/single/.run_n1_p20_g200_r3_s42_57d82337e0d0a305.tmp-exjbiuth",
+          "user_instruction": "Thôi ngắt đi, nay không chạy",
+          "stopped_on_local_date": "2026-10-21",
+          "timezone": "Asia/Saigon",
+          "comparison_eligible": false,
+          "retry_authorized": false,
+          "api_calls": null,
+          "reported_native_tokens": null,
+          "runtime_seconds": null,
+          "usage_note": "Explicitly stopped by the user before a result was published; this is not a storage or service failure. Logs and staging directory are retained. No durable generation, score or API-usage checkpoint is available, so calls/tokens/runtime are unknown rather than zero. Do not replay or resume without new user instructions."
+        }
+      ],
+      "user_instruction": "Tiến hành chạy",
+      "authorization_context": "On 22 October the user directly requested execution after stopping attempt 5 on 21 October. Exactly one new whole-run recovery, attempt 6, with the frozen solver/profile/model/budgets. Keep the interrupted attempt-5 log, staging directory and unknown usage; no replay of attempt 5, automatic retry of attempt 6 or authorization for attempt 7.",
+      "automatic_retry_limit_unchanged": true
+    },
+    {
+      "authorized": true,
+      "seed": 42,
+      "instance": "tg-spr18",
+      "method": "multi",
+      "attempt": 11,
+      "profile_sha256": "c88f3121c24bc44d1c5acd862a414d436b1aa8c30b063a60f5e968a7ea5992e4",
+      "previous_attempt_folders": [],
+      "previous_unpublished_attempts": [],
+      "user_instruction": "Thử lại cho tới khi nào được thì thôi",
+      "authorization_context": "On 22 October 2026 the user authorized the completed Multi seed 42 recovery with frozen configuration; prior failed API attempt details were removed at user request.",
+      "automatic_retry_limit_unchanged": true
+    }
+  ],
+  "artifact_audit": {
+    "checked_attempts": 6,
+    "passed": true,
+    "failures": [],
+    "scope": "Retained completed attempts only after user-requested deletion of failed API attempts; internal accounting and artifacts, not official validation."
+  }
+}

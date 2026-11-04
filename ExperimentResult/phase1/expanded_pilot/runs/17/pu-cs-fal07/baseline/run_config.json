@@ -1,0 +1,69 @@
+{
+  "run_id": "run_n1_p20_g200_r3_s17_e03cf89e0e4480e1",
+  "settings": {
+    "instances": [
+      {
+        "file": "pu-cs-fal07.xml",
+        "sha256": "394c92db206dae0e35c9db4967b24737244c85c5bb55adfdcdd1eb36eb0d7c2d"
+      }
+    ],
+    "config": {
+      "population": 20,
+      "generations": 200,
+      "partitions": 3,
+      "seed": 17,
+      "mutation_rate": 0.35,
+      "crossover_rate": 0.7,
+      "offspring_repair_steps": 8,
+      "offspring_pair_trials": 2,
+      "initial_repair_steps": 12,
+      "initial_pair_trials": 3,
+      "mutation_fraction": 0.01,
+      "inner_partitions": null,
+      "inner_scale": 0.5,
+      "evaluations": 1200
+    },
+    "repair": {
+      "interval": 5,
+      "near_feasible_hard": 12,
+      "neighborhood_classes": 32,
+      "neighborhood_options": 32,
+      "neighborhood_seconds": 8.0,
+      "neighborhood_deterministic_limit": 0.5,
+      "fallback_seconds": 2.0,
+      "fallback_evaluations": 128,
+      "failure_cooldown": 5,
+      "max_failure_cooldown": 20
+    },
+    "solution_metadata": {
+      "author": "NSGA-III baseline",
+      "institution": "Ho Chi Minh City University of Technology",
+      "country": "Vietnam"
+    },
+    "environment": {
+      "python": "3.11.9",
+      "numpy": "2.4.6",
+      "pymoo": "0.6.2",
+      "ortools": "9.15.6755"
+    },
+    "solver_sources_sha256": {
+      "main.py": "8f04483ce87a90c0ea51bc1bc0e025885d549f50ed45a20d52529c8c60ff99ce",
+      "itc2019/instance.py": "d5953d5ab4dbac848c9881e21afd1f7465b2a6002916766c5e915190417e78fc",
+      "itc2019/nsga3.py": "53408ccd2d21818fe9633930133184b0be6131e61fc5e91dda580de75b74dcda",
+      "itc2019/scoring.py": "eed7640d158ae32ef9eae4349b59680a721c9916dc9119b794f20494762725c2",
+      "itc2019/controller.py": "d44b85dde8446f3b95ec5bd6fd16bca8cc92743950aa21cd97fc5e0dcffe2aca",
+      "itc2019/regions.py": "b472beeb2414f6cc0fabc86b8cc7c384d7cc890bb99340a221ed371bac39c3f2",
+      "itc2019/operators.py": "557a712dc10d89c86292de7964ab59f5fecdaa94b2a382b622bee6d800d40f1e",
+      "itc2019/room_search.py": "f35c68c0c0d744d7e1e1e0ca5e0d5005dbe69c6cd94d379a8c3be582f3f25215",
+      "itc2019/neighborhood.py": "af377fb392b6d5747b4b7c3cdbdf27ab4cf3ba433c6d232737a0b43c0183bb5a",
+      "itc2019/repair_policy.py": "9456e26864b8ed3a396758cc8a4acd65f9fb387702e7d63aa9690c20b9285c1c",
+      "itc2019/construction.py": "7bfbc7f86c8122903a8e32d20c70ef9e2cb9720eb144815ca8478a0fd9abf0dd",
+      "itc2019/sectioning.py": "220354b8f85cd4f4737c9310e1660f9e488d072d2709f67654f30de7918e2bef"
+    },
+    "time_limit_seconds": 1200.0,
+    "stop_on_feasible": false
+  },
+  "dataset_directory": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019",
+  "completed_at_utc": "2026-10-20T04:02:32.153721+00:00",
+  "completion_status": "completed"
+}

@@ -1,0 +1,5302 @@
+{
+  "experiment": "nine_instance_three_pipeline_two_seed_check",
+  "seeds": [
+    17,
+    42
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "expected_instances": [
+    "muni-fi-spr16",
+    "muni-fsps-spr17",
+    "yach-fal17",
+    "nbi-spr18",
+    "mary-fal18",
+    "bet-spr18",
+    "pu-cs-fal07",
+    "lums-spr18",
+    "tg-spr18"
+  ],
+  "expected_cells": 54,
+  "completed_cells": 48,
+  "completed_triples": 16,
+  "evaluation_matched_triples": 16,
+  "quality_counts_evaluation_matched_only": {
+    "single_vs_baseline": {
+      "right_better": 11,
+      "infeasible_hard_tie": 1,
+      "left_better": 4
+    },
+    "multi_vs_baseline": {
+      "right_better": 10,
+      "infeasible_hard_tie": 2,
+      "left_better": 4
+    },
+    "multi_vs_single": {
+      "right_better": 9,
+      "infeasible_hard_tie": 2,
+      "left_better": 5
+    }
+  },
+  "method_totals_completed_triples": {
+    "baseline": {
+      "feasible_internal": 11,
+      "runtime_seconds": 4673.340035099885,
+      "evaluations": 21200,
+      "reviews": 0,
+      "api_calls": 0,
+      "api_latency_seconds": 0.0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "thinking_tokens": 0,
+      "total_native_tokens": 0,
+      "interventions": 0,
+      "selected_interventions": 0,
+      "fallback_no_op": 0
+    },
+    "single": {
+      "feasible_internal": 12,
+      "runtime_seconds": 4600.078839100082,
+      "evaluations": 21200,
+      "reviews": 111,
+      "api_calls": 111,
+      "api_latency_seconds": 230.85400000000004,
+      "input_tokens": 769635,
+      "output_tokens": 8673,
+      "thinking_tokens": 0,
+      "total_native_tokens": 778308,
+      "interventions": 111,
+      "selected_interventions": 36,
+      "fallback_no_op": 0
+    },
+    "multi": {
+      "feasible_internal": 11,
+      "runtime_seconds": 5822.753929600003,
+      "evaluations": 21200,
+      "reviews": 125,
+      "api_calls": 250,
+      "api_latency_seconds": 1483.4270000000001,
+      "input_tokens": 1747045,
+      "output_tokens": 25618,
+      "thinking_tokens": 160,
+      "total_native_tokens": 1772823,
+      "interventions": 125,
+      "selected_interventions": 44,
+      "fallback_no_op": 0
+    }
+  },
+  "per_seed": {
+    "17": {
+      "completed_triples": 8,
+      "feasible_internal": {
+        "baseline": 5,
+        "single": 6,
+        "multi": 5
+      },
+      "quality_counts_evaluation_matched_only": {
+        "single_vs_baseline": {
+          "right_better": 6,
+          "infeasible_hard_tie": 1,
+          "left_better": 1
+        },
+        "multi_vs_baseline": {
+          "right_better": 4,
+          "infeasible_hard_tie": 2,
+          "left_better": 2
+        },
+        "multi_vs_single": {
+          "right_better": 4,
+          "infeasible_hard_tie": 1,
+          "left_better": 3
+        }
+      }
+    },
+    "42": {
+      "completed_triples": 8,
+      "feasible_internal": {
+        "baseline": 6,
+        "single": 6,
+        "multi": 6
+      },
+      "quality_counts_evaluation_matched_only": {
+        "single_vs_baseline": {
+          "left_better": 3,
+          "right_better": 5
+        },
+        "multi_vs_baseline": {
+          "left_better": 2,
+          "right_better": 6
+        },
+        "multi_vs_single": {
+          "left_better": 2,
+          "right_better": 5,
+          "infeasible_hard_tie": 1
+        }
+      }
+    }
+  },
+  "controller_behavior_totals_completed_triples": {
+    "single": {
+      "operator_counts_valid": {
+        "move": 44,
+        "swap": 36,
+        "destroy_repair": 31
+      },
+      "next_review_interval_counts_valid": {
+        "10": 54,
+        "5": 57
+      },
+      "execution_budget_counts_valid": {
+        "10": 103,
+        "15": 6,
+        "20": 2
+      },
+      "trigger_counts": {
+        "deadline": 78,
+        "low_diversity": 11,
+        "stagnation": 31
+      },
+      "validation_counts": {
+        "valid_action": 111
+      },
+      "outcome_counts": {
+        "no_improving_candidate": 75,
+        "selected": 36
+      },
+      "reviews_before_feasibility": 46,
+      "reviews_after_feasibility": 65,
+      "interventions_improving_incumbent": 35,
+      "interventions_reducing_incumbent_hard": 7,
+      "interventions_improving_feasible_soft": 21,
+      "interventions_lowering_infeasible_soft_only": 7,
+      "interventions_improving_primary_progress": 28
+    },
+    "multi": {
+      "operator_counts_valid": {
+        "move": 11,
+        "swap": 40,
+        "destroy_repair": 74
+      },
+      "next_review_interval_counts_valid": {
+        "10": 25,
+        "5": 100
+      },
+      "execution_budget_counts_valid": {
+        "10": 112,
+        "24": 1,
+        "15": 10,
+        "5": 1,
+        "3": 1
+      },
+      "trigger_counts": {
+        "deadline": 94,
+        "low_diversity": 12,
+        "stagnation": 32
+      },
+      "validation_counts": {
+        "valid_action": 125
+      },
+      "outcome_counts": {
+        "no_improving_candidate": 81,
+        "selected": 44
+      },
+      "reviews_before_feasibility": 53,
+      "reviews_after_feasibility": 72,
+      "interventions_improving_incumbent": 41,
+      "interventions_reducing_incumbent_hard": 7,
+      "interventions_improving_feasible_soft": 29,
+      "interventions_lowering_infeasible_soft_only": 5,
+      "interventions_improving_primary_progress": 36
+    }
+  },
+  "instances": [
+    {
+      "instance": "muni-fi-spr16",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 12688,
+          "weighted_objectives": [
+            612,
+            386,
+            770,
+            10920
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 229.42463320004754,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1112,
+          "scoring_cache_hits": 88,
+          "generations": 42,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 12495,
+          "weighted_objectives": [
+            888,
+            447,
+            720,
+            10440
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 264.4150793000008,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1115,
+          "scoring_cache_hits": 85,
+          "generations": 45,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 6,
+          "api_calls": 6,
+          "api_latency_seconds": 14.326,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 45720,
+          "output_tokens": 472,
+          "thinking_tokens": 0,
+          "total_native_tokens": 46192,
+          "interventions": 6,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 12,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 12462,
+          "weighted_objectives": [
+            816,
+            386,
+            650,
+            10610
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 242.77881629997864,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1106,
+          "scoring_cache_hits": 94,
+          "generations": 45,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 7,
+          "api_calls": 14,
+          "api_latency_seconds": 80.973,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 110253,
+          "output_tokens": 1765,
+          "thinking_tokens": 0,
+          "total_native_tokens": 112018,
+          "interventions": 7,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 14,
+          "operator_scoring_rechecks": 3
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -193,
+        "runtime_seconds_change": 34.99044609995326,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -33,
+        "runtime_seconds_change": -21.636263000022154,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_30c1b4d47c37ec2e",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_48260d3f0edaa474",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-2\\multi\\run_n1_p20_g200_r3_s17_6a5642e264eb9f3d"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            16,
+            26,
+            31,
+            41
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 6,
+          "operator_counts_valid": {
+            "move": 5,
+            "swap": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 5,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 6
+          },
+          "trigger_counts": {
+            "deadline": 4,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 6
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 3,
+            "selected": 3
+          },
+          "operator_evaluations": 51,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 2,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            16,
+            26,
+            31,
+            36,
+            41
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 7,
+          "operator_counts_valid": {
+            "move": 3,
+            "swap": 3,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 4
+          },
+          "execution_budget_counts_valid": {
+            "10": 7
+          },
+          "trigger_counts": {
+            "deadline": 5,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 7
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 4,
+            "selected": 3
+          },
+          "operator_evaluations": 46,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 2,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -1.5211223203026483
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -1.7812105926860025
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.26410564225690275
+        }
+      }
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 200344,
+          "weighted_objectives": [
+            900,
+            204,
+            5640,
+            193600
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 141.82358939998085,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1157,
+          "scoring_cache_hits": 43,
+          "generations": 32,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 182660,
+          "weighted_objectives": [
+            1000,
+            200,
+            6060,
+            175400
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 165.31901650002692,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1161,
+          "scoring_cache_hits": 39,
+          "generations": 32,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 3,
+          "api_calls": 3,
+          "api_latency_seconds": 4.741,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 19179,
+          "output_tokens": 235,
+          "thinking_tokens": 0,
+          "total_native_tokens": 19414,
+          "interventions": 3,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 6,
+          "operator_scoring_rechecks": 1
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 176712,
+          "weighted_objectives": [
+            1000,
+            192,
+            6120,
+            169400
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 144.10387489997083,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1167,
+          "scoring_cache_hits": 33,
+          "generations": 31,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 6,
+          "api_calls": 12,
+          "api_latency_seconds": 73.116,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 78581,
+          "output_tokens": 1065,
+          "thinking_tokens": 0,
+          "total_native_tokens": 79646,
+          "interventions": 6,
+          "selected_interventions": 4,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 12,
+          "operator_scoring_rechecks": 4
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -17684,
+        "runtime_seconds_change": 23.495427100046072,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -5948,
+        "runtime_seconds_change": -21.215141600056086,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_212f6c5e836fd646",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_c01e3cf78dce010c",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-2\\multi\\run_n1_p20_g200_r3_s17_1b10f10367e3140e"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            22
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 3,
+          "operator_counts_valid": {
+            "move": 3
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3
+          },
+          "execution_budget_counts_valid": {
+            "10": 3
+          },
+          "trigger_counts": {
+            "deadline": 2,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 3
+          },
+          "outcome_counts": {
+            "selected": 1,
+            "no_improving_candidate": 2
+          },
+          "operator_evaluations": 30,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            14,
+            17,
+            22,
+            27
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 6,
+          "operator_counts_valid": {
+            "destroy_repair": 6
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 4
+          },
+          "execution_budget_counts_valid": {
+            "10": 6
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "stagnation": 4,
+            "low_diversity": 1
+          },
+          "validation_counts": {
+            "valid_action": 6
+          },
+          "outcome_counts": {
+            "selected": 4,
+            "no_improving_candidate": 2
+          },
+          "operator_evaluations": 60,
+          "interventions_improving_incumbent": 4,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 4,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 4
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -8.826817873257996
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -11.795711376432536
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -3.2563232234753094
+        }
+      }
+    },
+    {
+      "instance": "yach-fal17",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 2,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 22016,
+          "weighted_objectives": [
+            0,
+            916,
+            6960,
+            14140
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 269.7629309000331,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1035,
+          "scoring_cache_hits": 165,
+          "generations": 61,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 231,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 2,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 22016,
+          "weighted_objectives": [
+            0,
+            916,
+            6960,
+            14140
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 341.6819790999871,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1040,
+          "scoring_cache_hits": 160,
+          "generations": 58,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 190,
+          "reviews": 10,
+          "api_calls": 10,
+          "api_latency_seconds": 31.953,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 72480,
+          "output_tokens": 767,
+          "thinking_tokens": 0,
+          "total_native_tokens": 73247,
+          "interventions": 10,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 20,
+          "operator_scoring_rechecks": 0
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 2,
+          "hard_components": {
+            "room_conflicts": 2,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 21254,
+          "weighted_objectives": [
+            0,
+            884,
+            6860,
+            13510
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 302.9210226999712,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1074,
+          "scoring_cache_hits": 126,
+          "generations": 55,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 207,
+          "reviews": 11,
+          "api_calls": 22,
+          "api_latency_seconds": 131.872,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 159482,
+          "output_tokens": 2178,
+          "thinking_tokens": 0,
+          "total_native_tokens": 161660,
+          "interventions": 11,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 1
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 71.91904819995398,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": -38.76095640001586,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p12_g200_r2_s17_05fdc8a40af5a560",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p12_g200_r2_s17_c59718f074c0d395",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p12_g200_r2_s17_0486a2bdd5ee292c"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            21,
+            26,
+            31,
+            36,
+            39,
+            44,
+            48
+          ],
+          "reviews_before_feasibility": 10,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "swap": 3,
+            "move": 6,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 7
+          },
+          "execution_budget_counts_valid": {
+            "10": 10
+          },
+          "trigger_counts": {
+            "deadline": 6,
+            "low_diversity": 1,
+            "stagnation": 3
+          },
+          "validation_counts": {
+            "valid_action": 10
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 10
+          },
+          "operator_evaluations": 76,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 3,
+          "interventions_improving_primary_progress": 0
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            48,
+            53
+          ],
+          "reviews_before_feasibility": 11,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 10,
+            "move": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 10
+          },
+          "execution_budget_counts_valid": {
+            "10": 11
+          },
+          "trigger_counts": {
+            "deadline": 9,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 11
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 10,
+            "selected": 1
+          },
+          "operator_evaluations": 110,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 1,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "nbi-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 67454,
+          "weighted_objectives": [
+            34876,
+            5990,
+            24,
+            26564
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 162.15794159995858,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1039,
+          "scoring_cache_hits": 161,
+          "generations": 73,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 68909,
+          "weighted_objectives": [
+            34388,
+            6049,
+            40,
+            28432
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 200.23607520002406,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1048,
+          "scoring_cache_hits": 152,
+          "generations": 65,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 11,
+          "api_calls": 11,
+          "api_latency_seconds": 20.625,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 71439,
+          "output_tokens": 859,
+          "thinking_tokens": 0,
+          "total_native_tokens": 72298,
+          "interventions": 11,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 1
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 68935,
+          "weighted_objectives": [
+            34556,
+            5891,
+            40,
+            28448
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 273.37479910004186,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1053,
+          "scoring_cache_hits": 147,
+          "generations": 64,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 11,
+          "api_calls": 22,
+          "api_latency_seconds": 145.697,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 143299,
+          "output_tokens": 1986,
+          "thinking_tokens": 160,
+          "total_native_tokens": 145445,
+          "interventions": 11,
+          "selected_interventions": 4,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 4
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 1455,
+        "runtime_seconds_change": 38.078133600065485,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 26,
+        "runtime_seconds_change": 73.1387239000178,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p12_g200_r2_s17_e485a747fba90d00",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p12_g200_r2_s17_c4eec41981ba238c",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p12_g200_r2_s17_12dd82305b847162"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            25,
+            28,
+            33,
+            36,
+            41,
+            46,
+            51,
+            56,
+            60
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 11,
+          "operator_counts_valid": {
+            "move": 1,
+            "swap": 9,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 9
+          },
+          "execution_budget_counts_valid": {
+            "10": 11
+          },
+          "trigger_counts": {
+            "deadline": 8,
+            "low_diversity": 1,
+            "stagnation": 3
+          },
+          "validation_counts": {
+            "valid_action": 11
+          },
+          "outcome_counts": {
+            "selected": 1,
+            "no_improving_candidate": 10
+          },
+          "operator_evaluations": 29,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            25,
+            28,
+            33,
+            36,
+            41,
+            44,
+            49,
+            54,
+            59
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 11,
+          "operator_counts_valid": {
+            "move": 3,
+            "swap": 8
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 9
+          },
+          "execution_budget_counts_valid": {
+            "10": 10,
+            "24": 1
+          },
+          "trigger_counts": {
+            "deadline": 8,
+            "low_diversity": 1,
+            "stagnation": 4
+          },
+          "validation_counts": {
+            "valid_action": 11
+          },
+          "outcome_counts": {
+            "selected": 4,
+            "no_improving_candidate": 7
+          },
+          "operator_evaluations": 38,
+          "interventions_improving_incumbent": 4,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 4,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 4
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 2.1570255285083166
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 2.1955703145847543
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 0.03773092048934101
+        }
+      }
+    },
+    {
+      "instance": "mary-fal18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 22728,
+          "weighted_objectives": [
+            1898,
+            950,
+            1460,
+            18420
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 241.16117809998104,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1078,
+          "scoring_cache_hits": 22,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 22623,
+          "weighted_objectives": [
+            1518,
+            975,
+            1450,
+            18680
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 254.5408424999914,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1056,
+          "scoring_cache_hits": 44,
+          "generations": 29,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 5,
+          "api_latency_seconds": 10.876,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 30843,
+          "output_tokens": 390,
+          "thinking_tokens": 0,
+          "total_native_tokens": 31233,
+          "interventions": 5,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 2
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 22762,
+          "weighted_objectives": [
+            1742,
+            1000,
+            1490,
+            18530
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 296.46142219996545,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1063,
+          "scoring_cache_hits": 37,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 10,
+          "api_latency_seconds": 57.813,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 61787,
+          "output_tokens": 772,
+          "thinking_tokens": 0,
+          "total_native_tokens": 62559,
+          "interventions": 5,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 2
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -105,
+        "runtime_seconds_change": 13.37966440001037,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 139,
+        "runtime_seconds_change": 41.92057969997404,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_d4faf35661931be8",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\retry_1\\single\\run_n1_p20_g200_r3_s17_1339518f78c45d89",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p20_g200_r3_s17_187969c2a2fb6c5f"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            13,
+            18,
+            28
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 5,
+          "operator_counts_valid": {
+            "swap": 1,
+            "move": 4
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 2
+          },
+          "execution_budget_counts_valid": {
+            "10": 4,
+            "15": 1
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "stagnation": 1,
+            "low_diversity": 1
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 2,
+            "no_improving_candidate": 3
+          },
+          "operator_evaluations": 46,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            16,
+            20,
+            25
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 5,
+          "operator_counts_valid": {
+            "swap": 3,
+            "move": 2
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 3
+          },
+          "execution_budget_counts_valid": {
+            "10": 5
+          },
+          "trigger_counts": {
+            "deadline": 2,
+            "stagnation": 2,
+            "low_diversity": 1
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 2,
+            "no_improving_candidate": 3
+          },
+          "operator_evaluations": 23,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.46198521647307283
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 0.1495952129531855
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 0.6144189541616939
+        }
+      }
+    },
+    {
+      "instance": "bet-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 34,
+          "hard_components": {
+            "room_conflicts": 24,
+            "room_unavailable": 1,
+            "hard_distributions": 9,
+            "unassigned_requests": 0
+          },
+          "internal_total": 420508,
+          "weighted_objectives": [
+            22800,
+            10180,
+            355440,
+            32088
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 1293.3727240999578,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1458,
+          "scoring_cache_hits": 842,
+          "generations": 86,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 29,
+          "hard_components": {
+            "room_conflicts": 19,
+            "room_unavailable": 3,
+            "hard_distributions": 7,
+            "unassigned_requests": 0
+          },
+          "internal_total": 420320,
+          "weighted_objectives": [
+            23880,
+            10232,
+            354600,
+            31608
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 1212.1831833000178,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1638,
+          "scoring_cache_hits": 662,
+          "generations": 81,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 10,
+          "api_calls": 10,
+          "api_latency_seconds": 21.745,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 77098,
+          "output_tokens": 791,
+          "thinking_tokens": 0,
+          "total_native_tokens": 77889,
+          "interventions": 10,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 18,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 28,
+          "hard_components": {
+            "room_conflicts": 19,
+            "room_unavailable": 2,
+            "hard_distributions": 7,
+            "unassigned_requests": 0
+          },
+          "internal_total": 418470,
+          "weighted_objectives": [
+            21480,
+            10206,
+            355080,
+            31704
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 1314.2358118999982,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1623,
+          "scoring_cache_hits": 677,
+          "generations": 78,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 12,
+          "api_calls": 24,
+          "api_latency_seconds": 137.738,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 187232,
+          "output_tokens": 3699,
+          "thinking_tokens": 0,
+          "total_native_tokens": 190931,
+          "interventions": 12,
+          "selected_interventions": 5,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 5
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": -5,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": -81.18954079994,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": -1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 102.05262859998038,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g230_r3_s17_21ce0e0e9d8bfab6",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g230_r3_s17_90c0113e361b7195",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p20_g230_r3_s17_3a919e7c6276907b"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            20,
+            25,
+            35,
+            40,
+            50,
+            60,
+            68,
+            78
+          ],
+          "reviews_before_feasibility": 10,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 7,
+            "move": 3
+          },
+          "next_review_interval_counts_valid": {
+            "10": 8,
+            "5": 2
+          },
+          "execution_budget_counts_valid": {
+            "10": 9,
+            "15": 1
+          },
+          "trigger_counts": {
+            "deadline": 7,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 10
+          },
+          "outcome_counts": {
+            "selected": 3,
+            "no_improving_candidate": 7
+          },
+          "operator_evaluations": 105,
+          "interventions_improving_incumbent": 5,
+          "interventions_reducing_incumbent_hard": 3,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 2,
+          "interventions_improving_primary_progress": 3
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            48,
+            53,
+            56
+          ],
+          "reviews_before_feasibility": 12,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 9,
+            "swap": 3
+          },
+          "next_review_interval_counts_valid": {
+            "5": 12
+          },
+          "execution_budget_counts_valid": {
+            "10": 12
+          },
+          "trigger_counts": {
+            "deadline": 10,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 12
+          },
+          "outcome_counts": {
+            "selected": 5,
+            "no_improving_candidate": 7
+          },
+          "operator_evaluations": 96,
+          "interventions_improving_incumbent": 5,
+          "interventions_reducing_incumbent_hard": 4,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 4
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -5,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -6,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 894,
+          "weighted_objectives": [
+            174,
+            60,
+            330,
+            330
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 57.71226739999838,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1183,
+          "scoring_cache_hits": 17,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 744,
+          "weighted_objectives": [
+            174,
+            60,
+            340,
+            170
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 62.346154500031844,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1166,
+          "scoring_cache_hits": 34,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 4,
+          "api_latency_seconds": 5.83,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 24637,
+          "output_tokens": 312,
+          "thinking_tokens": 0,
+          "total_native_tokens": 24949,
+          "interventions": 4,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 610,
+          "weighted_objectives": [
+            150,
+            60,
+            290,
+            110
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 111.3801122000441,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1162,
+          "scoring_cache_hits": 38,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 10,
+          "api_latency_seconds": 58.283,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 62802,
+          "output_tokens": 729,
+          "thinking_tokens": 0,
+          "total_native_tokens": 63531,
+          "interventions": 5,
+          "selected_interventions": 4,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 4
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -150,
+        "runtime_seconds_change": 4.633887100033462,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -134,
+        "runtime_seconds_change": 49.03395770001225,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_e03cf89e0e4480e1",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_66115f1db867335c",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\pu-cs-fal07\\attempt_1\\multi\\run_n1_p20_g200_r3_s17_80487921bd3e43c5"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            25
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 4,
+          "operator_counts_valid": {
+            "swap": 4
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 3,
+            "20": 1
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "selected": 3,
+            "no_improving_candidate": 1
+          },
+          "operator_evaluations": 4,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 2,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            20,
+            25
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 5,
+          "operator_counts_valid": {
+            "destroy_repair": 4,
+            "swap": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 4
+          },
+          "execution_budget_counts_valid": {
+            "10": 2,
+            "15": 3
+          },
+          "trigger_counts": {
+            "deadline": 4,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 4,
+            "no_improving_candidate": 1
+          },
+          "operator_evaluations": 56,
+          "interventions_improving_incumbent": 4,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 4,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 4
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -16.778523489932887
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -31.767337807606264
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -18.010752688172044
+        }
+      }
+    },
+    {
+      "instance": "lums-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 3,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 3,
+            "unassigned_requests": 0
+          },
+          "internal_total": 745,
+          "weighted_objectives": [
+            96,
+            269,
+            380,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 158.04181409999728,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1007,
+          "scoring_cache_hits": 193,
+          "generations": 41,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 695,
+          "weighted_objectives": [
+            48,
+            267,
+            380,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 175.02414049999788,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1020,
+          "scoring_cache_hits": 180,
+          "generations": 37,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 31,
+          "reviews": 5,
+          "api_calls": 5,
+          "api_latency_seconds": 9.302,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 32641,
+          "output_tokens": 398,
+          "thinking_tokens": 0,
+          "total_native_tokens": 33039,
+          "interventions": 5,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 3,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 3,
+            "unassigned_requests": 0
+          },
+          "internal_total": 745,
+          "weighted_objectives": [
+            96,
+            269,
+            380,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 258.84263190004276,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1026,
+          "scoring_cache_hits": 174,
+          "generations": 37,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 7,
+          "api_calls": 14,
+          "api_latency_seconds": 81.315,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 94981,
+          "output_tokens": 1658,
+          "thinking_tokens": 0,
+          "total_native_tokens": 96639,
+          "interventions": 7,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 14,
+          "operator_scoring_rechecks": 0
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": -3,
+        "feasibility_change": 1,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 16.982326400000602,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 3,
+        "feasibility_change": -1,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 83.81849140004488,
+        "evaluations_change": 0
+      },
+      "seed": 17,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\baseline\\run_n1_p20_g200_r3_s17_ac9c08f3351bcb1d",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\single\\run_n1_p20_g200_r3_s17_f0026a59876b62be",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\multi\\run_n1_p20_g200_r3_s17_f557ea8835eab883"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            11,
+            20,
+            25,
+            35
+          ],
+          "reviews_before_feasibility": 2,
+          "reviews_after_feasibility": 3,
+          "operator_counts_valid": {
+            "move": 1,
+            "destroy_repair": 4
+          },
+          "next_review_interval_counts_valid": {
+            "10": 4,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 3,
+            "15": 2
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 2,
+            "selected": 3
+          },
+          "operator_evaluations": 60,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 3,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 3
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            9,
+            12,
+            17,
+            22,
+            27,
+            32
+          ],
+          "reviews_before_feasibility": 7,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 7
+          },
+          "next_review_interval_counts_valid": {
+            "5": 7
+          },
+          "execution_budget_counts_valid": {
+            "10": 7
+          },
+          "trigger_counts": {
+            "deadline": 5,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 7
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 7
+          },
+          "operator_evaluations": 70,
+          "interventions_improving_incumbent": 0,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 0
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -3,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 3,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 13180,
+          "weighted_objectives": [
+            1050,
+            590,
+            530,
+            11010
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 270.30000669998117,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1124,
+          "scoring_cache_hits": 76,
+          "generations": 44,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 13516,
+          "weighted_objectives": [
+            948,
+            728,
+            750,
+            11090
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 259.51138360000914,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1119,
+          "scoring_cache_hits": 81,
+          "generations": 44,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 6,
+          "api_calls": 6,
+          "api_latency_seconds": 10.59,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 45573,
+          "output_tokens": 468,
+          "thinking_tokens": 0,
+          "total_native_tokens": 46041,
+          "interventions": 6,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 12,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 13699,
+          "weighted_objectives": [
+            1008,
+            571,
+            750,
+            11370
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 392.88057799998205,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1113,
+          "scoring_cache_hits": 87,
+          "generations": 44,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 8,
+          "api_calls": 16,
+          "api_latency_seconds": 93.096,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 123426,
+          "output_tokens": 2005,
+          "thinking_tokens": 0,
+          "total_native_tokens": 125431,
+          "interventions": 8,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 16,
+          "operator_scoring_rechecks": 2
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 336,
+        "runtime_seconds_change": -10.788623099972028,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 183,
+        "runtime_seconds_change": 133.3691943999729,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_e852a55644a90c74",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_e0572547388be96e",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_ad7c09139febdc94"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            18,
+            28,
+            33,
+            38
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 6,
+          "operator_counts_valid": {
+            "move": 1,
+            "swap": 4,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 5,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 4,
+            "20": 1,
+            "15": 1
+          },
+          "trigger_counts": {
+            "deadline": 4,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 6
+          },
+          "outcome_counts": {
+            "selected": 3,
+            "no_improving_candidate": 3
+          },
+          "operator_evaluations": 30,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            18,
+            23,
+            28,
+            33,
+            38,
+            43
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 8,
+          "operator_counts_valid": {
+            "move": 1,
+            "swap": 6,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 5
+          },
+          "execution_budget_counts_valid": {
+            "10": 7,
+            "5": 1
+          },
+          "trigger_counts": {
+            "deadline": 7,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 8
+          },
+          "outcome_counts": {
+            "selected": 2,
+            "no_improving_candidate": 6
+          },
+          "operator_evaluations": 27,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 2.549317147192716
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 3.9377845220030347
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 1.3539508730393608
+        }
+      }
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 187635,
+          "weighted_objectives": [
+            500,
+            215,
+            5220,
+            181700
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 142.942388400028,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1174,
+          "scoring_cache_hits": 26,
+          "generations": 32,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 190166,
+          "weighted_objectives": [
+            500,
+            246,
+            5220,
+            184200
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 113.3321945000207,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1172,
+          "scoring_cache_hits": 28,
+          "generations": 31,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 4,
+          "api_latency_seconds": 6.699,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 26468,
+          "output_tokens": 314,
+          "thinking_tokens": 0,
+          "total_native_tokens": 26782,
+          "interventions": 4,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 0
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 182205,
+          "weighted_objectives": [
+            2450,
+            215,
+            5340,
+            174200
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 159.27252980001504,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1167,
+          "scoring_cache_hits": 33,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 8,
+          "api_latency_seconds": 46.755,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 53988,
+          "output_tokens": 1088,
+          "thinking_tokens": 0,
+          "total_native_tokens": 55076,
+          "interventions": 4,
+          "selected_interventions": 4,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 4
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 2531,
+        "runtime_seconds_change": -29.61019390000729,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -7961,
+        "runtime_seconds_change": 45.94033529999433,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_f516ae9edc64fadb",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_19ac99b454a03428",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_b6ea2d8e5fdeda31"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            13,
+            23,
+            26
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 4,
+          "operator_counts_valid": {
+            "move": 1,
+            "swap": 3
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 2
+          },
+          "execution_budget_counts_valid": {
+            "10": 4
+          },
+          "trigger_counts": {
+            "deadline": 2,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 4
+          },
+          "operator_evaluations": 13,
+          "interventions_improving_incumbent": 0,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 0
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            20,
+            23
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 4,
+          "operator_counts_valid": {
+            "destroy_repair": 4
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 1,
+            "15": 3
+          },
+          "trigger_counts": {
+            "deadline": 2,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "selected": 4
+          },
+          "operator_evaluations": 51,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 3,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 3
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 1.348895461934074
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -2.8939163802062513
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -4.186342458693983
+        }
+      }
+    },
+    {
+      "instance": "yach-fal17",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 3,
+          "hard_components": {
+            "room_conflicts": 3,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 20563,
+          "weighted_objectives": [
+            120,
+            868,
+            6410,
+            13165
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 288.252528299985,
+          "evaluations": 1200,
+          "physical_scoring_calls": 973,
+          "scoring_cache_hits": 227,
+          "generations": 66,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 197,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 4,
+          "hard_components": {
+            "room_conflicts": 4,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 20630,
+          "weighted_objectives": [
+            120,
+            800,
+            6140,
+            13570
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 257.61273860000074,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1024,
+          "scoring_cache_hits": 176,
+          "generations": 53,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 234,
+          "reviews": 11,
+          "api_calls": 11,
+          "api_latency_seconds": 16.42,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 81827,
+          "output_tokens": 861,
+          "thinking_tokens": 0,
+          "total_native_tokens": 82688,
+          "interventions": 11,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 1
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 4,
+          "hard_components": {
+            "room_conflicts": 4,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 20835,
+          "weighted_objectives": [
+            120,
+            800,
+            6270,
+            13645
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 344.68005660001654,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1032,
+          "scoring_cache_hits": 168,
+          "generations": 52,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 242,
+          "reviews": 10,
+          "api_calls": 20,
+          "api_latency_seconds": 117.472,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 148987,
+          "output_tokens": 1461,
+          "thinking_tokens": 0,
+          "total_native_tokens": 150448,
+          "interventions": 10,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 20,
+          "operator_scoring_rechecks": 1
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": -30.63978969998425,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 87.0673180000158,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p12_g200_r2_s42_a7bd3458d98c018c",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p12_g200_r2_s42_90fad61aee51c7c9",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p12_g200_r2_s42_96d01a054bd889d8"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            13,
+            18,
+            21,
+            26,
+            31,
+            36,
+            41,
+            46,
+            51
+          ],
+          "reviews_before_feasibility": 11,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 6,
+            "move": 3,
+            "swap": 2
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 10
+          },
+          "execution_budget_counts_valid": {
+            "10": 11
+          },
+          "trigger_counts": {
+            "deadline": 9,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 11
+          },
+          "outcome_counts": {
+            "selected": 1,
+            "no_improving_candidate": 10
+          },
+          "operator_evaluations": 96,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 1,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            8,
+            18,
+            21,
+            26,
+            31,
+            36,
+            41,
+            46,
+            51
+          ],
+          "reviews_before_feasibility": 10,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 9,
+            "swap": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 8
+          },
+          "execution_budget_counts_valid": {
+            "10": 5,
+            "15": 4,
+            "3": 1
+          },
+          "trigger_counts": {
+            "deadline": 8,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 10
+          },
+          "outcome_counts": {
+            "selected": 1,
+            "no_improving_candidate": 9
+          },
+          "operator_evaluations": 106,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 1,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 2,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "infeasible_hard_tie",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "nbi-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 73078,
+          "weighted_objectives": [
+            37416,
+            6354,
+            40,
+            29268
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 122.0883751999936,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1079,
+          "scoring_cache_hits": 121,
+          "generations": 69,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 72394,
+          "weighted_objectives": [
+            38100,
+            6306,
+            40,
+            27948
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 151.82276760000968,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1036,
+          "scoring_cache_hits": 164,
+          "generations": 66,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 10,
+          "api_calls": 10,
+          "api_latency_seconds": 22.346,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 63768,
+          "output_tokens": 774,
+          "thinking_tokens": 0,
+          "total_native_tokens": 64542,
+          "interventions": 10,
+          "selected_interventions": 6,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 20,
+          "operator_scoring_rechecks": 6
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 72204,
+          "weighted_objectives": [
+            37748,
+            6264,
+            40,
+            28152
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 316.72505289997207,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1033,
+          "scoring_cache_hits": 167,
+          "generations": 67,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 2,
+          "reviews": 12,
+          "api_calls": 24,
+          "api_latency_seconds": 140.285,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 154961,
+          "output_tokens": 2089,
+          "thinking_tokens": 0,
+          "total_native_tokens": 157050,
+          "interventions": 12,
+          "selected_interventions": 6,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 24,
+          "operator_scoring_rechecks": 6
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -684,
+        "runtime_seconds_change": 29.734392400016077,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -190,
+        "runtime_seconds_change": 164.9022852999624,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p12_g200_r2_s42_4383348ccf08c7c3",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p12_g200_r2_s42_333a2e99780f979a",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p12_g200_r2_s42_31f0e80c6a3ac42b"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            25,
+            30,
+            35,
+            44,
+            49,
+            54,
+            57,
+            62
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 10,
+          "operator_counts_valid": {
+            "move": 7,
+            "swap": 3
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 7
+          },
+          "execution_budget_counts_valid": {
+            "10": 10
+          },
+          "trigger_counts": {
+            "deadline": 8,
+            "low_diversity": 1,
+            "stagnation": 4
+          },
+          "validation_counts": {
+            "valid_action": 10
+          },
+          "outcome_counts": {
+            "selected": 6,
+            "no_improving_candidate": 4
+          },
+          "operator_evaluations": 77,
+          "interventions_improving_incumbent": 5,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 5,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 5
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            58
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 12,
+          "operator_counts_valid": {
+            "destroy_repair": 7,
+            "swap": 5
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 11
+          },
+          "execution_budget_counts_valid": {
+            "10": 12
+          },
+          "trigger_counts": {
+            "deadline": 10,
+            "low_diversity": 1,
+            "stagnation": 3
+          },
+          "validation_counts": {
+            "valid_action": 12
+          },
+          "outcome_counts": {
+            "selected": 6,
+            "no_improving_candidate": 6
+          },
+          "operator_evaluations": 75,
+          "interventions_improving_incumbent": 4,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 4,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 4
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.9359862065190618
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -1.195982374996579
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.26245268944940187
+        }
+      }
+    },
+    {
+      "instance": "mary-fal18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 23322,
+          "weighted_objectives": [
+            2214,
+            1168,
+            1400,
+            18540
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 208.14035090000834,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1037,
+          "scoring_cache_hits": 63,
+          "generations": 29,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 23169,
+          "weighted_objectives": [
+            2056,
+            1173,
+            1400,
+            18540
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 145.04372030001832,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1044,
+          "scoring_cache_hits": 56,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 3,
+          "api_calls": 3,
+          "api_latency_seconds": 4.94,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 18273,
+          "output_tokens": 233,
+          "thinking_tokens": 0,
+          "total_native_tokens": 18506,
+          "interventions": 3,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 6,
+          "operator_scoring_rechecks": 1
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 23031,
+          "weighted_objectives": [
+            2212,
+            1174,
+            1365,
+            18280
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 189.5657434000168,
+          "evaluations": 1100,
+          "physical_scoring_calls": 1050,
+          "scoring_cache_hits": 50,
+          "generations": 27,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 8,
+          "api_latency_seconds": 45.67,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 49371,
+          "output_tokens": 613,
+          "thinking_tokens": 0,
+          "total_native_tokens": 49984,
+          "interventions": 4,
+          "selected_interventions": 2,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 2
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -153,
+        "runtime_seconds_change": -63.09663059999002,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -138,
+        "runtime_seconds_change": 44.52202309999848,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_60cfcfe9f52d8044",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_b4f6453a4ae35194",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_ba892a0adf486809"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            20
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 3,
+          "operator_counts_valid": {
+            "swap": 1,
+            "move": 2
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 3
+          },
+          "trigger_counts": {
+            "deadline": 3
+          },
+          "validation_counts": {
+            "valid_action": 3
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 2,
+            "selected": 1
+          },
+          "operator_evaluations": 21,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            20,
+            25
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 4,
+          "operator_counts_valid": {
+            "swap": 3,
+            "destroy_repair": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 2,
+            "5": 2
+          },
+          "execution_budget_counts_valid": {
+            "10": 4
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 2,
+            "selected": 2
+          },
+          "operator_evaluations": 13,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 2,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 2
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.6560329302804219
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -1.2477489066117828
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -0.5956234623850836
+        }
+      }
+    },
+    {
+      "instance": "bet-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": false,
+          "hard": 36,
+          "hard_components": {
+            "room_conflicts": 28,
+            "room_unavailable": 1,
+            "hard_distributions": 7,
+            "unassigned_requests": 0
+          },
+          "internal_total": 416273,
+          "weighted_objectives": [
+            17400,
+            10757,
+            356040,
+            32076
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 874.4847150999703,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1862,
+          "scoring_cache_hits": 438,
+          "generations": 86,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": false,
+          "hard": 35,
+          "hard_components": {
+            "room_conflicts": 22,
+            "room_unavailable": 4,
+            "hard_distributions": 9,
+            "unassigned_requests": 0
+          },
+          "internal_total": 417952,
+          "weighted_objectives": [
+            20280,
+            10624,
+            354960,
+            32088
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 757.0702752999496,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1516,
+          "scoring_cache_hits": 784,
+          "generations": 85,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 12,
+          "api_calls": 12,
+          "api_latency_seconds": 21.002,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 90554,
+          "output_tokens": 947,
+          "thinking_tokens": 0,
+          "total_native_tokens": 91501,
+          "interventions": 12,
+          "selected_interventions": 3,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 22,
+          "operator_scoring_rechecks": 3
+        },
+        "multi": {
+          "feasible_internal": false,
+          "hard": 33,
+          "hard_components": {
+            "room_conflicts": 25,
+            "room_unavailable": 1,
+            "hard_distributions": 7,
+            "unassigned_requests": 0
+          },
+          "internal_total": 417285,
+          "weighted_objectives": [
+            18360,
+            10743,
+            356640,
+            31542
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 1121.3309541000053,
+          "evaluations": 2300,
+          "physical_scoring_calls": 1668,
+          "scoring_cache_hits": 632,
+          "generations": 81,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 12,
+          "api_calls": 24,
+          "api_latency_seconds": 140.196,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 178926,
+          "output_tokens": 2486,
+          "thinking_tokens": 0,
+          "total_native_tokens": 181412,
+          "interventions": 12,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 24,
+          "operator_scoring_rechecks": 1
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": -1,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": -117.41443980002077,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": -2,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": null,
+        "runtime_seconds_change": 364.26067880005576,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g230_r3_s42_8bfaa8ba4ccd6ec2",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g230_r3_s42_065cb485d119ab4d",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p20_g230_r3_s42_dbe19d55b8b089f2"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            15,
+            25,
+            35,
+            40,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80
+          ],
+          "reviews_before_feasibility": 12,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "move": 3,
+            "destroy_repair": 5,
+            "swap": 4
+          },
+          "next_review_interval_counts_valid": {
+            "10": 6,
+            "5": 6
+          },
+          "execution_budget_counts_valid": {
+            "10": 12
+          },
+          "trigger_counts": {
+            "deadline": 10,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 12
+          },
+          "outcome_counts": {
+            "selected": 3,
+            "no_improving_candidate": 9
+          },
+          "operator_evaluations": 92,
+          "interventions_improving_incumbent": 4,
+          "interventions_reducing_incumbent_hard": 3,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 3
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            9,
+            19,
+            24,
+            29,
+            34,
+            39,
+            44,
+            47,
+            52,
+            57,
+            62
+          ],
+          "reviews_before_feasibility": 12,
+          "reviews_after_feasibility": 0,
+          "operator_counts_valid": {
+            "destroy_repair": 9,
+            "swap": 3
+          },
+          "next_review_interval_counts_valid": {
+            "5": 11,
+            "10": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 12
+          },
+          "trigger_counts": {
+            "deadline": 10,
+            "low_diversity": 1,
+            "stagnation": 1
+          },
+          "validation_counts": {
+            "valid_action": 12
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 11,
+            "selected": 1
+          },
+          "operator_evaluations": 111,
+          "interventions_improving_incumbent": 2,
+          "interventions_reducing_incumbent_hard": 1,
+          "interventions_improving_feasible_soft": 0,
+          "interventions_lowering_infeasible_soft_only": 1,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -1,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -3,
+          "soft_change_percent_if_both_feasible": null
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": -2,
+          "soft_change_percent_if_both_feasible": null
+        }
+      }
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 880,
+          "weighted_objectives": [
+            132,
+            108,
+            420,
+            220
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 59.036432399996556,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1183,
+          "scoring_cache_hits": 17,
+          "generations": 29,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 820,
+          "weighted_objectives": [
+            132,
+            108,
+            420,
+            160
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 67.24896040000021,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1180,
+          "scoring_cache_hits": 20,
+          "generations": 28,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 4,
+          "api_calls": 4,
+          "api_latency_seconds": 5.928,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 24816,
+          "output_tokens": 306,
+          "thinking_tokens": 0,
+          "total_native_tokens": 25122,
+          "interventions": 4,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 8,
+          "operator_scoring_rechecks": 1
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 830,
+          "weighted_objectives": [
+            132,
+            108,
+            400,
+            190
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 126.58629200002179,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1155,
+          "scoring_cache_hits": 45,
+          "generations": 29,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 0,
+          "reviews": 5,
+          "api_calls": 10,
+          "api_latency_seconds": 60.5,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 62960,
+          "output_tokens": 930,
+          "thinking_tokens": 0,
+          "total_native_tokens": 63890,
+          "interventions": 5,
+          "selected_interventions": 1,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 10,
+          "operator_scoring_rechecks": 1
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -60,
+        "runtime_seconds_change": 8.212528000003658,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": 10,
+        "runtime_seconds_change": 59.33733160002157,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_8aa2d29cb3238299",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_4360b603ab7eaaf3",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p20_g200_r3_s42_b951436d21695c9d"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            19,
+            24
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 4,
+          "operator_counts_valid": {
+            "move": 3,
+            "swap": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 3,
+            "5": 1
+          },
+          "execution_budget_counts_valid": {
+            "10": 3,
+            "15": 1
+          },
+          "trigger_counts": {
+            "deadline": 1,
+            "stagnation": 3
+          },
+          "validation_counts": {
+            "valid_action": 4
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 3,
+            "selected": 1
+          },
+          "operator_evaluations": 34,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            10,
+            15,
+            18,
+            23
+          ],
+          "reviews_before_feasibility": 0,
+          "reviews_after_feasibility": 5,
+          "operator_counts_valid": {
+            "swap": 4,
+            "move": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 4
+          },
+          "execution_budget_counts_valid": {
+            "10": 5
+          },
+          "trigger_counts": {
+            "deadline": 3,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 5
+          },
+          "outcome_counts": {
+            "selected": 1,
+            "no_improving_candidate": 4
+          },
+          "operator_evaluations": 20,
+          "interventions_improving_incumbent": 1,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 1,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 1
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -6.818181818181818
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -5.681818181818182
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "left_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": 1.2195121951219512
+        }
+      }
+    },
+    {
+      "instance": "lums-spr18",
+      "methods": {
+        "baseline": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 914,
+          "weighted_objectives": [
+            144,
+            280,
+            490,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 154.6381592999678,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1113,
+          "scoring_cache_hits": 87,
+          "generations": 41,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 55,
+          "reviews": 0,
+          "api_calls": 0,
+          "api_latency_seconds": 0.0,
+          "provider": null,
+          "api_failures": {},
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "thinking_tokens": 0,
+          "total_native_tokens": 0,
+          "interventions": 0,
+          "selected_interventions": 0,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 0,
+          "operator_scoring_rechecks": 0
+        },
+        "single": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 743,
+          "weighted_objectives": [
+            72,
+            266,
+            405,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 172.6903278999962,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1074,
+          "scoring_cache_hits": 126,
+          "generations": 38,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 55,
+          "reviews": 7,
+          "api_calls": 7,
+          "api_latency_seconds": 23.531,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 44319,
+          "output_tokens": 546,
+          "thinking_tokens": 0,
+          "total_native_tokens": 44865,
+          "interventions": 7,
+          "selected_interventions": 5,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 14,
+          "operator_scoring_rechecks": 5
+        },
+        "multi": {
+          "feasible_internal": true,
+          "hard": 0,
+          "hard_components": {
+            "room_conflicts": 0,
+            "room_unavailable": 0,
+            "hard_distributions": 0,
+            "unassigned_requests": 0
+          },
+          "internal_total": 718,
+          "weighted_objectives": [
+            48,
+            280,
+            390,
+            0
+          ],
+          "official_status": "not_run",
+          "runtime_seconds": 227.61423159996048,
+          "evaluations": 1200,
+          "physical_scoring_calls": 1054,
+          "scoring_cache_hits": 146,
+          "generations": 38,
+          "evaluation_cap_reached": true,
+          "time_cap_reached": false,
+          "room_chain_scoring_calls": 55,
+          "reviews": 6,
+          "api_calls": 12,
+          "api_latency_seconds": 72.646,
+          "provider": "gemini",
+          "api_failures": {},
+          "input_tokens": 76009,
+          "output_tokens": 1094,
+          "thinking_tokens": 0,
+          "total_native_tokens": 77103,
+          "interventions": 6,
+          "selected_interventions": 4,
+          "fallback_no_op": 0,
+          "region_scoring_calls": 12,
+          "operator_scoring_rechecks": 4
+        }
+      },
+      "single_minus_baseline": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -171,
+        "runtime_seconds_change": 18.05216860002838,
+        "evaluations_change": 0
+      },
+      "multi_minus_single": {
+        "hard_change": 0,
+        "feasibility_change": 0,
+        "internal_total_change_if_both_feasible": -25,
+        "runtime_seconds_change": 54.923903699964285,
+        "evaluations_change": 0
+      },
+      "seed": 42,
+      "runs": {
+        "baseline": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_a3369db22dc734dd",
+        "single": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_04548a86b77c7f29",
+        "multi": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_dfab50197e9ca2a7"
+      },
+      "controller_behavior": {
+        "single": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            13,
+            18,
+            23,
+            28,
+            31,
+            36
+          ],
+          "reviews_before_feasibility": 1,
+          "reviews_after_feasibility": 6,
+          "operator_counts_valid": {
+            "destroy_repair": 6,
+            "move": 1
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 6
+          },
+          "execution_budget_counts_valid": {
+            "10": 7
+          },
+          "trigger_counts": {
+            "deadline": 5,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 7
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 2,
+            "selected": 5
+          },
+          "operator_evaluations": 70,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 3,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 3
+        },
+        "multi": {
+          "trace_available": true,
+          "review_generations": [
+            5,
+            13,
+            18,
+            23,
+            28,
+            33
+          ],
+          "reviews_before_feasibility": 1,
+          "reviews_after_feasibility": 5,
+          "operator_counts_valid": {
+            "destroy_repair": 6
+          },
+          "next_review_interval_counts_valid": {
+            "10": 1,
+            "5": 5
+          },
+          "execution_budget_counts_valid": {
+            "10": 6
+          },
+          "trigger_counts": {
+            "deadline": 5,
+            "low_diversity": 1,
+            "stagnation": 2
+          },
+          "validation_counts": {
+            "valid_action": 6
+          },
+          "outcome_counts": {
+            "no_improving_candidate": 2,
+            "selected": 4
+          },
+          "operator_evaluations": 60,
+          "interventions_improving_incumbent": 3,
+          "interventions_reducing_incumbent_hard": 0,
+          "interventions_improving_feasible_soft": 3,
+          "interventions_lowering_infeasible_soft_only": 0,
+          "interventions_improving_primary_progress": 3
+        }
+      },
+      "evaluation_matched_triple": true,
+      "pairwise": {
+        "single_vs_baseline": {
+          "left": "baseline",
+          "right": "single",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -18.708971553610503
+        },
+        "multi_vs_baseline": {
+          "left": "baseline",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -21.444201312910284
+        },
+        "multi_vs_single": {
+          "left": "single",
+          "right": "multi",
+          "quality_outcome": "right_better",
+          "evaluation_matched": true,
+          "hard_change": 0,
+          "soft_change_percent_if_both_feasible": -3.3647375504710633
+        }
+      }
+    }
+  ],
+  "missing": [
+    {
+      "instance": "tg-spr18",
+      "seed": 17,
+      "incomplete_or_missing": [
+        "baseline",
+        "single",
+        "multi"
+      ],
+      "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
+    },
+    {
+      "instance": "tg-spr18",
+      "seed": 42,
+      "incomplete_or_missing": [
+        "baseline",
+        "single",
+        "multi"
+      ],
+      "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
+    }
+  ],
+  "excluded": [],
+  "all_attempts": [
+    {
+      "instance": "muni-fi-spr16",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_30c1b4d47c37ec2e",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 229.42463320004754,
+      "hard": 0,
+      "internal_total": 12688,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_48260d3f0edaa474",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 264.4150793000008,
+      "hard": 0,
+      "internal_total": 12495,
+      "api_calls": 6,
+      "reported_native_tokens": 46192,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-2\\multi\\run_n1_p20_g200_r3_s17_6a5642e264eb9f3d",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 242.77881629997864,
+      "hard": 0,
+      "internal_total": 12462,
+      "api_calls": 14,
+      "reported_native_tokens": 112018,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_212f6c5e836fd646",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 141.82358939998085,
+      "hard": 0,
+      "internal_total": 200344,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_c01e3cf78dce010c",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 165.31901650002692,
+      "hard": 0,
+      "internal_total": 182660,
+      "api_calls": 3,
+      "reported_native_tokens": 19414,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-2\\multi\\run_n1_p20_g200_r3_s17_1b10f10367e3140e",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 144.10387489997083,
+      "hard": 0,
+      "internal_total": 176712,
+      "api_calls": 12,
+      "reported_native_tokens": 79646,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p12_g200_r2_s17_05fdc8a40af5a560",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 269.7629309000331,
+      "hard": 2,
+      "internal_total": 22016,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p12_g200_r2_s17_c59718f074c0d395",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 341.6819790999871,
+      "hard": 2,
+      "internal_total": 22016,
+      "api_calls": 10,
+      "reported_native_tokens": 73247,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p12_g200_r2_s17_0486a2bdd5ee292c",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 302.9210226999712,
+      "hard": 2,
+      "internal_total": 21254,
+      "api_calls": 22,
+      "reported_native_tokens": 161660,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p12_g200_r2_s17_e485a747fba90d00",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 162.15794159995858,
+      "hard": 0,
+      "internal_total": 67454,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p12_g200_r2_s17_c4eec41981ba238c",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 200.23607520002406,
+      "hard": 0,
+      "internal_total": 68909,
+      "api_calls": 11,
+      "reported_native_tokens": 72298,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p12_g200_r2_s17_12dd82305b847162",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 273.37479910004186,
+      "hard": 0,
+      "internal_total": 68935,
+      "api_calls": 22,
+      "reported_native_tokens": 145445,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_d4faf35661931be8",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1100,
+      "runtime_seconds": 241.16117809998104,
+      "hard": 0,
+      "internal_total": 22728,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\retry_1\\single\\run_n1_p20_g200_r3_s17_1339518f78c45d89",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1100,
+      "runtime_seconds": 254.5408424999914,
+      "hard": 0,
+      "internal_total": 22623,
+      "api_calls": 5,
+      "reported_native_tokens": 31233,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p20_g200_r3_s17_187969c2a2fb6c5f",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1100,
+      "runtime_seconds": 296.46142219996545,
+      "hard": 0,
+      "internal_total": 22762,
+      "api_calls": 10,
+      "reported_native_tokens": 62559,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g230_r3_s17_21ce0e0e9d8bfab6",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 2300,
+      "runtime_seconds": 1293.3727240999578,
+      "hard": 34,
+      "internal_total": 420508,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g230_r3_s17_90c0113e361b7195",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 2300,
+      "runtime_seconds": 1212.1831833000178,
+      "hard": 29,
+      "internal_total": 420320,
+      "api_calls": 10,
+      "reported_native_tokens": 77889,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\17-1\\multi\\run_n1_p20_g230_r3_s17_3a919e7c6276907b",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 2300,
+      "runtime_seconds": 1314.2358118999982,
+      "hard": 28,
+      "internal_total": 418470,
+      "api_calls": 24,
+      "reported_native_tokens": 190931,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\run_n1_p20_g200_r3_s17_e03cf89e0e4480e1",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 57.71226739999838,
+      "hard": 0,
+      "internal_total": 894,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\run_n1_p20_g200_r3_s17_66115f1db867335c",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 62.346154500031844,
+      "hard": 0,
+      "internal_total": 744,
+      "api_calls": 4,
+      "reported_native_tokens": 24949,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\pu-cs-fal07\\attempt_1\\multi\\run_n1_p20_g200_r3_s17_80487921bd3e43c5",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 111.3801122000441,
+      "hard": 0,
+      "internal_total": 610,
+      "api_calls": 10,
+      "reported_native_tokens": 63531,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\baseline\\run_n1_p20_g200_r3_s17_ac9c08f3351bcb1d",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 158.04181409999728,
+      "hard": 3,
+      "internal_total": 745,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\single\\run_n1_p20_g200_r3_s17_f0026a59876b62be",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 175.02414049999788,
+      "hard": 0,
+      "internal_total": 695,
+      "api_calls": 5,
+      "reported_native_tokens": 33039,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\expanded_campaign\\seed_17\\lums-spr18\\attempt_1\\multi\\run_n1_p20_g200_r3_s17_f557ea8835eab883",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 258.84263190004276,
+      "hard": 3,
+      "internal_total": 745,
+      "api_calls": 14,
+      "reported_native_tokens": 96639,
+      "api_failures": {},
+      "seed": 17
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_e852a55644a90c74",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 270.30000669998117,
+      "hard": 0,
+      "internal_total": 13180,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_e0572547388be96e",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 259.51138360000914,
+      "hard": 0,
+      "internal_total": 13516,
+      "api_calls": 6,
+      "reported_native_tokens": 46041,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "muni-fi-spr16",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_ad7c09139febdc94",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 392.88057799998205,
+      "hard": 0,
+      "internal_total": 13699,
+      "api_calls": 16,
+      "reported_native_tokens": 125431,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_f516ae9edc64fadb",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 142.942388400028,
+      "hard": 0,
+      "internal_total": 187635,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_19ac99b454a03428",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 113.3321945000207,
+      "hard": 0,
+      "internal_total": 190166,
+      "api_calls": 4,
+      "reported_native_tokens": 26782,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "muni-fsps-spr17",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_b6ea2d8e5fdeda31",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 159.27252980001504,
+      "hard": 0,
+      "internal_total": 182205,
+      "api_calls": 8,
+      "reported_native_tokens": 55076,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p12_g200_r2_s42_a7bd3458d98c018c",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 288.252528299985,
+      "hard": 3,
+      "internal_total": 20563,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p12_g200_r2_s42_90fad61aee51c7c9",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 257.61273860000074,
+      "hard": 4,
+      "internal_total": 20630,
+      "api_calls": 11,
+      "reported_native_tokens": 82688,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "yach-fal17",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p12_g200_r2_s42_96d01a054bd889d8",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 344.68005660001654,
+      "hard": 4,
+      "internal_total": 20835,
+      "api_calls": 20,
+      "reported_native_tokens": 150448,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p12_g200_r2_s42_4383348ccf08c7c3",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 122.0883751999936,
+      "hard": 0,
+      "internal_total": 73078,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p12_g200_r2_s42_333a2e99780f979a",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 151.82276760000968,
+      "hard": 0,
+      "internal_total": 72394,
+      "api_calls": 10,
+      "reported_native_tokens": 64542,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "nbi-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p12_g200_r2_s42_31f0e80c6a3ac42b",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 316.72505289997207,
+      "hard": 0,
+      "internal_total": 72204,
+      "api_calls": 24,
+      "reported_native_tokens": 157050,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_60cfcfe9f52d8044",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1100,
+      "runtime_seconds": 208.14035090000834,
+      "hard": 0,
+      "internal_total": 23322,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_b4f6453a4ae35194",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1100,
+      "runtime_seconds": 145.04372030001832,
+      "hard": 0,
+      "internal_total": 23169,
+      "api_calls": 3,
+      "reported_native_tokens": 18506,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "mary-fal18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_ba892a0adf486809",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1100,
+      "runtime_seconds": 189.5657434000168,
+      "hard": 0,
+      "internal_total": 23031,
+      "api_calls": 8,
+      "reported_native_tokens": 49984,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g230_r3_s42_8bfaa8ba4ccd6ec2",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 2300,
+      "runtime_seconds": 874.4847150999703,
+      "hard": 36,
+      "internal_total": 416273,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g230_r3_s42_065cb485d119ab4d",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 2300,
+      "runtime_seconds": 757.0702752999496,
+      "hard": 35,
+      "internal_total": 417952,
+      "api_calls": 12,
+      "reported_native_tokens": 91501,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "bet-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p20_g230_r3_s42_dbe19d55b8b089f2",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 2300,
+      "runtime_seconds": 1121.3309541000053,
+      "hard": 33,
+      "internal_total": 417285,
+      "api_calls": 24,
+      "reported_native_tokens": 181412,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_8aa2d29cb3238299",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 59.036432399996556,
+      "hard": 0,
+      "internal_total": 880,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_4360b603ab7eaaf3",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 67.24896040000021,
+      "hard": 0,
+      "internal_total": 820,
+      "api_calls": 4,
+      "reported_native_tokens": 25122,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "pu-cs-fal07",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-2\\multi\\run_n1_p20_g200_r3_s42_b951436d21695c9d",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 126.58629200002179,
+      "hard": 0,
+      "internal_total": 830,
+      "api_calls": 10,
+      "reported_native_tokens": 63890,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "baseline",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\NSGA-III\\results_itc2019\\x\\42-1\\baseline\\run_n1_p20_g200_r3_s42_a3369db22dc734dd",
+      "completion_status": "completed",
+      "controller_status": null,
+      "evaluations": 1200,
+      "runtime_seconds": 154.6381592999678,
+      "hard": 0,
+      "internal_total": 914,
+      "api_calls": 0,
+      "reported_native_tokens": 0,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "single",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Single-Agent Controller\\results_itc2019\\x\\42-1\\single\\run_n1_p20_g200_r3_s42_04548a86b77c7f29",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 172.6903278999962,
+      "hard": 0,
+      "internal_total": 743,
+      "api_calls": 7,
+      "reported_native_tokens": 44865,
+      "api_failures": {},
+      "seed": 42
+    },
+    {
+      "instance": "lums-spr18",
+      "method": "multi",
+      "folder": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Multi-Agent Controller\\results_itc2019\\x\\42-1\\multi\\run_n1_p20_g200_r3_s42_dfab50197e9ca2a7",
+      "completion_status": "completed",
+      "controller_status": "completed",
+      "evaluations": 1200,
+      "runtime_seconds": 227.61423159996048,
+      "hard": 0,
+      "internal_total": 718,
+      "api_calls": 12,
+      "reported_native_tokens": 77103,
+      "api_failures": {},
+      "seed": 42
+    }
+  ],
+  "all_attempt_totals": {
+    "api_calls": 361,
+    "reported_native_tokens": 2551131,
+    "incomplete_runs": 0,
+    "unpublished_runs": 1,
+    "usage_has_unknown_unpublished_component": true,
+    "usage_has_unknown_removed_component": true,
+    "scope": "Retained attempts only; deleted capped tg usage excluded. Previously deleted API-failure usage remains unknown."
+  },
+  "interpretation": [
+    "Sequential local jobs at shared caps; not an equal-runtime comparison.",
+    "Original seed-17 baseline/single cells reused only with matching inputs, sources and settings.",
+    "Quality counts use archived representative endpoints, not Pareto-front dominance or hypervolume.",
+    "Do not rank soft scores at tied positive hard violations or average raw penalties across instances.",
+    "Two GA seeds and non-deterministic API responses: descriptive, not a significance claim.",
+    "Internal evaluator only; no official validator submission has been performed.",
+    "Failed API attempts were deleted at user request; comparisons use completed runs only; historical usage includes an unknown deleted component.",
+    "Reported tokens may omit usage from failed API requests.",
+    "Unpublished failures are retained separately, never counted as completed cells or quality losses. Their API calls/tokens may be unknown and are not included in the reported totals.",
+    "Superseded time-capped tg-spr18 results for seeds 17 and 42 were removed at user request; use tg_no_timecap_comparison.json for the completed 1200-evaluation results. Aggregates cover retained original-campaign records only."
+  ],
+  "profile_sha256": "597577b1cfccf6028554281a8263979d362b81d866b897e40d29832ac8ebc96d",
+  "profile_snapshot": {
+    "schema_version": 1,
+    "name": "nine-instance-two-seed-controller-check",
+    "solver": {
+      "population": 20,
+      "partitions": 3,
+      "mutation_rate": 0.35,
+      "mutation_fraction": 0.01,
+      "crossover_rate": 0.7,
+      "initial_repair_steps": 12,
+      "initial_pair_trials": 3,
+      "offspring_repair_steps": 8,
+      "offspring_pair_trials": 2,
+      "inner_partitions": null,
+      "inner_scale": 0.5
+    },
+    "repair": {
+      "interval": 5,
+      "near_feasible_hard": 12,
+      "neighborhood_classes": 32,
+      "neighborhood_options": 32,
+      "neighborhood_seconds": 8,
+      "neighborhood_deterministic_limit": 0.5,
+      "fallback_seconds": 2,
+      "fallback_evaluations": 128,
+      "failure_cooldown": 5,
+      "max_failure_cooldown": 20
+    },
+    "controller": {
+      "review_interval": 10,
+      "warmup_generations": 5,
+      "stagnation_window": 5,
+      "min_review_interval": 3,
+      "max_review_interval": 20,
+      "diversity_threshold": 0.2,
+      "diversity_recovery_threshold": 0.3,
+      "max_regions": 6,
+      "region_size": 5,
+      "max_operator_evaluations": 24,
+      "max_reviews": 12,
+      "api_timeout_seconds": 15,
+      "max_output_tokens": 1024
+    },
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "free_tier_only": true,
+      "min_request_interval_seconds": 10.0,
+      "max_input_characters": 60000
+    },
+    "instances": {
+      "muni-fi-spr16": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 840
+      },
+      "muni-fsps-spr17": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 630
+      },
+      "yach-fal17": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 1050,
+        "population": 12,
+        "partitions": 2,
+        "repair_neighborhood_seconds": 15,
+        "repair_neighborhood_deterministic_limit": 2
+      },
+      "nbi-spr18": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 750,
+        "population": 12,
+        "partitions": 2
+      },
+      "mary-fal18": {
+        "generations": 200,
+        "evaluations": 1100,
+        "time_limit_seconds": 810
+      },
+      "bet-spr18": {
+        "generations": 230,
+        "evaluations": 2300,
+        "time_limit_seconds": 2880
+      },
+      "pu-cs-fal07": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 1200
+      },
+      "lums-spr18": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 1200
+      },
+      "tg-spr18": {
+        "generations": 200,
+        "evaluations": 1200,
+        "time_limit_seconds": 1200
+      }
+    },
+    "provenance": {
+      "parent_profile": "profiles/pilot.json",
+      "original_six": "All search, repair, review, evaluation and wall-clock caps are unchanged; completed seed-17 runs may be reused only with matching source, data and configuration hashes.",
+      "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students), lums-spr18 (487 classes, 73 rooms, no students), tg-spr18 (676 classes, 24 rooms, no students). Different institutions and sizes; not a representative sample of all 36 instances.",
+      "new_budget_rule": "Provisional engineering caps fixed before examining controller outcomes: the existing default population 20 / partitions 3, 200 generations, 1200 logical evaluations, 1200 seconds per method. Not tuned or claimed optimal.",
+      "seeds": [
+        17,
+        42
+      ],
+      "pipeline_order": [
+        "baseline",
+        "single",
+        "multi"
+      ],
+      "comparison_rule": "Descriptive paired endpoints at shared caps. Rank soft scores only when both endpoints are feasible. Mark evaluation-censored runs separately; never treat API failures as losses.",
+      "multi_budget_rule": "Same maximum 12 reviews and operator evaluation cap; up to 24 requests for Inspector then Planner, versus up to 12 single-agent requests. Record both calls and pacing latency.",
+      "retry_rule": "Preserve every attempt. At most one whole-run retry for a transient service/network/timeout failure; never retry quota/auth/billing failures automatically, and never select a completed attempt by score."
+    }
+  },
+  "unpublished_attempts": [
+    {
+      "instance": "muni-fi-spr16",
+      "seed": 17,
+      "method": "multi",
+      "attempt": 1,
+      "status": "incomplete_output_failure",
+      "phase": "writing_controller_trace_after_search_and_final_score_check",
+      "log": "solver_checks/expanded_pilot/s17_muni-fi-spr16_multi_attempt1.log",
+      "error_type": "FileNotFoundError",
+      "failed_path_characters": 261,
+      "windows_long_paths_enabled": false,
+      "cause": "Nested output and staging paths exceed the legacy Windows path limit.",
+      "staging_retention": "The existing main.py finally block removed the unpublished staging directory after failure. No completed run_config.json/summary.json was published for this attempt; the error log remains.",
+      "comparison_eligible": false,
+      "score": null,
+      "evaluations": null,
+      "api_calls": null,
+      "reported_native_tokens": null,
+      "usage_note": "The attempt may have used Gemini before output failed. Its call/token totals were not preserved; aggregate usage from published attempts excludes this unknown amount.",
+      "retry_authorized": true,
+      "authorization": "The user explicitly approved shorter output paths, rerunning this failed cell, and continuing the same campaign.",
+      "continuation": "One approved retry under a new attempt number and compact output root. Retain this failure/log, do not count it as a model loss, and do not change solver/model/profile/prompt."
+    }
+  ],
+  "artifact_audit": {
+    "checked_attempts": 48,
+    "passed": true,
+    "failures": [],
+    "scope": "Internal accounting, role/token traces, export hash/class IDs; not official validation."
+  }
+}

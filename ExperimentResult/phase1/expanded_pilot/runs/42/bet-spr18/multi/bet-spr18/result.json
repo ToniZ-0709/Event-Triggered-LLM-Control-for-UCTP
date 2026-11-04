@@ -1,0 +1,273 @@
+{
+  "instance": "bet-spr18",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\bet-spr18.xml",
+  "classes": 1083,
+  "rooms": 63,
+  "courses": 357,
+  "students": 2921,
+  "distributions": 1418,
+  "runtime_seconds": 1121.3309541000053,
+  "evaluations": 2300,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 1792,
+    "routine_repair": 508,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 2300,
+    "physical_calls": 1668,
+    "cache_hits": 632,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 64.323,
+      "offspring_repair": 585.833,
+      "objective_evaluation": 279.188
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 1600,
+      "objective_evaluation": 1736
+    }
+  },
+  "feasible": false,
+  "score": {
+    "hard": 33,
+    "time": 306,
+    "room": 10743,
+    "distribution": 11888,
+    "student": 5257,
+    "weighted": [
+      18360,
+      10743,
+      356640,
+      31542
+    ],
+    "total": 417285,
+    "room_conflicts": 25,
+    "room_unavailable": 1,
+    "hard_distributions": 7,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 230,
+    "partitions": 3,
+    "seed": 42,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 2300
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": false,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g230_r3_s42_dbe19d55b8b089f2",
+  "monitor": {
+    "generations_recorded": 81,
+    "time_limit_seconds": 2880.0,
+    "elapsed_seconds": 1121.796,
+    "best_observed_hard": 33,
+    "best_observed_internal_total": 417285,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 12,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 18,
+    "room_plateau_events": [
+      {
+        "generation": 5,
+        "source_hard": 63,
+        "source_room_conflicts": 52,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 10,
+        "search_steps": 1,
+        "restarts": 1,
+        "scoring_calls": 2,
+        "elapsed_seconds": 0.631,
+        "status": "selected",
+        "candidate_hard": 62
+      },
+      {
+        "generation": 10,
+        "source_hard": 51,
+        "source_room_conflicts": 41,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 9,
+        "search_steps": 25,
+        "restarts": 3,
+        "scoring_calls": 2,
+        "elapsed_seconds": 2.166,
+        "status": "selected",
+        "candidate_hard": 50
+      },
+      {
+        "generation": 15,
+        "source_hard": 44,
+        "source_room_conflicts": 34,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 9,
+        "search_steps": 47,
+        "restarts": 8,
+        "scoring_calls": 2,
+        "elapsed_seconds": 3.772,
+        "status": "selected",
+        "candidate_hard": 43
+      },
+      {
+        "generation": 20,
+        "source_hard": 41,
+        "source_room_conflicts": 32,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 1,
+        "restarts": 1,
+        "scoring_calls": 2,
+        "elapsed_seconds": 0.214,
+        "status": "selected",
+        "candidate_hard": 40
+      },
+      {
+        "generation": 25,
+        "source_hard": 40,
+        "source_room_conflicts": 31,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 45,
+        "restarts": 7,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 30,
+        "source_hard": 38,
+        "source_room_conflicts": 29,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 20,
+        "restarts": 4,
+        "scoring_calls": 2,
+        "elapsed_seconds": 1.091,
+        "status": "selected",
+        "candidate_hard": 37
+      },
+      {
+        "generation": 35,
+        "source_hard": 36,
+        "source_room_conflicts": 27,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 20,
+        "restarts": 3,
+        "scoring_calls": 2,
+        "elapsed_seconds": 3.434,
+        "status": "selected",
+        "candidate_hard": 35
+      },
+      {
+        "generation": 40,
+        "source_hard": 35,
+        "source_room_conflicts": 26,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 32,
+        "restarts": 4,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 45,
+        "source_hard": 34,
+        "source_room_conflicts": 25,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 74,
+        "restarts": 14,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 50,
+        "source_hard": 34,
+        "source_room_conflicts": 25,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 77,
+        "restarts": 13,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 70,
+        "source_hard": 33,
+        "source_room_conflicts": 25,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 41,
+        "restarts": 6,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 75,
+        "source_hard": 33,
+        "source_room_conflicts": 25,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 25,
+        "restarts": 4,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.001,
+        "status": "no_improvement"
+      }
+    ]
+  },
+  "controller": {
+    "mode": "multi_agent",
+    "status": "active",
+    "completion_status": "completed",
+    "comparison_eligible": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "models_returned": [
+      "gemini-3.5-flash-lite"
+    ],
+    "reviews": 12,
+    "budget_skipped_reviews": 1,
+    "no_op": 0,
+    "model_no_op": 0,
+    "fallback_no_op": 0,
+    "api_calls": 24,
+    "input_tokens": 178926,
+    "output_tokens": 2486,
+    "thinking_tokens": 0,
+    "total_native_tokens": 181412,
+    "cached_input_tokens": 0,
+    "api_failures": {},
+    "api_disabled_reason": null,
+    "api_pacing_wait_seconds": 96.726,
+    "api_latency_seconds": 140.196,
+    "api_disabled_after_configuration_error": false,
+    "interventions": 12,
+    "selected_interventions": 1,
+    "region_scoring_calls": 24,
+    "operator_scoring_rechecks": 1
+  }
+}

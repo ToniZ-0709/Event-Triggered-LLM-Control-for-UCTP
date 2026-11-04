@@ -1,0 +1,192 @@
+{
+  "instance": "bet-spr18",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\bet-spr18.xml",
+  "classes": 1083,
+  "rooms": 63,
+  "courses": 357,
+  "students": 2921,
+  "distributions": 1418,
+  "runtime_seconds": 874.4847150999703,
+  "evaluations": 2300,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 1732,
+    "routine_repair": 568,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 2300,
+    "physical_calls": 1862,
+    "cache_hits": 438,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 67.849,
+      "offspring_repair": 516.482,
+      "objective_evaluation": 264.225
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 1688,
+      "objective_evaluation": 1712
+    }
+  },
+  "feasible": false,
+  "score": {
+    "hard": 36,
+    "time": 290,
+    "room": 10757,
+    "distribution": 11868,
+    "student": 5346,
+    "weighted": [
+      17400,
+      10757,
+      356040,
+      32076
+    ],
+    "total": 416273,
+    "room_conflicts": 28,
+    "room_unavailable": 1,
+    "hard_distributions": 7,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 230,
+    "partitions": 3,
+    "seed": 42,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 2300
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": false,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g230_r3_s42_8bfaa8ba4ccd6ec2",
+  "monitor": {
+    "generations_recorded": 86,
+    "time_limit_seconds": 2880.0,
+    "elapsed_seconds": 874.699,
+    "best_observed_hard": 36,
+    "best_observed_internal_total": 416273,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 8,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 12,
+    "room_plateau_events": [
+      {
+        "generation": 5,
+        "source_hard": 63,
+        "source_room_conflicts": 52,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 10,
+        "search_steps": 1,
+        "restarts": 1,
+        "scoring_calls": 2,
+        "elapsed_seconds": 0.664,
+        "status": "selected",
+        "candidate_hard": 62
+      },
+      {
+        "generation": 10,
+        "source_hard": 53,
+        "source_room_conflicts": 43,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 9,
+        "search_steps": 2,
+        "restarts": 2,
+        "scoring_calls": 2,
+        "elapsed_seconds": 0.219,
+        "status": "selected",
+        "candidate_hard": 52
+      },
+      {
+        "generation": 15,
+        "source_hard": 45,
+        "source_room_conflicts": 36,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 1,
+        "restarts": 1,
+        "scoring_calls": 2,
+        "elapsed_seconds": 0.346,
+        "status": "selected",
+        "candidate_hard": 44
+      },
+      {
+        "generation": 20,
+        "source_hard": 41,
+        "source_room_conflicts": 32,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 8,
+        "search_steps": 54,
+        "restarts": 10,
+        "scoring_calls": 2,
+        "elapsed_seconds": 3.358,
+        "status": "selected",
+        "candidate_hard": 40
+      },
+      {
+        "generation": 25,
+        "source_hard": 37,
+        "source_room_conflicts": 29,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 58,
+        "restarts": 10,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 30,
+        "source_hard": 37,
+        "source_room_conflicts": 29,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 67,
+        "restarts": 9,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 55,
+        "source_hard": 36,
+        "source_room_conflicts": 28,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 53,
+        "restarts": 10,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      },
+      {
+        "generation": 60,
+        "source_hard": 36,
+        "source_room_conflicts": 28,
+        "source_room_unavailable": 1,
+        "source_hard_distributions": 7,
+        "search_steps": 53,
+        "restarts": 9,
+        "scoring_calls": 1,
+        "elapsed_seconds": 5.0,
+        "status": "no_improvement"
+      }
+    ]
+  }
+}

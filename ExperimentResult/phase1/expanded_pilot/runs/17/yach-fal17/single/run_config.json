@@ -1,0 +1,116 @@
+{
+  "run_id": "run_n1_p12_g200_r2_s17_c59718f074c0d395",
+  "settings": {
+    "instances": [
+      {
+        "file": "yach-fal17.xml",
+        "sha256": "9c4bf766be0fb8b689f14c240b212d0839bf53e5594b56f0b425740f812bfa82"
+      }
+    ],
+    "config": {
+      "population": 12,
+      "generations": 200,
+      "partitions": 2,
+      "seed": 17,
+      "mutation_rate": 0.35,
+      "crossover_rate": 0.7,
+      "offspring_repair_steps": 8,
+      "offspring_pair_trials": 2,
+      "initial_repair_steps": 12,
+      "initial_pair_trials": 3,
+      "mutation_fraction": 0.01,
+      "inner_partitions": null,
+      "inner_scale": 0.5,
+      "evaluations": 1200
+    },
+    "repair": {
+      "interval": 5,
+      "near_feasible_hard": 12,
+      "neighborhood_classes": 32,
+      "neighborhood_options": 32,
+      "neighborhood_seconds": 15.0,
+      "neighborhood_deterministic_limit": 2.0,
+      "fallback_seconds": 2.0,
+      "fallback_evaluations": 128,
+      "failure_cooldown": 5,
+      "max_failure_cooldown": 20
+    },
+    "solution_metadata": {
+      "author": "NSGA-III + Single-Agent",
+      "institution": "Ho Chi Minh City University of Technology",
+      "country": "Vietnam"
+    },
+    "environment": {
+      "python": "3.11.9",
+      "numpy": "2.4.6",
+      "pymoo": "0.6.2",
+      "ortools": "9.15.6755",
+      "google-genai": "2.31.0"
+    },
+    "solver_sources_sha256": {
+      "main.py": "8f04483ce87a90c0ea51bc1bc0e025885d549f50ed45a20d52529c8c60ff99ce",
+      "itc2019/instance.py": "d5953d5ab4dbac848c9881e21afd1f7465b2a6002916766c5e915190417e78fc",
+      "itc2019/nsga3.py": "53408ccd2d21818fe9633930133184b0be6131e61fc5e91dda580de75b74dcda",
+      "itc2019/scoring.py": "eed7640d158ae32ef9eae4349b59680a721c9916dc9119b794f20494762725c2",
+      "itc2019/controller.py": "d44b85dde8446f3b95ec5bd6fd16bca8cc92743950aa21cd97fc5e0dcffe2aca",
+      "itc2019/regions.py": "b472beeb2414f6cc0fabc86b8cc7c384d7cc890bb99340a221ed371bac39c3f2",
+      "itc2019/operators.py": "557a712dc10d89c86292de7964ab59f5fecdaa94b2a382b622bee6d800d40f1e",
+      "itc2019/room_search.py": "f35c68c0c0d744d7e1e1e0ca5e0d5005dbe69c6cd94d379a8c3be582f3f25215",
+      "itc2019/neighborhood.py": "af377fb392b6d5747b4b7c3cdbdf27ab4cf3ba433c6d232737a0b43c0183bb5a",
+      "itc2019/repair_policy.py": "9456e26864b8ed3a396758cc8a4acd65f9fb387702e7d63aa9690c20b9285c1c",
+      "itc2019/construction.py": "7bfbc7f86c8122903a8e32d20c70ef9e2cb9720eb144815ca8478a0fd9abf0dd",
+      "itc2019/sectioning.py": "220354b8f85cd4f4737c9310e1660f9e488d072d2709f67654f30de7918e2bef"
+    },
+    "time_limit_seconds": 1050.0,
+    "stop_on_feasible": false,
+    "pipeline": {
+      "name": "NSGA-III + Single-Agent",
+      "status": "active"
+    },
+    "controller": {
+      "model": "gemini-3.5-flash-lite",
+      "review_interval": 10,
+      "warmup_generations": 5,
+      "stagnation_window": 5,
+      "min_review_interval": 3,
+      "max_review_interval": 20,
+      "diversity_threshold": 0.2,
+      "diversity_recovery_threshold": 0.3,
+      "max_regions": 6,
+      "region_size": 5,
+      "max_operator_evaluations": 24,
+      "recent_outcomes": 5,
+      "api_timeout_seconds": 15.0,
+      "max_output_tokens": 1024,
+      "max_api_calls": 12,
+      "max_reviews": 12,
+      "provider": "gemini"
+    },
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "api": "gemini_developer_generate_content",
+      "free_tier_only": true,
+      "api_base_url": "https://generativelanguage.googleapis.com",
+      "billing_tier_verification": "user_confirmed_not_queryable_from_key",
+      "min_request_interval_seconds": 10.0,
+      "max_input_characters": 60000,
+      "thinking_level": "low",
+      "sdk_attempts_per_call": 1,
+      "automatic_continuation": false,
+      "automatic_function_calling": false,
+      "quota_policy": "stop_api_and_mark_incomplete_no_provider_fallback"
+    },
+    "controller_sources_sha256": {
+      "Single-Agent Controller\\main.py": "d5a2bef6710fe38cb0d4bd3a780abf64e3a269555c8baa71446c81787d6ba036",
+      "Single-Agent Controller\\controller.py": "1ed24ff7dc2a80c22ddd2dcad16af56a14b3606584d0e11e3c7c443be16e2114",
+      "NSGA-III\\itc2019\\controller.py": "d44b85dde8446f3b95ec5bd6fd16bca8cc92743950aa21cd97fc5e0dcffe2aca",
+      "NSGA-III\\itc2019\\regions.py": "b472beeb2414f6cc0fabc86b8cc7c384d7cc890bb99340a221ed371bac39c3f2",
+      "NSGA-III\\itc2019\\operators.py": "557a712dc10d89c86292de7964ab59f5fecdaa94b2a382b622bee6d800d40f1e",
+      "NSGA-III\\itc2019\\llm.py": "f8d23981b44ed6c0d17c2643559eea777a8068dfd788cdad314c1852793a9e8e"
+    }
+  },
+  "dataset_directory": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019",
+  "completed_at_utc": "2026-10-19T14:49:24.731767+00:00",
+  "completion_status": "completed"
+}

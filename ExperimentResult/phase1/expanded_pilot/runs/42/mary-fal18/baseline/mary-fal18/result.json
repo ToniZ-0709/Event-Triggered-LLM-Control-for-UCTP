@@ -1,0 +1,91 @@
+{
+  "instance": "mary-fal18",
+  "path": "G:\\Other computers\\My Laptop\\HCMUT\\Projects\\GA\\Literature Review\\Experiment\\Dataset_ITC2019\\mary-fal18.xml",
+  "classes": 951,
+  "rooms": 93,
+  "courses": 540,
+  "students": 5051,
+  "distributions": 515,
+  "runtime_seconds": 208.14035090000834,
+  "evaluations": 1100,
+  "evaluation_breakdown": {
+    "objective_and_monitor": 578,
+    "routine_repair": 522,
+    "final_verification": 2
+  },
+  "score_engine": {
+    "logical_requests": 1100,
+    "physical_calls": 1037,
+    "cache_hits": 63,
+    "cache_capacity": 16
+  },
+  "sectioning_fallback": {},
+  "stage_timing": {
+    "seconds": {
+      "initial_sampling": 23.536,
+      "offspring_repair": 99.102,
+      "objective_evaluation": 84.761
+    },
+    "candidates": {
+      "initial_sampling": 20,
+      "offspring_repair": 558,
+      "objective_evaluation": 578
+    }
+  },
+  "feasible": true,
+  "score": {
+    "hard": 0,
+    "time": 1107,
+    "room": 1168,
+    "distribution": 280,
+    "student": 1854,
+    "weighted": [
+      2214,
+      1168,
+      1400,
+      18540
+    ],
+    "total": 23322,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "config": {
+    "population": 20,
+    "generations": 200,
+    "partitions": 3,
+    "seed": 42,
+    "mutation_rate": 0.35,
+    "crossover_rate": 0.7,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "mutation_fraction": 0.01,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "evaluations": 1100
+  },
+  "stop_on_feasible": false,
+  "selection_policy": "best_observed_lexicographic_hard_then_total",
+  "validation": {
+    "internal_feasible": true,
+    "official_status": "not_run"
+  },
+  "run_id": "run_n1_p20_g200_r3_s42_60cfcfe9f52d8044",
+  "monitor": {
+    "generations_recorded": 29,
+    "time_limit_seconds": 810.0,
+    "elapsed_seconds": 208.266,
+    "best_observed_hard": 0,
+    "best_observed_internal_total": 23322,
+    "room_chain_scoring_calls": 0,
+    "room_repair_backoff_skips": 0,
+    "room_chain_events": [],
+    "coordinated_repair_scoring_calls": 0,
+    "coordinated_repair_events": [],
+    "room_plateau_scoring_calls": 0,
+    "room_plateau_events": []
+  }
+}

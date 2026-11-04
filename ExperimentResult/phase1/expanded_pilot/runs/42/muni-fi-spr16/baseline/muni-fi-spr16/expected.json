@@ -1,0 +1,32 @@
+{
+  "instance": "muni-fi-spr16",
+  "classes": 575,
+  "score": {
+    "hard": 0,
+    "time": 350,
+    "room": 590,
+    "distribution": 53,
+    "student": 2202,
+    "weighted": [
+      1050,
+      590,
+      530,
+      11010
+    ],
+    "total": 13180,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "591be07ac18dd457c878c0ae8cee5e0578ecc0cfbcd4aee0c8f836309a90a387",
+  "dataset_sha256": "24ade384213545a5416a628fbfeb6cbf2408e8a89423d515f1ae8c7b01c1d532",
+  "weights": [
+    3,
+    1,
+    10,
+    5
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}

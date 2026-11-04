@@ -1,0 +1,32 @@
+{
+  "instance": "lums-spr18",
+  "classes": 487,
+  "score": {
+    "hard": 0,
+    "time": 36,
+    "room": 266,
+    "distribution": 81,
+    "student": 0,
+    "weighted": [
+      72,
+      266,
+      405,
+      0
+    ],
+    "total": 743,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "8fd699f8982184b3e47f71bbc48c54162e0ec160ce23608ac05b67299b4b5aae",
+  "dataset_sha256": "ea9ec5ebcaf4e8d46a5c26af03d59e99b3d4e47be10cc0eff583cb83227edc23",
+  "weights": [
+    2,
+    1,
+    5,
+    0
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}

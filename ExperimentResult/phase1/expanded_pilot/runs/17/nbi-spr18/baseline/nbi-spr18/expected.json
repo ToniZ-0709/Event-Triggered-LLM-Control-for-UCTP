@@ -1,0 +1,32 @@
+{
+  "instance": "nbi-spr18",
+  "classes": 782,
+  "score": {
+    "hard": 0,
+    "time": 17438,
+    "room": 5990,
+    "distribution": 3,
+    "student": 6641,
+    "weighted": [
+      34876,
+      5990,
+      24,
+      26564
+    ],
+    "total": 67454,
+    "room_conflicts": 0,
+    "room_unavailable": 0,
+    "hard_distributions": 0,
+    "unassigned_requests": 0
+  },
+  "solution_sha256": "4de8b7112a866c26a328ba614f1c9cbeb2fa0b6d9b3c0751e0d19886b6c28616",
+  "dataset_sha256": "7f6a7b19e2f5a8f02ea72bcac7ad8c3c98f0d86605b8defbc6ba11a5733caa95",
+  "weights": [
+    2,
+    1,
+    8,
+    4
+  ],
+  "official_status": "not_run",
+  "source": "solver_export"
+}
