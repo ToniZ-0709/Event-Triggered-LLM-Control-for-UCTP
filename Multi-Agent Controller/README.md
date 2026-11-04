@@ -1,6 +1,6 @@
 # Inspector-Planner Controller
 
-A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene; after target validation, Planner receives the state packet and Inspector diagnosis to select HOW and WHEN. The shared solver validates and executes the proposed change. A review can end before the Planner call.
+A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene, then after target validation, Planner receives the StatePacket and Inspector diagnosis to select HOW and WHEN. The shared solver validates and executes the proposed change. A review can end before the Planner call.
 
 Both roles operate on the StatePacket (Schema v1). Inspector selects target IDs (`solution_id`, `region_id`, `boundary_id`) and relevant constraint IDs from candidate regions. Planner receives this diagnosis and selects an operator from `move`, `swap`, `destroy_repair`, and `no_op`, alongside execution budget and next review interval.
 
