@@ -372,12 +372,11 @@ def _agent_class(folder: str, class_name: str):
 class _FakeDecisionClient:
     def request(self, role: str, payload: dict, remaining_seconds=None):
         regions = (payload["state"] if role == "planner" else payload)["candidate_regions"]
-        region = next((item for item in regions if item["available_actions"]["operators"]), None)
-        target = {} if region is None else region["target"]
+        region = next((item for item in regions if item["available_operators"]), None)
         if role == "inspector":
-            decision = ({"solution_id": target["solution_id"],
-                         "region_id": target["region_id"],
-                         "boundary_id": target["boundary_id"],
+            decision = ({"solution_id": region["solution_id"],
+                         "region_id": region["region_id"],
+                         "boundary_id": region["boundary_id"],
                          "relevant_constraint_ids": []} if region else
                         {"solution_id": None, "region_id": None,
                          "boundary_id": None, "relevant_constraint_ids": []})
@@ -386,9 +385,9 @@ class _FakeDecisionClient:
                         "execution_budget": 1 if region else 0,
                         "next_review_interval": 2}
         else:
-            decision = {"solution_id": target.get("solution_id"),
-                        "region_id": target.get("region_id"),
-                        "boundary_id": target.get("boundary_id"),
+            decision = {"solution_id": region["solution_id"] if region else None,
+                        "region_id": region["region_id"] if region else None,
+                        "boundary_id": region["boundary_id"] if region else None,
                         "operator_id": "move" if region else "no_op",
                         "execution_budget": 1 if region else 0,
                         "next_review_interval": 2}

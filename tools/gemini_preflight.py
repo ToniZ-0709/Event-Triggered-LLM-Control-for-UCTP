@@ -36,10 +36,9 @@ def main():
         parser.error(str(exc))
     try:
         decision, record = client.request("single_agent", {
-            "global_search_state":{"progress":{"generation":5}}, "recent_quality":{},
-            "candidate_regions":[], "boundary_context":[], "recent_outcomes":{"reviews":[]},
-            "action_limits":{"operators":["no_op"],"execution_budget":{"min":1,"max":1},
-                             "review_interval":{"min":3,"max":20}}},15)
+            "schema_version":1,"instance":"connection-check-no-real-data",
+            "global":{"generation":5},"candidate_regions":[],"recent_outcomes":[],
+            "allowed_actions":{"operators":["no_op"],"execution_budget":[1,1],"review_interval":[3,20]}},15)
         report.update(status=record["status"],network_requests=record["api_requests"],
                       decision=decision,record=record)
         print(json.dumps(report,indent=2))

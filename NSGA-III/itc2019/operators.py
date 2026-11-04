@@ -13,10 +13,9 @@ from .instance import Instance
 from .regions import RegionCandidate, swap_targets
 from .scoring import evaluate
 from .neighborhood import room_neighborhood_repair
-from .diagnostics import PlacementDiagnostics, source_hash
 
 
-OPERATORS = ("move", "swap", "destroy_repair", "guided_move", "distribution_repair", "blocker_chain")
+OPERATORS = ("move", "swap", "destroy_repair")
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,12 +33,6 @@ class OperatorOutcome:
     candidate_weighted: tuple[int, int, int, int] | None
     scoring_rechecks: int
     elapsed_seconds: float
-    changed_classes: tuple[str, ...] = ()
-    targeted_rule: str | None = None
-    admitted: bool = False
-    stop_reason: str | None = None
-    source_weighted: tuple[int, ...] | None = None
-    best_trial_weighted: tuple[int, ...] | None = None
 
 
 def _move(instance: Instance, source: np.ndarray, indices: tuple[int, ...],
@@ -116,181 +109,124 @@ def _admissible_candidate(source_hard: int, source_total: int,
 def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
                    operator_id: str, budget: int, rng: np.random.Generator,
                    deadline: float | None) -> OperatorOutcome:
-    """Share the allowance across source/trials/final recheck, including cache hits."""
+    """Try at most ``budget`` full evaluations and inject one improving candidate."""
     if operator_id not in OPERATORS or budget < 1:
         raise ValueError("Invalid improvement operator or budget")
     started = time.perf_counter()
     source = np.asarray(algorithm.pop[int(region.solution_id)].X, dtype=np.int32)
     source_hard = int(np.asarray(algorithm.pop[int(region.solution_id)].G).reshape(-1)[0])
     source_total = int(np.asarray(algorithm.pop[int(region.solution_id)].F).sum())
-    source_weighted = tuple(map(int, algorithm.pop[int(region.solution_id)].F))
-    best_pop = best_key = best_trial = best_trial_weighted = None
-    attempts = evaluations = rechecks = 0
-    targeted_rule = None
-    reason = "proposal_pool_exhausted"
-    evaluated: set[str] = set()
-    remaining = getattr(algorithm.problem, "evaluation_budget", None)
-    if remaining is not None:
-        used = algorithm.evaluator.n_eval + getattr(algorithm.problem, "repair_scoring_calls", 0)
-        budget = min(budget, max(0, remaining-used))
-    local_deadline = started + 3.0 if deadline is None else min(deadline, started + 3.0)
+    best_pop = None
+    best_key = None
+    best_trial: tuple[int, int] | None = None
+    attempts = evaluations = 0
+    evaluated: set[tuple[int, ...]] = set()
 
-    def room_for_trial():
-        return evaluations < budget-1 and time.perf_counter() < local_deadline
-
-    def charged_score(trial):
-        nonlocal evaluations
-        result = algorithm.problem.score_state(trial)
-        algorithm.evaluator.n_eval += 1
-        evaluations += 1
-        return result
-
-    def observe(trial, score):
-        nonlocal best_pop, best_key, best_trial, best_trial_weighted
-        rank = (score.hard, score.total)
-        if best_trial is None or rank < best_trial:
-            best_trial, best_trial_weighted = rank, score.weighted
-        if not _admissible_candidate(source_hard, source_total, *rank):
-            return rank
-        key = (*rank, tuple(map(int, trial)))
-        if best_key is None or key < best_key:
-            best_key = key
-            best_pop = Population.new("X", trial[None].copy(), "F", np.asarray([score.weighted]),
-                                      "G", np.asarray([[score.hard]]))
-        return rank
-
-    def consider(trial):
-        nonlocal attempts
-        if not room_for_trial():
+    def consider(trial: np.ndarray) -> tuple[int, int] | None:
+        nonlocal attempts, evaluations, best_pop, best_key, best_trial
+        if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
             return None
         attempts += 1
         if trial is None or np.array_equal(trial, source):
             return None
-        identity = source_hash(trial)
+        identity = tuple(map(int, trial))
         if identity in evaluated:
             return None
         evaluated.add(identity)
-        return observe(trial, charged_score(trial))
+        candidate_pop = Population.new("X", trial.reshape(1, -1))
+        algorithm.evaluator.eval(algorithm.problem, candidate_pop, algorithm=algorithm)
+        evaluations += 1
+        hard = int(np.asarray(candidate_pop.get("G")).reshape(-1)[0])
+        total = int(np.asarray(candidate_pop.get("F")).reshape(1, -1).sum())
+        rank = (hard, total)
+        if best_trial is None or rank < best_trial:
+            best_trial = rank
+        if not _admissible_candidate(source_hard, source_total, hard, total):
+            return rank
+        key = (hard, total, identity)
+        if best_key is None or key < best_key:
+            best_pop, best_key = candidate_pop, key
+        return rank
 
-    def outcome(status, selected=False, score=None):
-        changed = () if best_pop is None else tuple(instance.classes[i].id
-            for i in region.class_indices if source[i] != best_pop[0].X[i] or
-            source[len(instance.classes)+i] != best_pop[0].X[len(instance.classes)+i])
-        return OperatorOutcome(status, attempts, evaluations, selected, source_hard, source_total,
-            *(best_trial or (None, None)), None if score is None else score.hard,
-            None if score is None else score.total, None if score is None else score.weighted,
-            rechecks, time.perf_counter()-started, changed, targeted_rule,
-            score is not None and status in {"selected", "rejected_by_selection"}, reason,
-            source_weighted, best_trial_weighted)
-
-    screening = region.screening
-    if screening is not None and screening["source_hash"] != source_hash(source):
-        reason = "source_identity_changed"
-        return outcome("stale_region")
-    if not room_for_trial():
-        reason = "time_budget_exhausted" if time.perf_counter() >= local_deadline else "evaluation_budget_exhausted"
-        return outcome("no_candidate_evaluated")
-    if operator_id == "blocker_chain":
-        if not region.expanded_region:
-            reason = "expanded_region_required"
-            return outcome("operator_unavailable_in_region")
-        beam = [(source.copy(), (source_hard, source_total))]
-        for depth in range(3):
-            next_beam = []
-            for state, rank in beam:
-                proposals, _, _ = PlacementDiagnostics(instance,state).moves(region.class_indices,rank[0])
-                quota = max(1,(budget-evaluations-1)//max(1,(3-depth)*len(beam)))
-                for gene,value in proposals[:quota]:
-                    if not room_for_trial():
-                        break
-                    trial = state.copy()
-                    trial[gene] = value
-                    trial_rank = consider(trial)
-                    if trial_rank is not None and trial_rank[0] <= source_hard+1:
-                        next_beam.append((trial,trial_rank))
-            next_beam.sort(key=lambda item:(item[1],tuple(map(int,item[0]))))
-            beam = next_beam[:2]
-            if not beam or not room_for_trial():
-                break
-    elif operator_id == "guided_move":
-        if screening is None:
-            reason = "screening_not_available"
-            return outcome("no_candidate_evaluated")
-        for gene, value in screening["move_proposals"]:
-            if not room_for_trial():
-                break
-            trial = source.copy()
-            trial[gene] = value
-            consider(trial)
-    elif operator_id in {"destroy_repair", "distribution_repair"}:
-        active = region.class_indices
-        target_index = None
-        if operator_id == "distribution_repair":
-            selected_target = PlacementDiagnostics(instance, source).distribution_target(active)
-            if selected_target is None:
-                reason = "no_actionable_violated_required_rule"
-                return outcome("no_candidate_evaluated")
-            target_index, active = selected_target
-            if screening is not None and selected_target != screening["distribution_target"]:
-                reason = "target_rule_changed"
-                return outcome("stale_region")
-            targeted_rule = f"distribution:{target_index}"
+    if operator_id == "destroy_repair":
+        # Solve the entire selected region jointly before the cheap sequential fallback.
+        # The outside chromosome is immutable; all solver checks are charged to this budget.
         engine = algorithm.problem.engine
         cached = engine.cache.get(engine.key(source))
-        source_score = cached[0] if cached else charged_score(source)
-        if room_for_trial():
-            candidate, stats = room_neighborhood_repair(
-                instance, source, deadline=local_deadline, seed=int(rng.integers(2147483647)),
-                max_classes=len(active), max_options=32, max_table_cells=50000,
-                deterministic_limit=0.25, allowed_classes=active,
-                require_room_improvement=False, allow_soft_improvement=operator_id == "destroy_repair",
-                target_distribution_index=target_index, source_score=source_score,
-                max_full_scoring_calls=max(0, budget-evaluations-1), score_fn=charged_score)
-            attempts += stats["full_scoring_calls"]
-            reason = stats["status"]
-            if stats.get("best_trial_quality") is not None:
-                best_trial = tuple(stats["best_trial_quality"])
-                best_trial_weighted = tuple(stats["best_trial_weighted"])
-            if candidate is not None:
-                observe(candidate, engine.cache[engine.key(candidate)][0])
-        if operator_id == "destroy_repair":
-            mutable = [i for i in active if len(instance.classes[i].times) > 1 or
-                       len(instance.classes[i].room_options) > 1]
-            selected = list(map(int, rng.choice(mutable, size=min(3, len(mutable)), replace=False))) if mutable else []
-            working, working_rank = source.copy(), (source_hard, source_total)
-            n = len(instance.classes)
-            for position, index in enumerate(selected):
-                quota = max(0, (budget-evaluations-1)//(len(selected)-position))
-                local_best, local_choice = working_rank, working
-                for ti, ri in _repair_options(instance, working, index, rng)[:quota]:
-                    trial = working.copy()
-                    trial[index], trial[n+index] = ti, ri
-                    rank = consider(trial)
-                    if rank is not None and rank < local_best:
-                        local_best, local_choice = rank, trial
-                working, working_rank = local_choice, local_best
+        source_score = cached[0] if cached else algorithm.problem.score_state(source)
+        if cached is None:
+            evaluations += 1
+            algorithm.evaluator.n_eval += 1
+        local_deadline = time.perf_counter()+3.0
+        if deadline is not None:
+            local_deadline = min(local_deadline, deadline)
+        candidate, stats = room_neighborhood_repair(
+            instance, source, deadline=local_deadline, seed=int(rng.integers(2147483647)),
+            max_classes=len(region.class_indices), max_options=32, max_table_cells=50000,
+            deterministic_limit=0.25, allowed_classes=region.class_indices,
+            require_room_improvement=False, allow_soft_improvement=True, source_score=source_score,
+            max_full_scoring_calls=max(0, budget-evaluations), score_fn=algorithm.problem.score_state)
+        used = stats["full_scoring_calls"]
+        evaluations += used
+        attempts += used
+        algorithm.evaluator.n_eval += used
+        if candidate is not None:
+            score = engine.cache[engine.key(candidate)][0]
+            best_trial = score.hard, score.total
+            best_key = (score.hard, score.total, tuple(map(int, candidate)))
+            best_pop = Population.new("X", candidate[None], "F", np.asarray([score.weighted]),
+                                      "G", np.asarray([[score.hard]]))
+        # Rebuild up to three classes sequentially. Each proposed placement is
+        # evaluated on the complete timetable and charged to the same budget.
+        mutable = [i for i in region.class_indices if len(instance.classes[i].times) > 1 or
+                   len(instance.classes[i].room_options) > 1]
+        selected = list(map(int, rng.choice(mutable, size=min(3, len(mutable)),
+                                            replace=False))) if mutable else []
+        working = source.copy()
+        working_rank = (source_hard, source_total)
+        n = len(instance.classes)
+        for position, index in enumerate(selected):
+            if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
+                break
+            remaining_classes = len(selected) - position
+            quota = max(1, (budget - evaluations) // remaining_classes)
+            local_best = working_rank
+            local_choice = working
+            for ti, ri in _repair_options(instance, working, index, rng)[:quota]:
+                trial = working.copy()
+                trial[index], trial[n + index] = ti, ri
+                rank = consider(trial)
+                if rank is not None and rank < local_best:
+                    local_best, local_choice = rank, trial
+            working, working_rank = local_choice, local_best
     else:
         for _ in range(budget * 5):
-            if not room_for_trial():
+            if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
                 break
             consider(_PROPOSALS[operator_id](instance, source, region.class_indices, rng))
-    if time.perf_counter() >= local_deadline:
-        reason = "time_budget_exhausted"
-    elif evaluations >= budget-1:
-        reason = "evaluation_budget_exhausted"
+
+    trial_hard, trial_total = best_trial if best_trial is not None else (None, None)
     if best_pop is None:
-        return outcome("no_candidate_evaluated" if best_trial is None else "no_improving_candidate")
-    if time.perf_counter() >= local_deadline:
-        return outcome("recheck_deadline_exhausted")
+        status = "no_candidate_evaluated" if evaluations == 0 else "no_improving_candidate"
+        return OperatorOutcome(status, attempts, evaluations, False, source_hard,
+                               source_total, trial_hard, trial_total,
+                               None, None, None, 0, time.perf_counter() - started)
+    n = len(instance.classes)
     choices = np.asarray(best_pop[0].X, dtype=np.int32)
-    score = charged_score(choices)
-    rechecks = 1
+    score = algorithm.problem.score_state(choices)
     if (score.hard, score.total) != best_key[:2]:
-        return outcome("scoring_mismatch", score=score)
+        return OperatorOutcome("scoring_mismatch", attempts, evaluations, False,
+                               source_hard, source_total, trial_hard, trial_total,
+                               score.hard, score.total, score.weighted, 1,
+                               time.perf_counter() - started)
     population_size = len(algorithm.pop)
     algorithm.pop = algorithm.survival.do(
         algorithm.problem, Population.merge(algorithm.pop, best_pop),
         n_survive=population_size, random_state=algorithm.random_state)
     algorithm._set_optimum()
     selected = any(individual is best_pop[0] for individual in algorithm.pop)
-    return outcome("selected" if selected else "rejected_by_selection", selected, score)
+    return OperatorOutcome("selected" if selected else "rejected_by_selection",
+                           attempts, evaluations, selected, source_hard, source_total,
+                           trial_hard, trial_total,
+                           score.hard, score.total, score.weighted, 1,
+                           time.perf_counter() - started)

@@ -12,8 +12,7 @@ import numpy as np
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
 from .instance import Instance
-from .scoring import distribution_violations, overlaps, attendee_conflict
-from .diagnostics import PlacementDiagnostics
+from .scoring import distribution_violations, evaluate, overlaps, attendee_conflict
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,15 +31,10 @@ class RegionCandidate:
     movable_class_count: int
     compatible_swap_pairs: int
     available_operators: tuple[str, ...]
-    screening: dict | None = None
-    source_quality: tuple[int, int] | None = None
-    source_weighted: tuple[int, ...] | None = None
-    expanded_region: bool = False
 
     def public(self) -> dict:
         result = asdict(self)
         result.pop("class_indices")
-        result.pop("screening")
         result["boundary_class_count"] = len(self.boundary_class_ids)
         result["boundary_truncated"] = len(self.boundary_class_ids) > 32
         result["boundary_class_ids"] = self.boundary_class_ids[:32]
@@ -123,7 +117,6 @@ def population_metrics(algorithm, elapsed_seconds: float,
         "feasible_count": int(np.count_nonzero(feasible)),
         "best_hard": int(hard[best_index]),
         "best_internal_total": int(totals[best_index]),
-        "population_best_weighted_objectives": list(map(int, weighted[best_index])),
         "best_feasible_internal_total": int(np.min(totals[feasible])) if feasible.any() else None,
         "best_feasible_official_score": None,
         "metric_source": "internal_evaluator",
@@ -206,17 +199,17 @@ class RegionBuilder:
         for i, cls in enumerate(instance.classes):
             for room, _ in cls.room_options:
                 neighbors[i].update(j for j in by_room.get(room, ()) if j != i)
-        engine = getattr(self, "engine", None)
-        cached = None if engine is None else engine.cache.get(engine.key(choices))
-        score = None if cached is None else cached[0]
+        fn = getattr(self, "score_fn", None)
+        score = fn(choices) if fn else evaluate(instance, choices[:n], choices[n:])[0]
+        self.scoring_calls += 1
         unlocalized = []
-        if score is None:
-            if instance.students:
-                unlocalized.extend(("student_conflict", "unassigned_requests"))
-        elif score.student:
-            if cached is not None:
+        if score.student:
+            engine = getattr(self, "engine", None)
+            if engine is None:
+                unlocalized.append("student_conflict")
+            else:
                 attending = defaultdict(list)
-                for i, students in cached[1].items():
+                for i, students in engine.details(choices).items():
                     for student in students:
                         attending[student].append(i)
                 for members in attending.values():
@@ -228,11 +221,12 @@ class RegionBuilder:
                             neighbors[b].add(a)
                             constraint_ids[a].add("student_conflict")
                             constraint_ids[b].add("student_conflict")
-        if score is not None and score.unassigned_requests:
+        if score.unassigned_requests:
             unlocalized.append("unassigned_requests")
         return hard, soft, neighbors, constraint_ids, tuple(unlocalized)
 
     def build(self, algorithm, max_regions: int, region_size: int) -> list[RegionCandidate]:
+        self.score_fn = getattr(getattr(algorithm, "problem", None), "score_state", None)
         self.engine = getattr(getattr(algorithm, "problem", None), "engine", None)
         pop = algorithm.pop
         hard = np.asarray(pop.get("G"), dtype=float).reshape(-1)
@@ -286,7 +280,7 @@ class RegionBuilder:
                 seen.add(key)
                 boundary = sorted(set().union(*(neighbors[i] for i in active)) - set(active))
                 boundary_ids = tuple(self.instance.classes[i].id for i in boundary)
-                stamp = hashlib.sha256(repr((active, boundary)).encode() + choices.tobytes()).hexdigest()[:12]
+                stamp = hashlib.sha256(repr((active, boundary)).encode()).hexdigest()[:12]
                 n = len(self.instance.classes)
                 summaries = []
                 movable = 0
@@ -314,7 +308,7 @@ class RegionBuilder:
                     available.extend(("move", "destroy_repair"))
                 if swap_count:
                     available.append("swap")
-                region = RegionCandidate(
+                candidates.append(RegionCandidate(
                     solution_id=str(solution_index),
                     region_id=f"{solution_index}:{len(candidates)}",
                     boundary_id=stamp,
@@ -330,56 +324,7 @@ class RegionBuilder:
                     movable_class_count=movable,
                     compatible_swap_pairs=swap_count,
                     available_operators=tuple(available),
-                    source_quality=(int(hard[solution_index]), int(totals[solution_index])),
-                    source_weighted=tuple(map(int, pop[solution_index].F)),
-                )
-                screening = PlacementDiagnostics(self.instance, choices).extract(region, int(hard[solution_index]))
-                if screening["move_proposals"]:
-                    available.append("guided_move")
-                if screening["distribution_target"] is not None:
-                    available.append("distribution_repair")
-                candidates.append(replace(region, available_operators=tuple(available), screening=screening))
+                ))
                 if len(candidates) >= max_regions:
                     return candidates
         return candidates
-
-
-def expand_blocker_region(instance, choices, region, max_classes=10):
-    """Publish a distinct capped target before permitting any boundary release."""
-    if region.screening is None:
-        return None
-    blockers = [instance.class_index[c["class_id"]]
-                for c in region.screening["boundary_context"]["outside_classes"]["items"]
-                if c["relation"] == "checked_blocker"]
-    active = tuple(sorted(set(region.class_indices).union(blockers[:max(0,max_classes-len(region.class_indices))])))
-    if active == region.class_indices:
-        return None
-    builder = RegionBuilder(instance)
-    hard,soft,neighbors,constraints,unlocalized = builder._contributions(choices)
-    boundary = sorted(set().union(*(neighbors[i] for i in active))-set(active))
-    summaries = []
-    n = len(instance.classes)
-    for i in active:
-        cls = instance.classes[i]
-        t = cls.times[int(choices[i])]
-        ri = int(choices[n+i])
-        summaries.append({"class_id":cls.id,"current_time":{"days":t.days,"weeks":t.weeks,"start":t.start,"length":t.length},
-            "current_room_id":None if cls.no_room else cls.room_options[ri][0],
-            "time_options":len(cls.times),"room_options":len(cls.room_options),
-            "current_time_penalty":t.penalty,"current_room_penalty":0 if cls.no_room else cls.room_options[ri][1]})
-    expanded = replace(region,region_id=region.region_id+":blockers",
-        boundary_id=hashlib.sha256(repr((active,boundary)).encode()+np.asarray(choices,dtype=np.int32).tobytes()).hexdigest()[:12],
-        class_indices=active,class_ids=tuple(instance.classes[i].id for i in active),
-        boundary_class_ids=tuple(instance.classes[i].id for i in boundary),
-        constraint_ids=tuple(sorted(set().union(*(constraints[i] for i in active)))),
-        hard_contribution=sum(hard[i] for i in active),soft_contribution=sum(soft[i] for i in active),
-        class_summaries=tuple(summaries),unlocalized_penalties=unlocalized,
-        movable_class_count=sum(len(instance.classes[i].times)>1 or len(instance.classes[i].room_options)>1 for i in active),
-        compatible_swap_pairs=sum(swap_targets(instance,choices,a,b) is not None for a,b in combinations(active,2)),
-        available_operators=("blocker_chain",),expanded_region=True,screening=None)
-    screening = PlacementDiagnostics(instance,choices).extract(expanded,region.source_quality[0])
-    screening["diagnostics"] = [{"operator_id":"blocker_chain","class_ids":list(expanded.class_ids),
-        "scope":"explicit_expanded_region_only","selection_policy":"bounded_beam_with_neutral_or_worse_intermediates",
-        "checks":[],"blocking_reasons":[],"coverage":{"candidates_total":None,"checked":0,"complete":False},
-        "counts":{"pass":0,"fail":0,"unknown":0},"witnesses":[]}]
-    return replace(expanded,screening=screening)

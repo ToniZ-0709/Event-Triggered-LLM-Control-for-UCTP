@@ -506,17 +506,12 @@ class Incumbent:
     def __init__(self):
         self.quality = None
         self.choices = None
-        self.weighted = None
 
-    def observe(self, choices, quality, weighted=None):
+    def observe(self, choices, quality):
         quality = tuple(map(int, quality))
         if self.quality is None or quality < self.quality:
             self.quality = quality
             self.choices = np.asarray(choices, dtype=np.int32).copy()
-            self.weighted = None if weighted is None else tuple(map(int, weighted))
-        elif (quality == self.quality and self.weighted is None and weighted is not None
-              and np.array_equal(choices, self.choices)):
-            self.weighted = tuple(map(int, weighted))
 
 
 class PlacementProblem(ElementwiseProblem):
@@ -552,7 +547,7 @@ class PlacementProblem(ElementwiseProblem):
 
     def score_state(self, choices):
         score = self.engine.score(choices)
-        self.incumbent.observe(choices, (score.hard, score.total), score.weighted)
+        self.incumbent.observe(choices, (score.hard, score.total))
         return score
 
     def remaining_scores(self, reserve=0):
