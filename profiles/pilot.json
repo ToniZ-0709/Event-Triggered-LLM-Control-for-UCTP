@@ -130,8 +130,9 @@
       42,
       73
     ],
-    "raw_artifact_root": "solver_checks/recalibration_v4",
-    "accepted_record_manifest": "solver_checks/recalibration_v4/_accepted_records.json",
+    "raw_artifact_root": null,
+    "accepted_record_manifest": null,
+    "calibration_artifacts_note": "The historical calibration artifacts and accepted-record manifest are no longer available in the working tree.",
     "budget_rule": "Measured local cap: 90% of observed feasible soft gain plus grace, or last hard improvement plus grace; never beyond the shortest measured seed trajectory.",
     "timing_note": "Concurrent local engineering runs, up to five compute workers during supplemental probes; safety-cap sizing, not a speed comparison."
   }

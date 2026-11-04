@@ -14,12 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from run_pilot import commands
 from tools.summarize_paired_pilot import CORE_FILES, METHOD_ROOTS, audit_attempts, digest, discover
-from tools.summarize_expanded_pilot import completed, save_report
+from tools.summarize_expanded_pilot import DEFAULT_REPORT, DEFAULT_STATE_ROOT, completed, save_report
 
 METHODS = ("baseline", "single", "multi")
 NEW_INSTANCES = ("pu-cs-fal07", "lums-spr18", "tg-spr18")
 TRANSIENT = {"api_service_error", "api_network_error", "api_timeout"}
-STATE_ROOT = ROOT / "solver_checks/expanded_pilot"
+STATE_ROOT = DEFAULT_STATE_ROOT
 
 
 def unpublished_failures(state_root: Path) -> list[dict]:
@@ -133,7 +133,7 @@ def human_recovery_allowed(state_root: Path, seed: int, instance: str, method: s
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, default=ROOT / "profiles/expanded_pilot.json")
-    parser.add_argument("--report", type=Path, default=ROOT / "solver_checks/expanded_pilot_comparison.json")
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--state-root", type=Path, default=STATE_ROOT)
     parser.add_argument("--output-tag", default="x", help="Short results namespace; keep campaigns separate")
     parser.add_argument("--confirm-free-tier", action="store_true")
@@ -157,7 +157,7 @@ def main() -> None:
                       for settings in profile["instances"].values())
     if no_time_cap and state_root == STATE_ROOT.resolve():
         parser.error("Use a separate --state-root for a no-time-cap follow-up")
-    if no_time_cap and args.report.resolve() == (ROOT / "solver_checks/expanded_pilot_comparison.json").resolve():
+    if no_time_cap and args.report.resolve() == DEFAULT_REPORT.resolve():
         parser.error("Use a separate --report for a no-time-cap follow-up")
 
     def publish_report() -> dict:

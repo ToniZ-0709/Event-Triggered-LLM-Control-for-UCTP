@@ -248,8 +248,8 @@ def retained_followup_sources(previous: dict, current: dict | None) -> list[dict
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path,
-                        default=ROOT / "solver_checks/expanded_pilot_comparison.json")
-    parser.add_argument("--output", type=Path, default=ROOT / "output/expanded_pilot")
+                        default=ROOT / "ExperimentResult/phase1/expanded_pilot/reports/expanded_pilot_comparison.json")
+    parser.add_argument("--output", type=Path, default=ROOT / "tmp/phase1_pilot/figures")
     parser.add_argument("--seeds", type=int, nargs="+", help="Only redraw these seeds; preserve the others")
     parser.add_argument("--followup-report", type=Path,
                         help="Display completed matched follow-up triples instead of their old capped endpoints")

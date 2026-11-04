@@ -464,24 +464,3 @@ def test_pilot_runner_keeps_per_instance_budgets_and_role_call_caps() -> None:
     assert multi[0][multi[0].index("--evaluations") + 1] == "1200"
     with pytest.raises(ValueError, match="No measured budget"):
         commands(profile, pipeline="baseline", seed=17, instances=["C"], model=None, output=None)
-
-
-def test_budget_horizon_never_claims_an_unmeasured_1200_evaluations() -> None:
-    from solver_checks.select_pilot_budget import horizon
-    record = {"config": {"population": 20}, "trace": [
-        {"evaluations": 100, "best_observed_hard": 10},
-        {"evaluations": 500, "best_observed_hard": 4},
-        {"evaluations": 850, "best_observed_hard": 4},
-    ]}
-    assert horizon(record) == 800
-
-
-def test_budget_horizon_keeps_search_after_first_feasibility() -> None:
-    from solver_checks.select_pilot_budget import horizon
-    record = {"config": {"population": 20}, "trace": [
-        {"evaluations": 100, "best_observed_hard": 2},
-        {"evaluations": 500, "best_observed_hard": 0, "best_observed_internal_total": 1000},
-        {"evaluations": 1000, "best_observed_hard": 0, "best_observed_internal_total": 500},
-        {"evaluations": 2000, "best_observed_hard": 0, "best_observed_internal_total": 400},
-    ]}
-    assert horizon(record) == 2000

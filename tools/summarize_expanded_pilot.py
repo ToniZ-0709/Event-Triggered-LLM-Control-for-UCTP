@@ -14,6 +14,8 @@ from compare_pipelines import compare
 from tools.summarize_paired_pilot import audit_attempts, behavior, digest, discover
 
 METHODS = ("baseline", "single", "multi")
+DEFAULT_STATE_ROOT = ROOT / "tmp/phase1_pilot/state"
+DEFAULT_REPORT = ROOT / "tmp/phase1_pilot/expanded_pilot_comparison.json"
 
 
 def outcome(left: dict, right: dict) -> str:
@@ -134,7 +136,7 @@ def save_report(profile_path: Path, seeds: list[int], output: Path, *,
     report = (summarize(profile, seeds, allow_no_time_limit=True) if allow_no_time_limit
               else summarize(profile, seeds))
     report.update(profile_sha256=digest(profile_path), profile_snapshot=profile)
-    state_root = state_root if state_root is not None else ROOT / "solver_checks/expanded_pilot"
+    state_root = state_root if state_root is not None else DEFAULT_STATE_ROOT
     failures_path = state_root / "storage_failures.json"
     failures = json.loads(failures_path.read_text(encoding="utf-8"))["failures"] if failures_path.is_file() else []
     failures = [record for record in failures
@@ -168,11 +170,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, default=ROOT / "profiles/expanded_pilot.json")
     parser.add_argument("--seeds", type=int, nargs="+", default=[17, 42])
-    parser.add_argument("--output", type=Path, default=ROOT / "solver_checks/expanded_pilot_comparison.json")
+    parser.add_argument("--output", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--state-root", type=Path)
     parser.add_argument("--allow-no-time-limit", action="store_true")
     args = parser.parse_args()
-    if args.allow_no_time_limit and args.output.resolve() == (ROOT / "solver_checks/expanded_pilot_comparison.json").resolve():
+    if args.allow_no_time_limit and args.output.resolve() == DEFAULT_REPORT.resolve():
         parser.error("Use a separate output for a no-time-cap follow-up")
     report = save_report(args.profile, args.seeds, args.output, state_root=args.state_root,
                          allow_no_time_limit=args.allow_no_time_limit)

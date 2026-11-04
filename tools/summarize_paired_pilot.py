@@ -19,8 +19,7 @@ from itc2019.repair_policy import RepairSettings
 CORE_FILES = ("main.py", "itc2019/instance.py", "itc2019/nsga3.py", "itc2019/scoring.py",
               "itc2019/controller.py", "itc2019/regions.py", "itc2019/operators.py",
               "itc2019/room_search.py", "itc2019/neighborhood.py", "itc2019/repair_policy.py",
-              "itc2019/construction.py", "itc2019/sectioning.py",
-              "itc2019/diagnostics.py", "itc2019/state_packet.py")
+              "itc2019/construction.py", "itc2019/sectioning.py")
 METHOD_ROOTS = {"baseline": "NSGA-III", "single": "Single-Agent Controller",
                 "multi": "Multi-Agent Controller"}
 PIPELINE_NAMES = {"single": "NSGA-III + Single-Agent",

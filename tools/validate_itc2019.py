@@ -28,7 +28,7 @@ from itc2019.instance import load_instance
 from itc2019.scoring import evaluate,validate_sectioning
 
 ENDPOINT="https://www.itc2019.org/server/validator/"
-DEFAULT_OUTPUT=ROOT/"solver_checks/official_validation"
+DEFAULT_OUTPUT=ROOT/"tmp/phase1_pilot/official_validation"
 
 
 def sha(path):
