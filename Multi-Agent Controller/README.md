@@ -1,8 +1,8 @@
 # Inspector-Planner Controller
 
-A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene; after target validation, Planner receives the state and diagnosis to select HOW and WHEN. The shared solver executes and scores the proposed change.
+A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene; after target validation, Planner receives the state packet and Inspector diagnosis to select HOW and WHEN. The shared solver validates and executes the proposed change. A review can end before the Planner call.
 
-Both roles receive the six-block StatePacket v2. Inspector selects IDs from `candidate_regions[].target` and references `boundary_context[].constraints.ids`; Planner receives the packet and diagnosis, then chooses an operator from the selected region's `available_actions`. The direct entrypoint optionally accepts `--enable-blocker-chain` for a separately published expanded target. The responses do not include a rationale.
+Both roles operate on the StatePacket (Schema v1). Inspector selects target IDs (`solution_id`, `region_id`, `boundary_id`) and relevant constraint IDs from candidate regions. Planner receives this diagnosis and selects an operator from `move`, `swap`, `destroy_repair`, and `no_op`, alongside execution budget and next review interval.
 
 Commands below run from the repository root:
 
@@ -18,4 +18,4 @@ Optimization requires `GEMINI_API_KEY` and confirmation that its project is Free
 python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
 ```
 
-Results go to `Multi-Agent Controller/results_itc2019/`. A failed API request saves an incomplete run and returns exit code 3. See [PIPELINES.md](../PIPELINES.md) for review rules, actions, accounting and comparison requirements, or the [repository README](../README.md) for profiles and saved reports.
+Results are saved to `Multi-Agent Controller/results_itc2019/`. A failed API request saves an incomplete run and returns exit code 3. See the [repository README](../README.md) for profiles and archived results.
