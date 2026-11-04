@@ -134,40 +134,7 @@ Compare paired runs with the same instances, seed, solver/repair settings and co
 python compare_pipelines.py --baseline "BASELINE_RUN_DIR" --single "SINGLE_RUN_DIR" --multi "MULTI_RUN_DIR" --output comparison.json
 ```
 
-`--multi` is optional for baseline/single comparisons. Time-censored endpoints are distinguished from runs that reached equal evaluation budgets. The expanded campaign and the no-time-cap follow-up remain separate reports; plot manifests identify any follow-up endpoints substituted into a figure.
-
-### Per-instance result figures
-
-`tools/plot_search_results.py --report REPORT --output NEW_FOLDER` reads either legacy or v2 saved traces. It exports three core figure sets per instance/seed: final hard and descriptive soft quality, incumbent convergence versus actual wall time and logical full evaluations, and endpoint runtime/native-token use. Initial elapsed time is retained, step curves stop at the last observation, and end/review/admission markers are explicit. Feasible soft progress gets a panel only when hard zero is observed. Shared observed ranges are recorded for comparisons.
-
-`--extra reviews diversity operators objectives` adds per-review token/latency, diversity, operator behavior and saved incumbent component plots. Missing incumbent vectors skip the component view with an explicit manifest reason. Native totals are counted once; latency already includes pacing. The optional `--split-runtime` remainder means all non-API work, not a measured pure-solver timer. Usage is attached to review-completion times in new traces, or same-generation post-review checkpoints in legacy traces; missing checkpoints remain unknown.
-
-Install plotting dependencies with `python -m pip install -r tools/requirements-plotting.txt`. PDF/SVG/PNG, source CSV and JSON manifests go to a separate folder such as `output/search_diagnostics/tg_no_timecap/`. Figure manifests retain configuration/source/trace hashes, unmatched/censored status, campaign failures/interruption/recoveries and unknown-usage caveats. Existing nine-panel figures are not overwritten. Each seed is shown separately without significance claims; recorded hardware conditions remain a comparability limit for legacy timing data.
-
-The v2 implementation passed 158 offline tests on 26 October 2026, including mocked Single/Inspector-Planner flows, fixed-boundary/global-rule checks and logical evaluation accounting. Eighteen example diagnostic PDFs passed rendered alignment, font-size and collision audits. Their screen-readable PDF/SVG plus 300-dpi PNG layout is for analysis rather than a journal-column submission. These are implementation/visualization checks using archived evidence; the new controller behavior has not been benchmarked with live API runs.
-
-### Current no-time-cap follow-up
-
-The `tg-spr18` follow-up is complete: all three pipelines finished for seeds 17 and 42. The profile is `profiles/tg_no_timecap.json`; only the global wall-clock cap is unset. Population 20, H3, generation cap 200, evaluation cap 1,200, solver/repair/prompts, both `gemini-3.5-flash-lite` controllers, review/API budgets and request timeout were kept fixed. Every endpoint reached the same 1,200-evaluation budget; none was time-censored. These are internal endpoints, not official validation results.
-
-| Seed | Pipeline | Hard | Weighted soft total | Runtime (s) | API calls | Reported native tokens |
-| ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| 17 | Baseline | 17 | 74,300 | 2,052.92 | 0 | 0 |
-| 17 | Single-agent | 16 | 74,070 | 3,259.29 | 5 | 34,990 |
-| 17 | Inspector–Planner | 15 | 73,870 | 3,624.25 | 10 | 71,770 |
-| 42 | Baseline | 22 | 77,282 | 3,765.33 | 0 | 0 |
-| 42 | Single-agent | 21 | 76,682 | 3,686.27 | 5 | 33,825 |
-| 42 | Inspector–Planner | 21 | 76,242 | 4,002.56 | 8 | 54,322 |
-
-All six endpoints remain internally infeasible (hard violations are nonzero); no solution XML was produced for these endpoints. Hard counts are the primary descriptive comparison. The weighted soft total is only a descriptive tie-break when hard counts are equal: for seed 42, single-agent and Inspector–Planner both have hard 21, with totals 76,682 and 76,242 respectively. Do not interpret this two-seed pilot as statistical significance or a general performance claim. The historical 20-minute endpoint can be shown for context only; it is not a matched-budget improvement comparison.
-
-The report `solver_checks/tg_no_timecap_comparison.json` records 6 completed cells, 2 completed seed triples, 20 published attempts checked (6 complete and 14 incomplete), plus one separately recorded unpublished user-interrupted attempt, 13 authorized recoveries, 53 API calls and 267,790 reported native tokens. Single-agent seed 42 attempts 1–4 ended in HTTP 504; attempt 5 was user-interrupted before publication and retains unknown usage; attempt 6 completed. Inspector–Planner seed 42 attempts 1–10 ended in transient service/network/timeout errors (six HTTP 504, two HTTP 503, two read timeouts); attempt 11 completed at 1,200 evaluations, hard 21, weighted soft total 76,242, runtime 4,002.56 seconds, 8 API calls and 54,322 reported native tokens. Failed-request usage is unknown: a zero reported-token field is not evidence that the failed request consumed zero tokens. All attempts, logs, recovery approvals and the attempt-5 interruption record are retained under `solver_checks/tg_no_timecap/` for audit and unknown-usage accounting; none were deleted.
-
-The final summary and `tools/audit_expanded_pilot.py` audit passed (20 published attempts checked; no audit failures); 131 offline tests passed after the seed-42 figure update. Both frozen campaign snapshots still match the original solver/profile inputs; solver, profile and controller settings are unchanged. The seed-42 figure was refreshed only for the `tg-spr18` endpoint, and its manifest retains the earlier seed-17 and current seed-42 follow-up sources. The seed-17 figure, `profiles/expanded_pilot.json`, the 54-cell comparison and pipeline PDF remain unchanged. These results make no official-validation or significance claim.
-
-These saved campaigns predate StatePacket v2, new action accounting and the new operators. Their frozen snapshots remain historical provenance; the current sources intentionally have different hashes. Use a fresh campaign state root and output namespace for new experiments. Offline implementation checks do not constitute a new benchmark result.
-
-All existing campaign scores are internal. [validate_itc2019.py](tools/validate_itc2019.py) can compare a saved official response and bind its receipt to the exact solution XML hash. Internal hard zero alone is not an official validation result.
+`--multi` is optional for baseline/single comparisons. Time-censored endpoints are distinguished from runs that reached equal evaluation budgets. Keep follow-up and original campaign endpoints separate when their budgets differ.
 
 ## Design decisions and limitations
 

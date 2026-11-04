@@ -2,7 +2,7 @@
 
 A review uses up to two sequential Gemini calls. Inspector selects WHERE to intervene; after target validation, Planner receives the state and diagnosis to select HOW and WHEN. The shared solver executes and scores the proposed change.
 
-Both roles use the same six-block StatePacket v2. Inspector selects IDs from `candidate_regions[].target` and references `boundary_context[].constraints.ids`; Planner chooses an operator from that region's `available_actions`. The shared actions now include `guided_move` and `distribution_repair`. The direct entrypoint optionally accepts `--enable-blocker-chain` for a separately published expanded target. Decisions retain their existing response fields; Section 3 XAI fields remain deferred.
+Both roles receive the six-block StatePacket v2. Inspector selects IDs from `candidate_regions[].target` and references `boundary_context[].constraints.ids`; Planner receives the packet and diagnosis, then chooses an operator from the selected region's `available_actions`. The direct entrypoint optionally accepts `--enable-blocker-chain` for a separately published expanded target. The responses do not include a rationale.
 
 Commands below run from the repository root:
 

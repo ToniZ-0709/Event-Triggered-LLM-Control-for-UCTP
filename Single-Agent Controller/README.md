@@ -2,7 +2,7 @@
 
 One Gemini call selects WHERE to intervene, HOW to modify the region and WHEN to review again. The shared solver validates the decision, executes an allowed operator and scores the candidate before selection.
 
-The current input is the shared six-block StatePacket v2. Decisions keep the original ActionPlan fields; local diagnostics guide operator selection and do not supply executable placements. Actions include the original `move`/`swap`/`destroy_repair`, plus `guided_move` and `distribution_repair`. The direct entrypoint optionally accepts `--enable-blocker-chain` for an explicitly published expanded target. XAI justification fields remain deferred under Section 3 of the plan.
+The input is the shared six-block StatePacket v2. Decisions use the ActionPlan fields; local diagnostics guide operator selection and do not supply executable placements. Actions include `move`, `swap`, `destroy_repair`, `guided_move` and `distribution_repair`. The direct entrypoint optionally accepts `--enable-blocker-chain` for an explicitly published expanded target. The response does not include a rationale.
 
 Commands below run from the repository root:
 

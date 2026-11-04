@@ -10,13 +10,11 @@ Three ITC 2019 pipelines share one NSGA-III solver and differ in how they contro
 
 [PIPELINES.md](PIPELINES.md) is the technical reference for scoring, repair, controller contracts, budgets and limitations. Shared implementation is in `NSGA-III/itc2019/`.
 
-Presentation: [PDF slides](output/pdf/PIPELINES_SLIDES.pdf) and [editable LaTeX source](output/latex/pipelines/main.tex). These teaching slides describe the earlier controller contract; use PIPELINES.md for the current StatePacket v2 and action interface.
-
 ## Current implementation
 
-Both controllers consume the same six-block StatePacket v2, with bounded read-only diagnostics, fixed-boundary context and detailed action outcomes. The original random `move`, `swap` and `destroy_repair` remain available. `guided_move` prioritizes screened one-gene alternatives; `distribution_repair` targets an actionable violated required rule. The optional `--enable-blocker-chain` flag on a controller's direct entrypoint publishes a separate expanded region before permitting coordinated chain moves.
+The controllers use the six-block StatePacket v2, with bounded diagnostics, boundary context and recent outcomes. Single-agent selects the region, operator and review interval in one call. Inspector-Planner first selects a region, then passes the StatePacket and diagnosis to Planner for its action.
 
-[implementation_plan.md](implementation_plan.md) records the status of Sections 1, 2 and 4. Section 3 (XAI) remains a proposal. Offline regression tests run with `python -m pytest NSGA-III/tests -q`.
+The work plan in [FinalizedWork.md](FinalizedWork.md) covers the planned Random and Greedy controls, XAI, experiments and result figures. Random and Greedy are not implemented. The offline XAI trace reader is a prototype and does not explain the model's internal reasoning.
 
 ## Setup
 
@@ -49,26 +47,8 @@ python run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --dry
 
 Execution commands are in the pipeline READMEs. The XML instances are in `Dataset_ITC2019/`; `pilot_instances.txt` lists the original six.
 
-## Saved results
+## Outputs
 
 Each pipeline writes to its own `results_itc2019/` directory. Runs contain configuration and source hashes, scores, saved choices and generation traces; controller runs also include API decision traces. `solution.xml` is exported only after internal feasibility checks.
 
-| Report | Recorded status |
-| --- | --- |
-| [Expanded comparison](solver_checks/expanded_pilot_comparison.json) | 54/54 completed cells: nine instances, two seeds and three methods |
-| [No-time-cap follow-up](solver_checks/tg_no_timecap_comparison.json) | 6/6 completed cells; prior failures and interruption retained |
-
-The expanded report has 16/18 triples with matched evaluation budgets. Scores are internal; official validation has not been completed. Experiment plots and their source manifest are in `output/expanded_pilot/`. The follow-up and original endpoints are separate datasets.
-
-The saved campaigns predate StatePacket v2 and the new operators. Their scores are historical results, not evidence of improvement from the current code. New experiments require a fresh campaign state root and output namespace because source hashes have changed.
-
-## Search diagnostics figures
-
-Generate separate final-quality, convergence and resource figures for each instance/seed from saved reports. This command uses no API and leaves the original nine-panel figures untouched:
-
-```cmd
-python -m pip install -r tools/requirements-plotting.txt
-python tools/plot_search_results.py --report solver_checks/tg_no_timecap_comparison.json --output output/search_diagnostics/tg_no_timecap --extra reviews diversity operators objectives
-```
-
-Outputs include editable PDF/SVG, PNG previews, source CSV, geometry checks and manifests preserving attempts, missing usage and comparison limits. Optional objective plots require saved incumbent vectors; legacy population minima are never substituted. Example figures for seeds 17 and 42 are in `output/search_diagnostics/tg_no_timecap/`.
+See [PIPELINES.md](PIPELINES.md) for the output contract and comparison limits. A run's source hashes identify the implementation that produced it; historical scores should not be attributed to a different StatePacket version.
