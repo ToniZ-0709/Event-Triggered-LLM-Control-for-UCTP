@@ -6,11 +6,15 @@ import hashlib
 import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
+try:
+    from .phase1_data import ARCHIVE, archived_runs
+except ImportError:
+    from phase1_data import ARCHIVE, archived_runs
 
 
-def audit_attempt(attempt: dict) -> dict:
-    folder = Path(attempt["folder"])
+def audit_attempt(attempt: dict, folder: Path) -> dict:
     name = attempt["instance"]
+    manifest = json.loads((folder / "run_config.json").read_text(encoding="utf-8"))
     row = next(record for record in json.loads((folder / "summary.json").read_text(encoding="utf-8"))
                if record["instance"] == name)
     errors = []
@@ -18,6 +22,15 @@ def audit_attempt(attempt: dict) -> dict:
     def check(condition: bool, message: str) -> None:
         if not condition:
             errors.append(message)
+
+    for item in attempt["files"]:
+        path = (folder / item["path"]).resolve()
+        if not path.is_relative_to(folder.resolve()):
+            errors.append("manifest path outside run")
+        elif not path.is_file():
+            errors.append(f"missing file: {item['path']}")
+        elif hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
+            errors.append(f"hash mismatch: {item['path']}")
 
     score = row["score"]
     check(sum(score["weighted"]) == score["total"], "weighted objectives do not sum to total")
@@ -48,7 +61,7 @@ def audit_attempt(attempt: dict) -> dict:
                    {"context_limit_skipped", "deadline_after_diagnostics"}) for event in events),
               "unexpected role sequence")
         check(all(record["model_requested"] == "gemini-3.5-flash-lite" for record in calls), "wrong requested model")
-        if attempt["completion_status"] == "completed":
+        if manifest.get("completion_status") == "completed":
             check(not controller["api_failures"] and controller["comparison_eligible"], "completed but API ineligible")
     solution = child / "solution.xml"
     if row["feasible"]:
@@ -56,7 +69,6 @@ def audit_attempt(attempt: dict) -> dict:
         expected = json.loads((child / "expected.json").read_text(encoding="utf-8"))
         check(hashlib.sha256(solution.read_bytes()).hexdigest() == expected["solution_sha256"], "XML hash mismatch")
         check(expected["score"] == score, "expected score mismatch")
-        manifest = json.loads((folder / "run_config.json").read_text(encoding="utf-8"))
         check(expected["dataset_sha256"] == manifest["settings"]["instances"][0]["sha256"], "dataset hash mismatch")
         classes = ET.parse(solution).getroot().findall("class")
         check(len(classes) == row["classes"] == len({item.attrib["id"] for item in classes}), "XML class count/IDs mismatch")
@@ -68,20 +80,25 @@ def audit_attempt(attempt: dict) -> dict:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--archive", type=Path, default=ARCHIVE)
+    parser.add_argument("--output", type=Path, help="Write a separate audit JSON; stdout only if omitted")
     args = parser.parse_args()
-    report = json.loads(args.report.read_text(encoding="utf-8"))
+    archive = args.archive.resolve()
+    if args.output and args.output.resolve().is_relative_to(archive):
+        parser.error("Write audit output outside the source archive")
     checks = []
-    for attempt in report["all_attempts"]:
+    for (campaign, seed, instance, method), (folder, attempt) in archived_runs(archive).items():
         try:
-            checks.append(audit_attempt(attempt))
-        except (KeyError, OSError, ValueError, TypeError, ET.ParseError) as exc:
-            checks.append({"instance": attempt["instance"], "seed": attempt["seed"],
-                           "method": attempt["method"], "passed": False, "errors": [str(exc)]})
-    report["artifact_audit"] = {"checked_attempts": len(checks),
+            checks.append({"campaign": campaign, **audit_attempt(attempt, folder)})
+        except (KeyError, OSError, ValueError, TypeError, StopIteration, ET.ParseError) as exc:
+            checks.append({"campaign": campaign, "instance": instance, "seed": seed,
+                           "method": method, "passed": False, "errors": [str(exc)]})
+    report = {"checked_attempts": len(checks),
         "passed": all(item["passed"] for item in checks), "failures": [item for item in checks if not item["passed"]],
         "scope": "Internal accounting, role/token traces, export hash/class IDs; not official validation."}
-    args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps(report["artifact_audit"], indent=2))
-    if not report["artifact_audit"]["passed"]:
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(report, indent=2))
+    if not report["passed"]:
         raise SystemExit(1)

@@ -87,10 +87,12 @@ python -m pip install -r "Single-Agent Controller/requirements.txt"
 python -m pip install -r "Multi-Agent Controller/requirements.txt"
 ```
 
-Verify API connection and model availability:
+Check the local SDK, key presence and configured model (no API call):
 ```cmd
 python tools/gemini_preflight.py
 ```
+
+Add `--live --confirm-free-tier` to send one test request.
 
 ### Running Experiments
 Execute dry-run previews without consuming API quotas:
@@ -124,3 +126,39 @@ Each pipeline writes structured execution artifacts to its dedicated `results_it
 - `solution.xml`: Exported for internally feasible solutions; official validation is a separate step.
 
 The phase-one source comparison is recorded in [source-verification.json](ExperimentResult/phase1/source-verification.json). The available `llm.py` has matching prompt and response-schema hashes in the recorded calls, but its file hash differs from the original; exact reproduction of the API adapter is therefore not established.
+
+To check the archived files:
+
+```cmd
+python tools/audit_expanded_pilot.py
+```
+
+The audit does not perform official validation.
+
+### Plot Phase 1 results
+
+Install the plotting dependency:
+
+```cmd
+python -m pip install -r tools/requirements-plotting.txt
+```
+
+Generate all three graphs for every available instance and seed:
+
+```cmd
+python tools/plot_phase1.py
+```
+
+Select instances or seeds:
+
+```cmd
+python tools/plot_phase1.py --instance mary-fal18 tg-spr18 --seed 17 42
+```
+
+Generate one graph for one instance and seed:
+
+```cmd
+python tools/plot_phase1.py --instance mary-fal18 --seed 17 --graph convergence
+```
+
+Graph names are `final_quality`, `convergence` and `resources`. Pass more than one name after `--graph` to select several. PNG files are written to `ExperimentResult/phase1/graphs/<instance>/seed_<seed>/`. Use `--output` to choose a different base folder. Running the same command again replaces the selected PNG files.
