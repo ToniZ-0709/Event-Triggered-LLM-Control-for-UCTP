@@ -2,6 +2,8 @@
 **/.pytest_cache/
 **/.venv/
 NSGA-III/results_itc2019/
+Random Controller/results_itc2019/
+Greedy Controller/results_itc2019/
 Single-Agent Controller/results_itc2019/
 Multi-Agent Controller/results_itc2019/
 **/.env

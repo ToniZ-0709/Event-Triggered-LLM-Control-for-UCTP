@@ -55,12 +55,44 @@ def audit_attempt(attempt: dict, folder: Path) -> dict:
             check(sum(record.get(record_key, 0) or 0 for record in calls) == controller[total_key], total_key + " mismatch")
         check(abs(sum(record["latency_seconds"] for record in calls) - controller["api_latency_seconds"]) < 0.01,
               "API latency mismatch")
-        allowed_sequences = (["single_agent"],) if attempt["method"] == "single" else (["inspector"], ["inspector", "planner"])
-        check(all([record["role"] for record in event["roles"]] in allowed_sequences or
-                  (not event["roles"] and event.get("decision_status") in
-                   {"context_limit_skipped", "deadline_after_diagnostics"}) for event in events),
-              "unexpected role sequence")
-        check(all(record["model_requested"] == "gemini-3.5-flash-lite" for record in calls), "wrong requested model")
+        method = attempt["method"]
+        if method in {"random", "greedy"}:
+            settings = manifest["settings"]["controller"]
+            check(settings["provider"] == "none" and settings["model"] is None and
+                  settings["max_api_calls"] == 0 and controller["api_calls"] == 0 and
+                  controller["mode"] == method, "unexpected local controller metadata")
+            check(all([record["role"] for record in event["roles"]] == [method] and
+                      event["roles"][0]["api_requests"] == 0 and
+                      event["action"]["next_review_interval"] == settings["review_interval"]
+                      for event in events), "unexpected local policy trace")
+            if method == "greedy":
+                check(sum(event["probe_evaluations"] for event in events) ==
+                      controller["probe_evaluations"], "total probe count mismatch")
+                for event in events:
+                    probes = event["roles"][0]["probes"]
+                    budget = min(settings["fixed_execution_budget"],
+                                 settings["max_operator_evaluations"])
+                    remaining = event["state"]["global"]["remaining_evaluations"]
+                    if remaining is not None:
+                        budget = min(budget, max(0, remaining - 1))
+                    used = event["probe_evaluations"]
+                    check(used == sum(probe["evaluations"] for probe in probes) and
+                          sum(probe["quota"] for probe in probes) <= budget and
+                          all(0 <= probe["evaluations"] <= probe["quota"] for probe in probes),
+                          "probe evaluation budget mismatch")
+                    outcome = event["outcome"]
+                    if outcome is not None:
+                        check(outcome["evaluations"] == used and outcome["scoring_rechecks"] == 1,
+                              "greedy injection accounting mismatch")
+        else:
+            allowed_sequences = (["single_agent"],) if method == "single" else (
+                ["inspector"], ["inspector", "planner"])
+            check(all([record["role"] for record in event["roles"]] in allowed_sequences or
+                      (not event["roles"] and event.get("decision_status") in
+                       {"context_limit_skipped", "deadline_after_diagnostics"}) for event in events),
+                  "unexpected role sequence")
+            check(all(record["model_requested"] == "gemini-3.5-flash-lite" for record in calls),
+                  "wrong requested model")
         if manifest.get("completion_status") == "completed":
             check(not controller["api_failures"] and controller["comparison_eligible"], "completed but API ineligible")
     solution = child / "solution.xml"
@@ -69,7 +101,9 @@ def audit_attempt(attempt: dict, folder: Path) -> dict:
         expected = json.loads((child / "expected.json").read_text(encoding="utf-8"))
         check(hashlib.sha256(solution.read_bytes()).hexdigest() == expected["solution_sha256"], "XML hash mismatch")
         check(expected["score"] == score, "expected score mismatch")
-        check(expected["dataset_sha256"] == manifest["settings"]["instances"][0]["sha256"], "dataset hash mismatch")
+        dataset = next(item for item in manifest["settings"]["instances"]
+                       if Path(item["file"]).stem == name)
+        check(expected["dataset_sha256"] == dataset["sha256"], "dataset hash mismatch")
         classes = ET.parse(solution).getroot().findall("class")
         check(len(classes) == row["classes"] == len({item.attrib["id"] for item in classes}), "XML class count/IDs mismatch")
     else:

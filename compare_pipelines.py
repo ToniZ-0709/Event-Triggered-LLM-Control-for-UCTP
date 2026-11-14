@@ -1,4 +1,4 @@
-"""Compare three already completed, paired ITC 2019 pipeline runs.
+"""Compare completed, paired ITC 2019 pipeline runs.
 
 This reports internal scores only. It does not claim official ITC validation or
 statistical significance across seeds or instances.
@@ -13,6 +13,12 @@ from pathlib import Path
 
 
 METHODS = ("baseline", "single", "multi")
+LOCAL_METHODS = ("random", "greedy")
+SHARED_REVIEW_SETTINGS = (
+    "review_interval", "warmup_generations", "stagnation_window", "min_review_interval",
+    "max_review_interval", "diversity_threshold", "diversity_recovery_threshold",
+    "max_regions", "region_size", "max_operator_evaluations", "max_reviews",
+)
 
 
 def _check_review_budget(single_controller: dict, multi_controller: dict) -> None:
@@ -72,13 +78,17 @@ def _paired_delta(left: dict, right: dict) -> dict:
 
 
 def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) -> dict:
+    if not set(METHODS) <= folders.keys() or set(folders) - set((*METHODS, *LOCAL_METHODS)):
+        raise ValueError("Supply baseline, single, and multi, optionally random and greedy")
+    local_methods = tuple(method for method in LOCAL_METHODS if method in folders)
+    methods = ("baseline", *local_methods, "single", "multi")
     runs = {name: _load_run(folder) for name, folder in folders.items()}
     baseline = runs["baseline"][0]["settings"]
     if "pipeline" in baseline:
         raise ValueError("The baseline input is a controller run")
     shared_keys = ("instances", "config", "repair", "time_limit_seconds", "stop_on_feasible",
                    "solver_sources_sha256")
-    for name in ("single", "multi"):
+    for name in methods[1:]:
         settings = runs[name][0]["settings"]
         for key in shared_keys:
             if settings.get(key) != baseline.get(key):
@@ -123,17 +133,40 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
     if llm_source_hash("single") != llm_source_hash("multi"):
         raise ValueError("Gemini adapter and prompts differ between single and multi runs")
     expected_names = {"single": "NSGA-III + Single-Agent",
-                      "multi": "NSGA-III + Inspector-Planner"}
-    for method, expected_name in expected_names.items():
+                      "multi": "NSGA-III + Inspector-Planner",
+                      "random": "NSGA-III + Random", "greedy": "NSGA-III + Greedy"}
+    for method in methods[1:]:
+        expected_name = expected_names[method]
         if runs[method][0]["settings"]["pipeline"]["name"] != expected_name:
             raise ValueError(f"{method} input is not a {expected_name} run")
-    if set(runs["baseline"][1]) != set(runs["single"][1]) or (
-            set(runs["baseline"][1]) != set(runs["multi"][1])):
+    for method in local_methods:
+        config, summaries = runs[method]
+        settings = config["settings"]
+        controller_settings = settings["controller"]
+        if (controller_settings.get("provider") != "none" or
+                controller_settings.get("model") is not None or "llm" in settings or
+                controller_settings.get("max_api_calls") != 0 or
+                controller_settings.get("fixed_execution_budget") != 10):
+            raise ValueError(f"{method} run does not use the fixed local controller policy")
+        if any(controller_settings.get(key) != single_controller.get(key)
+               for key in SHARED_REVIEW_SETTINGS):
+            raise ValueError(f"Shared review settings differ for {method}")
+        for row in summaries.values():
+            controller = row.get("controller", {})
+            if (config.get("completion_status") != "completed" or
+                    controller.get("mode") != method or
+                    controller.get("completion_status") != "completed" or
+                    not controller.get("comparison_eligible", False) or controller.get("api_failures") or
+                    any(controller.get(key) != 0 for key in (
+                        "api_calls", "input_tokens", "output_tokens", "thinking_tokens",
+                        "total_native_tokens", "api_latency_seconds"))):
+                raise ValueError(f"{method}/{row['instance']} is not a completed offline controller run")
+    if any(set(runs["baseline"][1]) != set(runs[method][1]) for method in methods[1:]):
         raise ValueError("Run summaries contain different instances")
 
     rows = []
     for instance in sorted(runs["baseline"][1]):
-        records = {method: runs[method][1][instance] for method in METHODS}
+        records = {method: runs[method][1][instance] for method in methods}
         single_versions = records["single"].get("controller", {}).get("models_returned", [])
         multi_versions = records["multi"].get("controller", {}).get("models_returned", [])
         if single_versions and multi_versions and set(single_versions) != set(multi_versions):
@@ -160,10 +193,16 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
                     "input_tokens": row.get("controller", {}).get("input_tokens", 0),
                     "output_tokens": row.get("controller", {}).get("output_tokens", 0),
                     "thinking_tokens": row.get("controller", {}).get("thinking_tokens", 0),
+                    **({"probe_evaluations": row["controller"]["probe_evaluations"]}
+                       if method == "greedy" else {}),
                 } for method, row in records.items()
             },
             "single_minus_baseline": _paired_delta(records["baseline"], records["single"]),
             "multi_minus_single": _paired_delta(records["single"], records["multi"]),
+            **{f"{right}_minus_{left}": _paired_delta(records[left], records[right])
+               for i, left in enumerate(methods) for right in methods[i + 1:]
+               if left in local_methods or right in local_methods or
+               (local_methods and (left, right) == ("baseline", "multi"))},
         })
     return {
         "score_source": "internal_evaluator",
@@ -173,22 +212,23 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
         "time_limit_seconds": baseline.get("time_limit_seconds"),
         "model": single_model,
         "provider": "gemini",
-        "runs": {method: str(folders[method].resolve()) for method in METHODS},
+        "runs": {method: str(folders[method].resolve()) for method in methods},
         "instances": rows,
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    for method in METHODS:
-        parser.add_argument(f"--{method}", type=Path, required=True,
+    for method in (*METHODS, *LOCAL_METHODS):
+        parser.add_argument(f"--{method}", type=Path, required=method in METHODS,
                             help=f"Completed {method} run directory")
     parser.add_argument("--allow-generation-only", action="store_true",
                         help="Allow runs without a wall-clock limit")
     parser.add_argument("--output", type=Path, help="Write comparison JSON to this file")
     args = parser.parse_args()
     try:
-        report = compare({method: getattr(args, method) for method in METHODS},
+        report = compare({method: getattr(args, method) for method in (*METHODS, *LOCAL_METHODS)
+                          if getattr(args, method) is not None},
                          allow_generation_only=args.allow_generation_only)
     except (KeyError, TypeError, ValueError, OSError) as exc:
         parser.error(str(exc))

@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 import hashlib
+from pathlib import Path
+import sys
 import time
 from typing import Any
 
@@ -14,7 +16,7 @@ from pymoo.core.population import Population
 
 from .instance import Instance
 from .nsga3 import _joint_improve_hard, _room_chain_repair, evaluation_count
-from .operators import OPERATORS, apply_operator
+from .operators import OPERATORS, OperatorProbe, apply_operator, inject_operator_candidate
 from .neighborhood import adaptive_room_repair, distribution_neighborhood_repair
 from .repair_policy import FailureBackoff, RepairSettings
 from .regions import RegionBuilder, RegionCandidate, population_metrics
@@ -25,11 +27,12 @@ from .scoring import evaluate, overlaps
 _COORDINATED_INTERVAL = 5
 _COORDINATED_PAIR_TRIALS = 8
 _COORDINATED_ROUNDS = 3
+FIXED_EXECUTION_BUDGET = 10
 
 
 @dataclass(frozen=True, slots=True)
 class ControllerSettings:
-    model: str
+    model: str | None
     review_interval: int = 10
     warmup_generations: int = 5
     stagnation_window: int = 5
@@ -41,22 +44,26 @@ class ControllerSettings:
     region_size: int = 5
     max_operator_evaluations: int = 24
     recent_outcomes: int = 5
-    api_timeout_seconds: float = 15.0
+    api_timeout_seconds: float = 60.0
     max_output_tokens: int = 300
     max_api_calls: int = 100
     max_reviews: int = 12
     provider: str = "gemini"
 
     def __post_init__(self) -> None:
-        if not self.model:
-            raise ValueError("A model is required for controller pipelines")
-        if self.provider != "gemini":
-            raise ValueError("Only the Gemini free-tier controller is enabled")
+        if self.provider == "gemini":
+            if not self.model or self.max_api_calls < 1:
+                raise ValueError("Gemini controllers require a model and a positive API call limit")
+        elif self.provider == "none":
+            if self.model is not None or self.max_api_calls != 0:
+                raise ValueError("Local controllers require no model and a zero API call limit")
+        else:
+            raise ValueError("Unknown controller provider")
         positive = (self.review_interval, self.warmup_generations,
                     self.stagnation_window, self.min_review_interval,
                     self.max_review_interval, self.max_regions, self.region_size,
                     self.max_operator_evaluations, self.recent_outcomes,
-                    self.max_output_tokens, self.max_api_calls, self.max_reviews)
+                    self.max_output_tokens, self.max_reviews)
         if any(value < 1 for value in positive) or self.api_timeout_seconds <= 0:
             raise ValueError("Controller settings must be positive")
         if not self.min_review_interval <= self.review_interval <= self.max_review_interval:
@@ -77,12 +84,76 @@ class ActionPlan:
     next_review_interval: int
 
 
+@dataclass(frozen=True, slots=True)
+class ReviewDecision:
+    plan: ActionPlan | None
+    roles: list[dict]
+    status: str
+    probe: OperatorProbe | None = None
+    probe_evaluations: int | None = None
+
+
 def _progress_signal(quality: tuple[int, int]) -> tuple[str, int]:
     return ("hard", quality[0]) if quality[0] > 0 else ("feasible_total", quality[1])
 
 
+def _format_quality(quality: tuple[int, int] | None) -> str:
+    if quality is None:
+        return "-/-"
+    return f"{quality[0]}/{quality[1]}"
+
+
+def _format_role_summary(record: dict) -> str:
+    role = str(record.get("role") or "llm")
+    status = str(record.get("status") or "unknown")
+    if role == "random":
+        return (f"random[pairs={record.get('valid_pairs', 0)} "
+                f"chosen={record.get('chosen_index')}]")
+    if role == "greedy":
+        probes = record.get("probes") or []
+        if not probes:
+            return f"greedy[{status}]"
+        probe_summary = ",".join(
+            f"{item.get('operator_id')}:{item.get('evaluations', 0)}/{item.get('quota', 0)}"
+            for item in probes)
+        return f"greedy[region={record.get('region_id')} probes={probe_summary}]"
+    parts = [status]
+    tokens = record.get("total_tokens")
+    if tokens is not None:
+        parts.append(f"tok={tokens}")
+    pacing = record.get("pacing_wait_seconds")
+    if isinstance(pacing, (int, float)) and pacing > 0:
+        parts.append(f"wait={pacing:.1f}s")
+    latency = record.get("latency_seconds")
+    if isinstance(latency, (int, float)) and latency > 0:
+        parts.append(f"t={latency:.2f}s")
+    return f"{role}[{' '.join(parts)}]"
+
+
+def _format_repair_line(monitor: "BaselineMonitor", generation: int) -> str | None:
+    sources = (("coordinated", monitor.coordinated_repair_events),
+               ("room_plateau", monitor.room_plateau_events),
+               ("room_chain", monitor.room_chain_events))
+    items = []
+    for label, events in sources:
+        for event in events:
+            if event.get("generation") != generation:
+                continue
+            status = event.get("status", "unknown")
+            calls = event.get("scoring_calls", 0)
+            src = event.get("source_hard")
+            cand = event.get("candidate_hard")
+            hard_delta = f" {src}->{cand}" if src is not None and cand is not None else ""
+            items.append(f"{label}={status}{hard_delta}(calls={calls})")
+    if not items:
+        return None
+    gen_tag = (f"{generation}/{monitor._max_generations}"
+               if monitor._max_generations else str(generation))
+    return f"  [repair @ gen {gen_tag}] " + " | ".join(items)
+
+
 class BaselineMonitor(Callback):
-    """Measure the same internal anytime signal in all three methods."""
+    """Measure the same internal anytime signal across pipelines."""
 
     def __init__(self, instance: Instance, started: float,
                  time_limit_seconds: float | None, seed: int = 42,
@@ -112,6 +183,49 @@ class BaselineMonitor(Callback):
         self._room_plateau_sources: set[str] = set()
         seed_bytes = hashlib.sha256(f"{instance.name}:{seed}:room-plateau".encode()).digest()
         self._room_plateau_rng = np.random.default_rng(int.from_bytes(seed_bytes[:8], "big"))
+        self._progress_stream = None
+        self._progress_logs: tuple[Path, ...] = ()
+        self._progress_interval = 0
+        self._max_generations: int | None = None
+        self._last_logged_review_gen = -1
+        self._last_logged_repair_gen = -1
+
+    def configure_progress(self, *, stream=None,
+                           log_paths: tuple[Path | str, ...] | list[Path | str] = (),
+                           interval: int = 1,
+                           max_generations: int | None = None) -> None:
+        if interval < 0:
+            raise ValueError("Progress interval must be non-negative")
+        self._progress_stream = stream
+        self._progress_logs = tuple(Path(path) for path in log_paths if path is not None)
+        self._progress_interval = interval
+        self._max_generations = max_generations
+
+    def _emit_progress(self, *lines: str) -> None:
+        filtered = [line for line in lines if line]
+        if not filtered or (self._progress_stream is None and not self._progress_logs):
+            return
+        text = "\n".join(filtered) + "\n"
+        if self._progress_stream is not None:
+            self._progress_stream.write(text)
+            flush = getattr(self._progress_stream, "flush", None)
+            if callable(flush):
+                flush()
+        for path in self._progress_logs:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(text)
+
+    def _format_generation_progress(self, metrics: dict) -> str:
+        gen = metrics["generation"]
+        gen_tag = f"{gen}/{self._max_generations}" if self._max_generations else str(gen)
+        budget = metrics.get("evaluation_budget")
+        eval_tag = (f"{metrics['evaluations']}/{budget}" if budget is not None
+                    else str(metrics["evaluations"]))
+        best_tag = _format_quality((metrics["best_observed_hard"],
+                                    metrics["best_observed_internal_total"]))
+        return (f"[gen {gen_tag}] eval={eval_tag} best={best_tag} "
+                f"div={metrics['placement_diversity']:.2f} t={metrics['elapsed_seconds']:.1f}s")
 
     def remaining(self) -> float | None:
         return None if self.deadline is None else self.deadline - time.perf_counter()
@@ -415,6 +529,21 @@ class BaselineMonitor(Callback):
         metrics["best_observed_hard"] = self.best_quality[0]
         metrics["best_observed_internal_total"] = self.best_quality[1]
         self.anytime_events.append(metrics)
+        generation = metrics["generation"]
+        repair_line = None
+        if self._last_logged_repair_gen != generation:
+            repair_line = _format_repair_line(self, generation)
+            if repair_line is not None:
+                self._emit_progress(repair_line)
+                self._last_logged_repair_gen = generation
+        should_log_gen = self._progress_interval > 0 and (
+            generation <= 1 or
+            generation % self._progress_interval == 0 or
+            generation == self._max_generations or
+            generation == self._last_logged_review_gen or
+            repair_line is not None)
+        if should_log_gen:
+            self._emit_progress(self._format_generation_progress(metrics))
         if self.deadline is not None and time.perf_counter() >= self.deadline:
             algorithm.termination.terminate()
             algorithm.termination.update(algorithm)
@@ -439,6 +568,7 @@ class ControllerCallback(BaselineMonitor):
     """One reviewed intervention at a time; the solver owns every state change."""
 
     mode = "unspecified"
+    requires_llm = True
 
     def __init__(self, instance: Instance, settings: ControllerSettings, client,
                  seed: int, started: float, time_limit_seconds: float | None,
@@ -474,6 +604,21 @@ class ControllerCallback(BaselineMonitor):
 
     def decide(self, packet: dict) -> tuple[ActionPlan | None, list[dict], str]:
         raise NotImplementedError
+
+    def _review(self, algorithm, packet: dict, regions: list[RegionCandidate]) -> ReviewDecision:
+        return ReviewDecision(*self.decide(packet))
+
+    def _format_generation_progress(self, metrics: dict) -> str:
+        gen = metrics["generation"]
+        gen_tag = f"{gen}/{self._max_generations}" if self._max_generations else str(gen)
+        budget = metrics.get("evaluation_budget")
+        eval_tag = (f"{metrics['evaluations']}/{budget}" if budget is not None
+                    else str(metrics["evaluations"]))
+        best_tag = _format_quality((metrics["best_observed_hard"],
+                                    metrics["best_observed_internal_total"]))
+        stag = gen - self.last_progress_generation
+        return (f"[gen {gen_tag}] eval={eval_tag} best={best_tag} "
+                f"div={metrics['placement_diversity']:.2f} stag={stag} t={metrics['elapsed_seconds']:.1f}s")
 
     def _fallback(self) -> ActionPlan:
         return ActionPlan(None, None, None, "no_op", 0, self.settings.review_interval)
@@ -580,9 +725,10 @@ class ControllerCallback(BaselineMonitor):
         if reasons and available is not None and available < 4:
             self.budget_skipped_reviews += 1
             reasons = []
-        if reasons and (self.remaining() is None or self.remaining() > 0.1) and (
-                self.api_calls < self.settings.max_api_calls) and (
-                len(self.events) < self.settings.max_reviews) and not self.api_disabled:
+        api_ready = not self.requires_llm or (
+            not self.api_disabled and self.api_calls < self.settings.max_api_calls)
+        if reasons and api_ready and (self.remaining() is None or self.remaining() > 0.1) and (
+                len(self.events) < self.settings.max_reviews):
             self._stagnation_event_handled |= "stagnation" in reasons
             self._low_diversity_event_handled |= "low_diversity" in reasons
             prior_scoring_calls = self.region_builder.scoring_calls
@@ -598,19 +744,30 @@ class ControllerCallback(BaselineMonitor):
                 self.current_operator_limit = min(self.current_operator_limit, remaining_evaluations - 1)
                 metrics["remaining_evaluations"] = max(0, remaining_evaluations)
             packet = self._packet(metrics, regions)
-            decision, role_records, decision_status = self.decide(packet)
-            self._account_calls(role_records)
-            if self.api_disabled:
-                # Export an incomplete run rather than keep evolving silently
-                # after infrastructure has disabled its controller.
-                algorithm.termination.force_termination = True
-            plan, region, validation = self._validate(decision, regions)
+            review_number = len(self.events) + 1
+            budget = metrics.get("evaluation_budget")
+            eval_tag = (f"{metrics['evaluations']}/{budget}" if budget is not None
+                        else str(metrics["evaluations"]))
+            self._emit_progress(
+                f"[review #{review_number} @ gen {metrics['generation']} | {self.mode} | "
+                f"trigger={','.join(reasons)} | eval={eval_tag} "
+                f"best={_format_quality(self.best_observed)}]")
+            review = self._review(algorithm, packet, regions)
+            if self.requires_llm:
+                self._account_calls(review.roles)
+                if self.api_disabled:
+                    # Preserve the incomplete run instead of silently continuing.
+                    algorithm.termination.force_termination = True
+            plan, region, validation = self._validate(review.plan, regions)
             outcome = None
             if region is not None and plan.operator_id != "no_op":
                 self.interventions += 1
-                outcome = apply_operator(
-                    algorithm, self.instance, region, plan.operator_id,
-                    plan.execution_budget, self.rng, self.deadline)
+                if review.probe is not None:
+                    outcome = inject_operator_candidate(algorithm, review.probe)
+                else:
+                    outcome = apply_operator(
+                        algorithm, self.instance, region, plan.operator_id,
+                        plan.execution_budget, self.rng, self.deadline)
                 self.selected_interventions += int(outcome.selected)
                 self.operator_scoring_rechecks += outcome.scoring_rechecks
                 algorithm.evaluator.n_eval += outcome.scoring_rechecks
@@ -625,22 +782,45 @@ class ControllerCallback(BaselineMonitor):
             self.progress_history[-1] = after_progress
             event = {
                 "generation": metrics["generation"], "trigger": reasons,
-                "state": packet, "roles": role_records,
-                "decision_status": decision_status, "validation": validation,
+                "state": packet, "roles": review.roles,
+                "decision_status": review.status, "validation": validation,
                 "action": asdict(plan),
                 "outcome": None if outcome is None else asdict(outcome),
                 "population_after": {"best_hard": after["best_hard"],
                                      "best_internal_total": after["best_internal_total"]},
                 "incumbent_after": {"hard": self.best_observed[0], "internal_total": self.best_observed[1]},
             }
+            if review.probe_evaluations is not None:
+                event["probe_evaluations"] = review.probe_evaluations
             self.events.append(event)
+            target = f"region={plan.region_id} " if plan.region_id is not None else ""
+            roles_text = (" ".join(_format_role_summary(role) for role in review.roles)
+                          if review.roles else "no_role_record")
+            decision_line = (
+                f"  decision: {target}op={plan.operator_id} budget={plan.execution_budget} "
+                f"next_when={plan.next_review_interval} status={review.status}/{validation} | "
+                f"{roles_text}")
+            outcome_line = None
+            if outcome is not None:
+                before_quality = (metrics["incumbent_hard"], metrics["incumbent_internal_total"])
+                after_tag = _format_quality(self.best_observed)
+                delta_tag = (f"{_format_quality(before_quality)}->{after_tag}"
+                             if self.best_observed != before_quality else after_tag)
+                outcome_line = (f"  outcome: {outcome.status} best={delta_tag} "
+                                f"evals={outcome.evaluations} rechecks={outcome.scoring_rechecks}")
+            elif review.probe_evaluations:
+                outcome_line = (f"  outcome: {review.status} probe_evals={review.probe_evaluations} "
+                                f"best={_format_quality(self.best_observed)}")
+            self._emit_progress(decision_line, *( (outcome_line,) if outcome_line else () ))
+            self._last_logged_review_gen = metrics["generation"]
             self.outcomes.append({"generation": metrics["generation"],
                                   "region_id": plan.region_id,
                                   "operator_id": plan.operator_id,
                                   "validation": validation,
                                   "outcome": None if outcome is None else outcome.status,
                                   "attempts": 0 if outcome is None else outcome.attempts,
-                                  "evaluations": 0 if outcome is None else outcome.evaluations,
+                                  "evaluations": (review.probe_evaluations or 0)
+                                  if outcome is None else outcome.evaluations,
                                   "elapsed_seconds": 0 if outcome is None else
                                   round(outcome.elapsed_seconds, 3),
                                   "best_hard_change": self.best_observed[0] - metrics["incumbent_hard"],
@@ -653,25 +833,27 @@ class ControllerCallback(BaselineMonitor):
 
     def report(self) -> dict[str, Any]:
         base = super().report()
+        intentional_no_op = sum(
+            event["validation"] == "valid_no_op" and (
+                not self.requires_llm or
+                event["decision_status"] in {"decision_received", "inspector_no_target"})
+            for event in self.events)
+        no_op = sum(event["action"]["operator_id"] == "no_op" for event in self.events)
         base.update({"mode": self.mode,
                      "status": "api_disabled" if self.api_disabled else "active",
                      "completion_status": ("incomplete_api_failure" if self.api_failures else
-                                           "no_api_calls" if self.api_calls == 0 else "completed"),
-                     "comparison_eligible": not self.api_failures and self.api_calls > 0,
+                                           "no_api_calls" if self.requires_llm and self.api_calls == 0
+                                           else "completed"),
+                     "comparison_eligible": not self.api_failures and (
+                         not self.requires_llm or self.api_calls > 0),
                      "provider": self.settings.provider,
                      "model": self.settings.model,
                      "models_returned": sorted(self.models_returned),
                      "reviews": len(self.events),
                      "budget_skipped_reviews": self.budget_skipped_reviews,
-                     "no_op": sum(event["action"]["operator_id"] == "no_op"
-                                  for event in self.events),
-                     "model_no_op": sum(event["validation"] == "valid_no_op" and
-                         event["decision_status"] in {"decision_received", "inspector_no_target"}
-                         for event in self.events),
-                     "fallback_no_op": sum(event["action"]["operator_id"] == "no_op" and
-                         not (event["validation"] == "valid_no_op" and
-                              event["decision_status"] in {"decision_received", "inspector_no_target"})
-                         for event in self.events),
+                     "no_op": no_op,
+                     "model_no_op": intentional_no_op if self.requires_llm else 0,
+                     "fallback_no_op": no_op - intentional_no_op,
                      "api_calls": self.api_calls,
                      "input_tokens": self.input_tokens,
                      "output_tokens": self.output_tokens,
@@ -688,4 +870,6 @@ class ControllerCallback(BaselineMonitor):
                      "selected_interventions": self.selected_interventions})
         base["region_scoring_calls"] = self.region_builder.scoring_calls
         base["operator_scoring_rechecks"] = self.operator_scoring_rechecks
+        if not self.requires_llm:
+            base["policy_no_op"] = intentional_no_op
         return base

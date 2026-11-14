@@ -8,7 +8,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/"NSGA-III"))
-from itc2019.llm import DEFAULT_MODEL, FREE_TIER_MODELS, GeminiDecisionClient
+from itc2019.llm import (DEFAULT_MODEL, DEFAULT_THINKING_LEVEL, DEFAULT_TIMEOUT_SECONDS,
+                             FREE_TIER_MODELS, GeminiDecisionClient, VALID_THINKING_LEVELS)
 
 
 def main():
@@ -16,12 +17,16 @@ def main():
     parser.add_argument("--live", action="store_true", help="Send one synthetic no-op packet, not a GA run")
     parser.add_argument("--confirm-free-tier", action="store_true")
     parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL",DEFAULT_MODEL))
+    parser.add_argument("--thinking-level", choices=VALID_THINKING_LEVELS,
+                        default=os.environ.get("GEMINI_THINKING_LEVEL") or DEFAULT_THINKING_LEVEL)
+    parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     args = parser.parse_args()
     try:
         sdk = version("google-genai")
     except PackageNotFoundError:
         sdk = None
-    report = {"provider":"gemini", "model":args.model,"sdk":sdk,
+    report = {"provider":"gemini", "model":args.model, "thinking_level":args.thinking_level,
+              "timeout_seconds":args.timeout_seconds, "sdk":sdk,
               "key_present":bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")),
               "model_in_free_tier_allowlist":args.model in FREE_TIER_MODELS,
               "free_tier_confirmation":args.confirm_free_tier or os.environ.get("GEMINI_FREE_TIER_CONFIRMED")=="1",
@@ -31,14 +36,17 @@ def main():
         print(json.dumps(report,indent=2))
         return
     try:
-        client = GeminiDecisionClient(args.model,15,1024,free_tier_confirmed=args.confirm_free_tier)
+        client = GeminiDecisionClient(args.model, args.timeout_seconds, 1024,
+                                      free_tier_confirmed=args.confirm_free_tier,
+                                      thinking_level=args.thinking_level)
     except (ValueError,RuntimeError) as exc:
         parser.error(str(exc))
     try:
         decision, record = client.request("single_agent", {
             "schema_version":1,"instance":"connection-check-no-real-data",
             "global":{"generation":5},"candidate_regions":[],"recent_outcomes":[],
-            "allowed_actions":{"operators":["no_op"],"execution_budget":[1,1],"review_interval":[3,20]}},15)
+            "allowed_actions":{"operators":["no_op"],"execution_budget":[1,1],"review_interval":[3,20]}},
+            args.timeout_seconds)
         report.update(status=record["status"],network_requests=record["api_requests"],
                       decision=decision,record=record)
         print(json.dumps(report,indent=2))

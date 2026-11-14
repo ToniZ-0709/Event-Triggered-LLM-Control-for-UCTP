@@ -16,9 +16,15 @@ from typing import Any
 from .operators import OPERATORS
 
 DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_TIMEOUT_SECONDS = 60.0
+DEFAULT_THINKING_LEVEL = "low"
+VALID_THINKING_LEVELS = ("minimal", "low", "medium", "high")
+RETRY_ATTEMPTS = 3
+# Retry transient timeouts and 5xx errors only; keep 429 fail-closed per quota policy.
+TRANSIENT_RETRY_STATUS_CODES = (408, 500, 502, 503, 504)
 # Text models with a published Free Tier when this integration was prepared.
 # No latest/preview aliases or silent fallback to a different model/provider.
-FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.6-flash", "gemini-3.5-flash-lite")
+FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.5-flash-lite", "gemini-4-hydrogen")
 
 
 def _object(properties: dict[str, dict]) -> dict:
@@ -110,16 +116,19 @@ def _enum(value) -> str | None:
 class GeminiDecisionClient:
     provider = "gemini"
 
-    def __init__(self, model: str, timeout_seconds: float,
-                 max_output_tokens: int, *, free_tier_confirmed: bool = False,
+    def __init__(self, model: str, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+                 max_output_tokens: int = 1024, *, free_tier_confirmed: bool = False,
                  min_request_interval_seconds: float = 10.0,
-                 max_input_characters: int = 60_000) -> None:
+                 max_input_characters: int = 60_000,
+                 thinking_level: str = DEFAULT_THINKING_LEVEL) -> None:
         if not (free_tier_confirmed or os.environ.get("GEMINI_FREE_TIER_CONFIRMED") == "1"):
             raise RuntimeError("Check that this key's project is Free Tier in AI Studio, then use "
                                "--confirm-free-tier or GEMINI_FREE_TIER_CONFIRMED=1. "
                                "Do not enable billing for this test.")
         if model not in FREE_TIER_MODELS:
             raise ValueError("This free-tier-only adapter permits: " + ", ".join(FREE_TIER_MODELS))
+        if thinking_level not in VALID_THINKING_LEVELS:
+            raise ValueError("thinking_level must be one of: " + ", ".join(VALID_THINKING_LEVELS))
         if (timeout_seconds <= 0 or not 1 <= max_output_tokens <= 4096 or
                 not 0 <= min_request_interval_seconds <= 60 or max_input_characters < 1):
             raise ValueError("Invalid Gemini timeout, token, pacing or input limits")
@@ -137,16 +146,21 @@ class GeminiDecisionClient:
         except ImportError as exc:
             raise RuntimeError("Install the controller requirements (google-genai)") from exc
         self.types = types
+        self.retry_options = types.HttpRetryOptions(
+            attempts=RETRY_ATTEMPTS,
+            http_status_codes=list(TRANSIENT_RETRY_STATUS_CODES),
+        )
         self.client = genai.Client(api_key=key, vertexai=False,
             http_options=types.HttpOptions(api_version="v1beta",
                 base_url="https://generativelanguage.googleapis.com",
                 timeout=max(1, int(timeout_seconds*1000)),
-                retry_options=types.HttpRetryOptions(attempts=1)))
+                retry_options=self.retry_options))
         self.model = model
         self.max_output_tokens = max_output_tokens
         self.timeout_seconds = timeout_seconds
         self.min_request_interval_seconds = min_request_interval_seconds
         self.max_input_characters = max_input_characters
+        self.thinking_level = thinking_level
         self._last_request_started: float | None = None
         self.blocked_reason: str | None = None
 
@@ -157,7 +171,7 @@ class GeminiDecisionClient:
                 "billing_tier_verification": "user_confirmed_not_queryable_from_key",
                 "min_request_interval_seconds": self.min_request_interval_seconds,
                 "max_input_characters": self.max_input_characters,
-                "thinking_level": "low", "sdk_attempts_per_call": 1,
+                "thinking_level": self.thinking_level, "sdk_attempts_per_call": RETRY_ATTEMPTS,
                 "automatic_continuation": False, "automatic_function_calling": False,
                 "quota_policy": "stop_api_and_mark_incomplete_no_provider_fallback"}
 
@@ -207,9 +221,10 @@ class GeminiDecisionClient:
                 max_output_tokens=self.max_output_tokens,
                 automatic_continuation=False,
                 automatic_function_calling=self.types.AutomaticFunctionCallingConfig(disable=True),
-                thinking_config=self.types.ThinkingConfig(thinking_level="low",include_thoughts=False),
+                thinking_config=self.types.ThinkingConfig(
+                    thinking_level=self.thinking_level, include_thoughts=False),
                 http_options=self.types.HttpOptions(timeout=max(1,int(call_timeout*1000)),
-                    retry_options=self.types.HttpRetryOptions(attempts=1)))
+                    retry_options=self.retry_options))
             self._last_request_started = time.perf_counter()
             record["api_requests"] = 1
             response = self.client.models.generate_content(model=self.model,contents=body,config=config)

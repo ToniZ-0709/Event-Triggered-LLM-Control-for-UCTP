@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import sys
 import tempfile
 import time
 import uuid
@@ -19,7 +20,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pymoo
 
-from itc2019.controller import BaselineMonitor, ControllerSettings
+from itc2019.controller import BaselineMonitor, ControllerSettings, FIXED_EXECUTION_BUDGET
 from itc2019.instance import Instance, load_instance
 from itc2019.nsga3 import Config, evaluation_count, reference_directions, run
 from itc2019.scoring import Score, evaluate, validate_sectioning
@@ -143,6 +144,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
          pipeline_name: str | None = None,
          controller_sources: tuple[Path, ...] = ()) -> None:
     pipeline_root = pipeline_root or Path(__file__).resolve().parent
+    uses_llm = controller_factory is not None and getattr(controller_factory, "requires_llm", True)
     parser = argparse.ArgumentParser(description=(
         f"Run the ITC 2019 {pipeline_name} pipeline" if pipeline_name else __doc__))
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
@@ -171,6 +173,12 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                         help="Per-instance wall-clock limit for solver and controller")
     parser.add_argument("--stop-on-feasible", action="store_true",
                         help="Stop after a generation contains a candidate with zero hard violations")
+    parser.add_argument("--quiet", action="store_true",
+                        help="Suppress live progress output on stderr")
+    parser.add_argument("--progress-interval", type=int, default=1,
+                        help="Emit live generation progress every N generations (0 for reviews/repairs only)")
+    parser.add_argument("--progress-log", type=Path,
+                        help="Optional additional file path for appending live progress lines")
     parser.add_argument("--author", default=pipeline_name or "NSGA-III baseline")
     parser.add_argument("--institution", default="Ho Chi Minh City University of Technology")
     parser.add_argument("--country", default="Vietnam")
@@ -178,19 +186,26 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         parser.add_argument("--repair-" + name.replace("_", "-"), type=type(default), default=default,
                             help=f"Shared repair setting {name} (default: {default})")
     if controller_factory is not None:
-        from itc2019.llm import DEFAULT_MODEL
         parser.add_argument("--review-interval", type=int, default=10,
                             help="Default controller review interval in generations")
+    if uses_llm:
+        from itc2019.llm import (DEFAULT_MODEL, DEFAULT_THINKING_LEVEL,
+                               DEFAULT_TIMEOUT_SECONDS, VALID_THINKING_LEVELS)
         parser.add_argument("--provider", choices=("gemini",), default="gemini")
         parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
                             help="Gemini Free Tier text model; can also be set via GEMINI_MODEL")
+        parser.add_argument("--thinking-level", choices=VALID_THINKING_LEVELS,
+                            default=os.environ.get("GEMINI_THINKING_LEVEL") or DEFAULT_THINKING_LEVEL,
+                            help="Gemini thinking level; can also be set via GEMINI_THINKING_LEVEL")
         parser.add_argument("--confirm-free-tier", action="store_true",
                             help="Confirm in AI Studio that this API key's project is Free Tier")
         parser.add_argument("--api-min-interval-seconds", type=float, default=10.0,
                             help="Pace API request starts; actual project quota must still be checked")
         parser.add_argument("--api-max-input-characters", type=int, default=60000)
-        parser.add_argument("--api-timeout-seconds", type=float, default=15.0)
+        parser.add_argument("--api-timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
         parser.add_argument("--max-output-tokens", type=int, default=1024)
+        parser.add_argument("--max-api-calls", type=int, default=100)
+    if controller_factory is not None:
         parser.add_argument("--warmup-generations", type=int, default=5)
         parser.add_argument("--stagnation-window", type=int, default=5)
         parser.add_argument("--min-review-interval", type=int, default=3)
@@ -201,12 +216,13 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         parser.add_argument("--max-regions", type=int, default=6)
         parser.add_argument("--region-size", type=int, default=5)
         parser.add_argument("--max-operator-evaluations", type=int, default=24)
-        parser.add_argument("--max-api-calls", type=int, default=100)
         parser.add_argument("--max-reviews", type=int, default=12,
                             help="Maximum number of review opportunities per instance")
     args = parser.parse_args()
     if args.time_limit_seconds is not None and args.time_limit_seconds <= 0:
         parser.error("--time-limit-seconds must be positive")
+    if args.progress_interval < 0:
+        parser.error("--progress-interval must be non-negative")
     paths = _paths(args)
     try:
         config = Config(args.population, args.generations, args.partitions, args.seed,
@@ -238,8 +254,8 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     if controller_factory is not None:
         try:
             controller_settings = ControllerSettings(
-                model=args.model,
-                provider=args.provider,
+                model=args.model if uses_llm else None,
+                provider=args.provider if uses_llm else "none",
                 review_interval=args.review_interval,
                 warmup_generations=args.warmup_generations,
                 stagnation_window=args.stagnation_window,
@@ -250,16 +266,18 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                 max_regions=args.max_regions,
                 region_size=args.region_size,
                 max_operator_evaluations=args.max_operator_evaluations,
-                api_timeout_seconds=args.api_timeout_seconds,
-                max_output_tokens=args.max_output_tokens,
-                max_api_calls=args.max_api_calls,
+                api_timeout_seconds=args.api_timeout_seconds if uses_llm else 60.0,
+                max_output_tokens=args.max_output_tokens if uses_llm else 300,
+                max_api_calls=args.max_api_calls if uses_llm else 0,
                 max_reviews=args.max_reviews,
             )
-            from itc2019.llm import GeminiDecisionClient
-            client = GeminiDecisionClient(args.model, args.api_timeout_seconds,
-                args.max_output_tokens, free_tier_confirmed=args.confirm_free_tier,
-                min_request_interval_seconds=args.api_min_interval_seconds,
-                max_input_characters=args.api_max_input_characters)
+            if uses_llm:
+                from itc2019.llm import GeminiDecisionClient
+                client = GeminiDecisionClient(args.model, args.api_timeout_seconds,
+                    args.max_output_tokens, free_tier_confirmed=args.confirm_free_tier,
+                    min_request_interval_seconds=args.api_min_interval_seconds,
+                    max_input_characters=args.api_max_input_characters,
+                    thinking_level=args.thinking_level)
         except (ValueError, RuntimeError) as exc:
             parser.error(str(exc))
     settings = _run_settings(paths, config, args)
@@ -269,8 +287,11 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     if controller_factory is not None:
         settings["pipeline"] = {"name": pipeline_name, "status": "active"}
         settings["controller"] = asdict(controller_settings)
-        settings["llm"] = client.metadata()
-        settings["environment"]["google-genai"] = package_version("google-genai")
+        if uses_llm:
+            settings["llm"] = client.metadata()
+            settings["environment"]["google-genai"] = package_version("google-genai")
+        else:
+            settings["controller"]["fixed_execution_budget"] = FIXED_EXECUTION_BUDGET
         settings["controller_sources_sha256"] = {
             str(source.resolve().relative_to(pipeline_root.parent.resolve())): _sha256(source)
             for source in controller_sources
@@ -288,22 +309,40 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                        "rooms": len(instance.rooms), "courses": len(instance.courses),
                        "students": len(instance.students), "distributions": len(instance.distributions)}
             started = time.perf_counter()
+            folder = staging / instance.name
+            folder.mkdir(parents=True, exist_ok=True)
+            log_paths = [folder / "run.log"]
+            if args.progress_log is not None:
+                log_paths.append(args.progress_log)
             monitor = (controller_factory(instance, controller_settings, client,
                                           config.seed, started, args.time_limit_seconds,
                                           repair_settings=repair_settings)
                        if controller_factory is not None else
                        BaselineMonitor(instance, started, args.time_limit_seconds, config.seed,
                                        repair_settings))
+            monitor.configure_progress(
+                stream=None if args.quiet else sys.stderr,
+                log_paths=log_paths,
+                interval=args.progress_interval,
+                max_generations=config.generations,
+            )
+            budget_text = "none" if config.evaluations is None else str(config.evaluations)
+            monitor._emit_progress(
+                f"[start] pipeline={pipeline_name or 'NSGA-III'} instance={instance.name} "
+                f"seed={config.seed} budget={budget_text} gens={config.generations} "
+                f"log={folder / 'run.log'}")
             choices, score, result = run(instance, config, callback=monitor,
                                          time_limit_seconds=args.time_limit_seconds,
                                          stop_on_feasible=args.stop_on_feasible)
             runtime = time.perf_counter() - started
+            monitor._emit_progress(
+                f"[done] instance={instance.name} best={score.hard}/{score.total} "
+                f"evals={evaluation_count(result.algorithm)} feasible={score.hard == 0} "
+                f"runtime={runtime:.2f}s")
             n = len(instance.classes)
             checked_score, assignments = evaluate(instance, choices[:n], choices[n:], keep_assignments=True)
             if checked_score != score:
                 raise RuntimeError(f"Inconsistent final scoring on {instance.name}")
-            folder = staging / instance.name
-            folder.mkdir(parents=True, exist_ok=True)
             report = monitor.report()
             monitor_keys = ("generations_recorded", "time_limit_seconds",
                             "elapsed_seconds", "best_observed_hard",
@@ -360,7 +399,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                               "weighted_total": score.total, "runtime_seconds": round(runtime, 2),
                               "solution_xml": score.hard == 0}))
             summaries.append(summary)
-            if summary.get("controller", {}).get("completion_status") == "incomplete_api_failure":
+            if uses_llm and summary["controller"]["completion_status"] == "incomplete_api_failure":
                 break
 
         (staging / "summary.json").write_text(json.dumps(summaries, indent=2) + "\n", encoding="utf-8")
@@ -368,7 +407,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
             "run_id": run_id, "settings": settings,
             "dataset_directory": str(args.dataset.resolve()),
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
-            "completion_status": ("incomplete_api_failure" if any(
+            "completion_status": ("incomplete_api_failure" if uses_llm and any(
                 row.get("controller", {}).get("completion_status") == "incomplete_api_failure"
                 for row in summaries) else "completed"),
         }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -380,7 +419,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
             client.close()
     print(json.dumps({"run_id": run_id, "results_dir": str(run_folder),
                       "overwrote_existing": replaced}))
-    if controller_factory is not None and any(
+    if uses_llm and any(
             row.get("controller", {}).get("completion_status") == "incomplete_api_failure"
             for row in summaries):
         print("API failure: results saved as incomplete; no provider fallback. "

@@ -35,6 +35,20 @@ class OperatorOutcome:
     elapsed_seconds: float
 
 
+@dataclass(frozen=True, slots=True)
+class OperatorProbe:
+    """Results of a bounded search before any population change."""
+
+    started: float
+    attempts: int
+    evaluations: int
+    source_hard: int
+    source_total: int
+    best_trial: tuple[int, int] | None
+    candidate: Population | None
+    candidate_quality: tuple[int, int] | None
+
+
 def _move(instance: Instance, source: np.ndarray, indices: tuple[int, ...],
           rng: np.random.Generator) -> np.ndarray | None:
     n = len(instance.classes)
@@ -106,10 +120,10 @@ def _admissible_candidate(source_hard: int, source_total: int,
     return trial_hard == 0 and trial_total < source_total
 
 
-def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
+def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
                    operator_id: str, budget: int, rng: np.random.Generator,
-                   deadline: float | None) -> OperatorOutcome:
-    """Try at most ``budget`` full evaluations and inject one improving candidate."""
+                   deadline: float | None) -> OperatorProbe:
+    """Charge all scoring to the evaluator; leave the source population intact."""
     if operator_id not in OPERATORS or budget < 1:
         raise ValueError("Invalid improvement operator or budget")
     started = time.perf_counter()
@@ -121,6 +135,10 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
     best_trial: tuple[int, int] | None = None
     attempts = evaluations = 0
     evaluated: set[tuple[int, ...]] = set()
+
+    def result() -> OperatorProbe:
+        return OperatorProbe(started, attempts, evaluations, source_hard, source_total,
+                             best_trial, best_pop, None if best_key is None else best_key[:2])
 
     def consider(trial: np.ndarray) -> tuple[int, int] | None:
         nonlocal attempts, evaluations, best_pop, best_key, best_trial
@@ -148,6 +166,8 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
             best_pop, best_key = candidate_pop, key
         return rank
 
+    if deadline is not None and time.perf_counter() >= deadline:
+        return result()
     if operator_id == "destroy_repair":
         # Solve the entire selected region jointly before the cheap sequential fallback.
         # The outside chromosome is immutable; all solver checks are charged to this budget.
@@ -173,9 +193,10 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
         if candidate is not None:
             score = engine.cache[engine.key(candidate)][0]
             best_trial = score.hard, score.total
-            best_key = (score.hard, score.total, tuple(map(int, candidate)))
-            best_pop = Population.new("X", candidate[None], "F", np.asarray([score.weighted]),
-                                      "G", np.asarray([[score.hard]]))
+            if _admissible_candidate(source_hard, source_total, score.hard, score.total):
+                best_key = (score.hard, score.total, tuple(map(int, candidate)))
+                best_pop = Population.new("X", candidate[None], "F", np.asarray([score.weighted]),
+                                          "G", np.asarray([[score.hard]]))
         # Rebuild up to three classes sequentially. Each proposed placement is
         # evaluated on the complete timetable and charged to the same budget.
         mutable = [i for i in region.class_indices if len(instance.classes[i].times) > 1 or
@@ -205,16 +226,23 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
                 break
             consider(_PROPOSALS[operator_id](instance, source, region.class_indices, rng))
 
-    trial_hard, trial_total = best_trial if best_trial is not None else (None, None)
+    return result()
+
+
+def inject_operator_candidate(algorithm, probe: OperatorProbe) -> OperatorOutcome:
+    """Recheck and pass at most one already evaluated candidate to survival."""
+    attempts, evaluations = probe.attempts, probe.evaluations
+    source_hard, source_total = probe.source_hard, probe.source_total
+    best_pop, started = probe.candidate, probe.started
+    trial_hard, trial_total = probe.best_trial or (None, None)
     if best_pop is None:
         status = "no_candidate_evaluated" if evaluations == 0 else "no_improving_candidate"
         return OperatorOutcome(status, attempts, evaluations, False, source_hard,
                                source_total, trial_hard, trial_total,
                                None, None, None, 0, time.perf_counter() - started)
-    n = len(instance.classes)
     choices = np.asarray(best_pop[0].X, dtype=np.int32)
     score = algorithm.problem.score_state(choices)
-    if (score.hard, score.total) != best_key[:2]:
+    if (score.hard, score.total) != probe.candidate_quality:
         return OperatorOutcome("scoring_mismatch", attempts, evaluations, False,
                                source_hard, source_total, trial_hard, trial_total,
                                score.hard, score.total, score.weighted, 1,
@@ -230,3 +258,11 @@ def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
                            trial_hard, trial_total,
                            score.hard, score.total, score.weighted, 1,
                            time.perf_counter() - started)
+
+
+def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
+                   operator_id: str, budget: int, rng: np.random.Generator,
+                   deadline: float | None) -> OperatorOutcome:
+    """Search within the budget and inject at most one improving candidate."""
+    probe = probe_operator(algorithm, instance, region, operator_id, budget, rng, deadline)
+    return inject_operator_candidate(algorithm, probe)

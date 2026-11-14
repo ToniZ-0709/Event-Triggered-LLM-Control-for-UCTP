@@ -51,7 +51,35 @@ def test_key_and_billing_confirmation_are_required_before_any_sdk_call(monkeypat
     with pytest.raises(RuntimeError,match="GEMINI_API_KEY"):
         llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-4-argon",15,1024,free_tier_confirmed=True)
+        llm.GeminiDecisionClient("gemini-4-argon",60,1024,free_tier_confirmed=True)
+    with pytest.raises(ValueError,match="permits"):
+        llm.GeminiDecisionClient("gemini-3.6-flash",60,1024,free_tier_confirmed=True)
+    with pytest.raises(ValueError,match="thinking_level"):
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,1024,free_tier_confirmed=True,
+                                 thinking_level="turbo")
+
+
+def test_allowlist_defaults_and_configurable_thinking_level(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY","offline-test-key-never-send")
+    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
+    calls=[]
+    response=NS(response_id="fake-id",model_version="gemini-4-hydrogen-v1",
+                text=json.dumps(NO_OP),candidates=[NS(finish_reason="STOP")],prompt_feedback=None,
+                usage_metadata=NS(prompt_token_count=10,candidates_token_count=10,
+                                  thoughts_token_count=0,total_token_count=20,cached_content_token_count=0))
+    fake=NS(models=NS(generate_content=lambda **kw:(calls.append(kw),response)[1]),close=lambda:None)
+    monkeypatch.setattr(genai,"Client",lambda **kw:fake)
+    assert llm.FREE_TIER_MODELS==("gemini-3.8-flash","gemini-3.5-flash-lite","gemini-4-hydrogen")
+    assert llm.DEFAULT_TIMEOUT_SECONDS==60.0
+    for model_name in llm.FREE_TIER_MODELS:
+        client=llm.GeminiDecisionClient(model_name,free_tier_confirmed=True,
+                                        min_request_interval_seconds=0,thinking_level="medium")
+        assert client.timeout_seconds==60.0
+        assert client.metadata()["thinking_level"]=="medium"
+        assert client.metadata()["sdk_attempts_per_call"]==3
+        decision,record=client.request("single_agent",{"candidate_regions":[]})
+        assert decision==NO_OP and record["status"]=="ok"
+        assert calls[-1]["config"].thinking_config.thinking_level==types.ThinkingLevel.MEDIUM
 
 
 def test_valid_json_usage_and_bounded_native_config(adapter):
@@ -63,7 +91,9 @@ def test_valid_json_usage_and_bounded_native_config(adapter):
     config=calls[0]["config"]
     assert config.response_json_schema==llm.SCHEMAS["single_agent"]
     assert config.http_options.timeout<=12000
-    assert config.http_options.retry_options.attempts==1
+    assert config.http_options.retry_options.attempts==3
+    assert 429 not in config.http_options.retry_options.http_status_codes
+    assert {500,503,504}<=set(config.http_options.retry_options.http_status_codes)
     assert config.max_output_tokens==1024 and config.candidate_count==1
     assert config.automatic_continuation is False and config.automatic_function_calling.disable is True
     assert config.thinking_config.thinking_level==types.ThinkingLevel.LOW
@@ -183,11 +213,11 @@ def test_native_sdk_does_not_retry_429(monkeypatch):
         requests.append(request)
         return httpx.Response(429,json={"error":{"code":429,"status":"RESOURCE_EXHAUSTED",
                                                  "message":"fake test quota"}})
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
+    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,1024,free_tier_confirmed=True)
     client.close()
     client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
         http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
-                                      retry_options=types.HttpRetryOptions(attempts=1)))
+                                      retry_options=client.retry_options))
     try:
         decision,record=client.request("single_agent",{})
         assert decision is None and record["status"]=="api_quota_exhausted"
@@ -196,15 +226,50 @@ def test_native_sdk_does_not_retry_429(monkeypatch):
         client.close()
 
 
+def test_native_sdk_retries_transient_504_up_to_3_attempts(monkeypatch):
+    import tenacity.nap
+    monkeypatch.setenv("GEMINI_API_KEY","offline-placeholder")
+    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
+    monkeypatch.setattr(tenacity.nap.time,"sleep",lambda _s:None)
+    requests=[]
+    def handler(request):
+        requests.append(request)
+        if len(requests)<3:
+            return httpx.Response(504,json={"error":{"code":504,"status":"DEADLINE_EXCEEDED",
+                                                     "message":"transient test timeout"}})
+        return httpx.Response(200,json={
+            "candidates":[{"content":{"role":"model","parts":[{"text":json.dumps(NO_OP)}]},
+                           "finishReason":"STOP"}],
+            "modelVersion":"gemini-4-hydrogen-v1",
+            "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
+    client=llm.GeminiDecisionClient("gemini-4-hydrogen",60,1024,free_tier_confirmed=True)
+    client.close()
+    client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
+        http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
+                                      retry_options=client.retry_options))
+    try:
+        decision,record=client.request("single_agent",{})
+        assert len(requests)==3
+        assert decision==NO_OP and record["status"]=="ok"
+    finally:
+        client.close()
+
+
 def test_wrapper_applies_gemini_policy_only_to_controllers():
     profile=json.loads((ROOT/"profiles/pilot.json").read_text(encoding="utf-8"))
-    for mode in ("baseline","single","multi"):
+    for mode in ("baseline","single","multi","random","greedy"):
         command=commands(profile,pipeline=mode,seed=17,instances=["nbi-spr18"],model=None,
-                         output=None,confirm_free_tier=True)[0]
-        assert ("--confirm-free-tier" in command)==(mode!="baseline")
-        if mode!="baseline":
+                         output=None,confirm_free_tier=True,thinking_level="high")[0]
+        if mode in ("single","multi"):
+            assert "--confirm-free-tier" in command
             assert command[command.index("--model")+1]==llm.DEFAULT_MODEL
+            assert command[command.index("--api-timeout-seconds")+1]=="60"
+            assert command[command.index("--thinking-level")+1]=="high"
             assert command.count("--provider")==1
+        else:
+            assert "--confirm-free-tier" not in command
+            assert "--thinking-level" not in command
+            assert "--api-timeout-seconds" not in command
 
 
 def test_accounting_counts_real_requests_not_deadline_skips():
@@ -257,6 +322,39 @@ def test_comparison_allows_infeasible_results_and_reports_hard_delta(tmp_path):
     assert result["provider"]=="gemini"
     assert result["instances"][0]["single_minus_baseline"]["hard_change"]==0
     assert result["instances"][0]["single_minus_baseline"]["internal_total_change_if_both_feasible"] is None
+
+
+def test_comparison_accepts_local_policies_alongside_llm_and_rejects_different_review_caps(tmp_path):
+    folders = make_runs(tmp_path)
+    baseline = json.loads((folders["baseline"] / "run_config.json").read_text())
+    summary = json.loads((folders["baseline"] / "summary.json").read_text())
+    for method in ("random", "greedy"):
+        folder = tmp_path / method
+        folder.mkdir()
+        folders[method] = folder
+        config = deepcopy(baseline)
+        config["completion_status"] = "completed"
+        config["settings"].update(
+            pipeline={"name": "NSGA-III + " + method.capitalize()},
+            controller={"provider": "none", "model": None, "max_api_calls": 0,
+                        "fixed_execution_budget": 10, "max_reviews": 1},
+        )
+        rows = deepcopy(summary)
+        rows[0]["controller"] = {
+            "mode": method, "completion_status": "completed", "comparison_eligible": True,
+            "api_calls": 0, "input_tokens": 0, "output_tokens": 0, "thinking_tokens": 0,
+            "total_native_tokens": 0, "api_latency_seconds": 0.0, "probe_evaluations": 7,
+        }
+        (folder / "run_config.json").write_text(json.dumps(config))
+        (folder / "summary.json").write_text(json.dumps(rows))
+    row, = compare(folders)["instances"]
+    assert set(row["methods"]) == set(folders)
+    assert row["methods"]["greedy"]["probe_evaluations"] == 7
+    assert row["greedy_minus_random"]["evaluations_change"] == 0
+    config["settings"]["controller"]["max_reviews"] = 2
+    (folders["greedy"] / "run_config.json").write_text(json.dumps(config))
+    with pytest.raises(ValueError, match="Shared review settings differ"):
+        compare(folders)
 
 
 def test_quota_failure_ends_solver_early_and_preserves_incomplete_report():
