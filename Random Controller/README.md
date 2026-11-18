@@ -12,7 +12,7 @@ See the [repository README](../README.md) for benchmark profiles, pipeline compa
 
 At each triggered review, `RandomController.decide(packet)` applies the following policy:
 
-- **Uniform action space:** Collects every `(region, operator)` pair across `packet["candidate_regions"]` and `region["available_operators"]` in order (`move`, `destroy_repair` when `movable_class_count > 0`, and `swap` when `compatible_swap_pairs > 0`), plus one `no_op` alternative. When at least one pair exists and `budget > 0`, it draws `chosen` uniformly over `0 .. len(pairs)` (`len(pairs) + 1` equal-probability options):
+- **Uniform action space:** Collects every `(region, operator)` pair across `packet["candidate_regions"]` and `region["available_operators"]` in order (`move`, `destroy_repair` when the region has movable classes, and `swap` when compatible swap pairs exist), plus one `no_op` alternative. When at least one pair exists and `budget > 0`, it draws `chosen` uniformly over `0 .. len(pairs)` (`len(pairs) + 1` equal-probability options):
   - `0 <= chosen < len(pairs)`: selects that `(region, operator)` pair with `status = "policy_decision"` and `validation = "valid_action"`.
   - `chosen == len(pairs)`: selects `no_op` (`execution_budget = 0`) with `status = "policy_decision"` and `validation = "valid_no_op"`.
   - Empty `pairs` or `budget <= 0`: falls back to `no_op` (`execution_budget = 0`) with `status = "no_legal_action"` and `validation = "valid_no_op"`.
@@ -43,13 +43,13 @@ At each triggered review, `RandomController.decide(packet)` applies the followin
 
 Before calling `decide(packet)`, `ControllerCallback` builds a full `StatePacket` containing:
 
-- `schema_version`, `instance`, and `global` (`population_metrics` plus `incumbent_hard`, `incumbent_internal_total`, `progress_mode`, `stagnant_generations`, and `remaining_evaluations` adjusted for region scoring).
-- `recent_best_quality`: last `stagnation_window` `(hard, internal_total)` incumbent snapshots.
+- `instance` and `global` (non-redundant population and budget metrics including `incumbent_hard`, `incumbent_internal_total`, `stagnant_generations`, `remaining_evaluations` adjusted for region scoring, `reviews_used`, `max_reviews`, and optional `remaining_seconds`).
+- `solutions`: deduplicated per-solution scores (`hard`, `total`, optional `unlocalized_penalties`) and class summaries (`classes` keyed by `class_id`).
 - `candidate_regions`: up to `max_regions` (default `6`) connected neighborhoods of up to `region_size` (default `5`) classes built around the highest-penalty classes across up to two distinct representative solutions.
-- `recent_outcomes`: last `recent_outcomes` (default `5`) review outcomes.
-- `allowed_actions`: legal operators (`move`, `swap`, `destroy_repair`, `no_op`), `execution_budget` bounds `[1, current_operator_limit]`, and `review_interval` bounds `[min_review_interval, max_review_interval]`.
+- `recent_outcomes`: last `recent_outcomes` (default `5`) compacted review outcomes.
+- `allowed_actions`: `execution_budget` bounds `[1, current_operator_limit]`, and `review_interval` bounds `[min_review_interval, max_review_interval]`.
 
-`RandomController.decide` consumes **only** `packet["candidate_regions"]` (specifically `available_operators`, `solution_id`, `region_id`, and `boundary_id` on each candidate region), together with `self.current_operator_limit` and `self.settings.review_interval`. It ignores `global`, `recent_best_quality`, `recent_outcomes`, `allowed_actions`, and region penalty or class summaries, while still writing the complete `StatePacket` to `controller_trace.jsonl` so traces match the schema of the other controller pipelines.
+`RandomController.decide` consumes **only** `packet["candidate_regions"]` (specifically `available_operators`, `solution_id`, `region_id`, and `boundary_id` on each candidate region), together with `self.current_operator_limit` and `self.settings.review_interval`. It ignores `global`, `solutions`, `recent_outcomes`, `allowed_actions`, and region penalty or class summaries, while still writing the complete `StatePacket` to `controller_trace.jsonl` so traces match the schema of the other controller pipelines.
 
 ---
 

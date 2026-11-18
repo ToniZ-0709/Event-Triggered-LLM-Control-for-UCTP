@@ -29,9 +29,11 @@ class MultiAgentController(ControllerCallback):
                                        region["boundary_id"])), None)
         if matching is None:
             return None, records, "invalid_inspector_target"
+        valid_constraints = {detail["constraint_id"]
+                             for detail in matching.get("constraint_details", ())}
         constraint_ids = raw.get("relevant_constraint_ids")
         if (not isinstance(constraint_ids, list) or
-                any(not isinstance(value, str) or value not in matching["constraint_ids"]
+                any(not isinstance(value, str) or value not in valid_constraints
                     for value in constraint_ids)):
             return None, records, "invalid_inspector_constraints"
         if self.remaining() is not None and self.remaining() <= 0.1:

@@ -72,7 +72,7 @@ def audit_attempt(attempt: dict, folder: Path) -> dict:
                     probes = event["roles"][0]["probes"]
                     budget = min(settings["fixed_execution_budget"],
                                  settings["max_operator_evaluations"])
-                    remaining = event["state"]["global"]["remaining_evaluations"]
+                    remaining = event["state"]["global"].get("remaining_evaluations")
                     if remaining is not None:
                         budget = min(budget, max(0, remaining - 1))
                     used = event["probe_evaluations"]

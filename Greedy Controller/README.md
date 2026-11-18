@@ -74,7 +74,7 @@ When eligible, a review fires if at least one trigger condition is satisfied:
 
 ### StatePacket & Region Inputs
 
-When a review triggers, `RegionBuilder.build` (`NSGA-III/itc2019/regions.py`) constructs up to `max_regions` (default `6`) conflict-coupled `RegionCandidate` objects of up to `region_size` (default `5`) classes across at most 2 distinct representative solutions. `ControllerCallback._packet` assembles the `StatePacket` containing `schema_version`, `instance`, `global` population metrics (`population_metrics`), `recent_best_quality`, public `candidate_regions`, `recent_outcomes`, and `allowed_actions`.
+When a review triggers, `RegionBuilder.build` (`NSGA-III/itc2019/regions.py`) constructs up to `max_regions` (default `6`) conflict-coupled `RegionCandidate` objects of up to `region_size` (default `5`) classes across at most 2 distinct representative solutions. `ControllerCallback._packet` assembles the non-redundant `StatePacket` containing `instance`, filtered `global` metrics, deduplicated `solutions`, public `candidate_regions`, compacted `recent_outcomes`, and `allowed_actions`.
 
 The complete `StatePacket` is logged to `controller_trace.jsonl` under `"state"` for cross-pipeline consistency. `GreedyController._review` reads `regions` (`solution_id`, `region_id`, `boundary_id`, `class_indices`, `hard_contribution`, `soft_contribution`, `unlocalized_penalties`, `available_operators`), `algorithm.pop` (`F`, `G`, `X`), `self.current_operator_limit`, `self.deadline`, `self.rng`, and `self.settings.review_interval`.
 

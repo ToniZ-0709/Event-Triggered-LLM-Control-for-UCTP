@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, replace
 import hashlib
 import math
 from collections import Counter, defaultdict
@@ -41,11 +41,21 @@ class RegionCandidate:
     constraint_details: tuple[dict, ...] = ()
 
     def public(self) -> dict:
-        result = asdict(self)
-        result.pop("class_indices")
-        result["boundary_class_count"] = len(self.boundary_class_ids)
-        result["boundary_truncated"] = len(self.boundary_class_ids) > 32
-        result["boundary_class_ids"] = self.boundary_class_ids[:32]
+        shown_boundary = self.boundary_class_ids[:32]
+        result = {
+            "solution_id": self.solution_id,
+            "region_id": self.region_id,
+            "boundary_id": self.boundary_id,
+            "class_ids": self.class_ids,
+            "boundary_class_ids": shown_boundary,
+            "hard_contribution": self.hard_contribution,
+            "soft_contribution": self.soft_contribution,
+            "available_operators": self.available_operators,
+            "constraint_details": self.constraint_details,
+        }
+        omitted = len(self.boundary_class_ids) - len(shown_boundary)
+        if omitted:
+            result["boundary_classes_omitted"] = omitted
         return result
 
 
@@ -289,11 +299,20 @@ class RegionBuilder:
                           if not active.isdisjoint(group)}
             if not groups:
                 continue
+            region_units = sum(groups.values())
             detail = {
-                "constraint_id": constraint_id, "kind": kind, "required": required,
-                "penalty": penalty, "params": params, "current_violations": violations,
-                "cross_boundary": cross_boundary, "region_violation_units": sum(groups.values()),
+                "constraint_id": constraint_id,
+                "kind": kind,
+                "required": required,
+                "cross_boundary": cross_boundary,
+                "region_violation_units": region_units,
             }
+            if not required:
+                detail["penalty"] = penalty
+            if params:
+                detail["params"] = params
+            if violations != region_units:
+                detail["current_violations"] = violations
             ranked = sorted(groups, key=lambda group: (not active.issuperset(group), -groups[group], group))
             detail["violation_groups"] = tuple(self._public_violation(group, groups[group], active)
                                                for group in ranked[:_MAX_VIOLATION_GROUPS])
@@ -305,18 +324,17 @@ class RegionBuilder:
             not item["required"],
             item["cross_boundary"],
             -item["region_violation_units"],
-            -item["current_violations"],
-            -item["penalty"],
+            -item.get("current_violations", item["region_violation_units"]),
+            -item.get("penalty", 0),
             item["constraint_id"],
         ))
         return tuple(details)
 
     def _public_violation(self, group: tuple[int, ...], units: int, active: set[int]) -> dict:
         outside = tuple(i for i in group if i not in active)
-        shown_outside = set(outside[:_MAX_OUTSIDE_CLASSES_PER_GROUP])
         classes = self.instance.classes
         result = {
-            "class_ids": tuple(classes[i].id for i in group if i in active or i in shown_outside),
+            "in_region_class_ids": tuple(classes[i].id for i in group if i in active),
             "outside_region_class_ids": tuple(classes[i].id for i in outside[:_MAX_OUTSIDE_CLASSES_PER_GROUP]),
             "violation_units": units,
         }
@@ -394,17 +412,18 @@ class RegionBuilder:
                     room_index = int(choices[n + index])
                     room_id = None if cls.no_room else cls.room_options[room_index][0]
                     movable += int(len(cls.times) > 1 or len(cls.room_options) > 1)
-                    summaries.append({
+                    summary = {
                         "class_id": cls.id,
                         "current_time": {"days": time.days, "weeks": time.weeks,
                                          "start": time.start, "length": time.length},
-                        "current_room_id": room_id,
                         "time_options": len(cls.times),
                         "room_options": len(cls.room_options),
                         "current_time_penalty": time.penalty,
-                        "current_room_penalty": (0 if cls.no_room else
-                                                 cls.room_options[room_index][1]),
-                    })
+                    }
+                    if not cls.no_room:
+                        summary["current_room_id"] = room_id
+                        summary["current_room_penalty"] = cls.room_options[room_index][1]
+                    summaries.append(summary)
                 swap_count = sum(swap_targets(self.instance, choices, left, right) is not None
                                  for left, right in combinations(active, 2))
                 available = []

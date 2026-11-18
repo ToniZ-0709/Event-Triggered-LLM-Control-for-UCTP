@@ -54,29 +54,34 @@ SCHEMAS = {
 }
 
 _STATE_GUIDANCE = (
-    "Compare solution_hard, then solution_total, with the incumbent scores in global. "
-    "is_incumbent marks the archived best schedule. A large regional penalty alone is "
-    "weak evidence if its source is far behind the incumbent. Work on a different source "
-    "only if its repair opportunity plausibly closes the gap or offers a distinct useful placement. "
+    "Look up each candidate region's solution_id in solutions to inspect its schedule hard "
+    "violations (hard), internal soft total (total), optional unlocalized_penalties, and class "
+    "assignments (classes), and compare hard then total against global.incumbent_hard and "
+    "global.incumbent_internal_total. A large regional penalty alone is weak evidence if its "
+    "source is far behind the incumbent. Work on a different source only if its repair "
+    "opportunity plausibly closes the gap or offers a distinct useful placement. "
     "constraint_details lists active violations touching the region, ordered with hard and in-region "
     "violations first; if it is empty, regional soft cost comes from unary current_time_penalty or "
-    "current_room_penalty in class_summaries. Use required to separate hard from soft constraints. "
-    "For distributions, current_violations covers the whole constraint; region_violation_units covers "
-    "only groups touching the region. Read params in the constraint type's order (e.g. MinGap's first "
-    "parameter is the minimum gap in time slots). In violation_groups, an empty "
-    "outside_region_class_ids means all violating classes are in the region and can change together; "
-    "when outside_region_class_ids is non-empty, those outside classes stay fixed, so inspect "
-    "class_summaries (time_options, room_options) to see if changing in-region classes can resolve "
-    "the violation. cross_boundary indicates whether any part of the constraint lies outside the "
-    "region; Group lists can be incomplete. Check boundary_id, overlapping class_ids, source_hard, "
-    "source_total, best_trial_hard, and best_trial_total in recent_outcomes to distinguish clusters "
-    "that are hard-stuck from those close to improving. Revisit a failed cluster only if the state "
-    "changed or a different operator fits better. "
+    "current_room_penalty in solutions[solution_id].classes. Use required to separate hard from "
+    "soft constraints. "
+    "region_violation_units covers violating groups touching the region; when violations extend "
+    "outside the region, current_violations also reports the constraint's full violation total. "
+    "Read params (when present) in the constraint type's order (e.g. MinGap's first parameter is "
+    "the minimum gap in time slots). In violation_groups, in_region_class_ids lists violating "
+    "classes inside the region and outside_region_class_ids lists fixed violating classes outside; "
+    "an empty outside_region_class_ids means all violating classes can change together, whereas when "
+    "non-empty inspect solutions[solution_id].classes (time_options, room_options) to see if "
+    "changing in-region classes can resolve the violation. cross_boundary indicates whether any "
+    "part of the constraint lies outside the region; group lists can be incomplete. Check "
+    "boundary_id, overlapping class_ids, source_hard, source_total, best_trial_hard, and "
+    "best_trial_total in recent_outcomes to distinguish clusters that are hard-stuck from those "
+    "close to improving. Revisit a failed cluster only if the state changed or a different operator "
+    "fits better. "
 )
 _ACCEPTANCE_GUIDANCE = (
     "The operator only passes a candidate to population selection if it improves its source "
-    "under these rules: for solution_hard > 0, the candidate must strictly reduce hard "
-    "violations; a lower total at the same hard count is insufficient. For solution_hard = 0, "
+    "solution under these rules: for source hard > 0, the candidate must strictly reduce hard "
+    "violations; a lower total at the same hard count is insufficient. For source hard = 0, "
     "the candidate must stay feasible and strictly reduce total. Use these rules to judge "
     "whether a target is worth the evaluations. "
 )
@@ -151,12 +156,17 @@ def _encode_payload(payload: dict[str, Any], max_characters: int) -> tuple[str, 
     for region in regions:
         is_target = diagnosed_ids and all(region.get(key) == diagnosis.get(key) for key in target_keys)
         required_ids = diagnosed_ids if is_target else set()
+        def _detail_units(item: dict[str, Any]) -> int:
+            if "region_violation_units" in item:
+                return int(item["region_violation_units"])
+            return int(item.get("current_violations", 0))
+
         details = sorted(region.get("constraint_details", ()), key=lambda item: (
             item["constraint_id"] not in required_ids,
-            not bool(item.get("region_violation_units", item["current_violations"])),
+            not bool(_detail_units(item)),
             not item["required"],
             item["cross_boundary"],
-            -item.get("region_violation_units", item["current_violations"]),
+            -_detail_units(item),
         ))
         keep = sum(item["constraint_id"] in required_ids for item in details)
         ranked_details.append((region, details, keep))

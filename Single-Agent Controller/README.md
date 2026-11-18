@@ -39,13 +39,12 @@ When a review proceeds, `RegionBuilder.build` in [../NSGA-III/itc2019/regions.py
 
 The serialized `StatePacket` contains:
 
-- `schema_version`: `1`
 - `instance`: Instance name
-- `global`: Population and anytime metrics (`generation`, `elapsed_seconds`, `remaining_seconds`, `evaluations`, `evaluation_budget`, `remaining_evaluations`, `population_size`, `feasible_count`, `best_hard`, `best_internal_total`, `best_feasible_internal_total`, `incumbent_hard`, `incumbent_internal_total`, `progress_mode`, `stagnant_generations`, `feasible_nondominated_count`, `decision_diversity`, `placement_diversity`, `reference_direction_coverage`, `objective_distribution`)
-- `recent_best_quality`: Last `stagnation_window` `(hard, internal_total)` tuples
-- `candidate_regions`: List of public region descriptors (`solution_id`, `region_id`, `boundary_id`, `class_ids`, `boundary_class_ids` truncated at 32 with `boundary_class_count` and `boundary_truncated`, `constraint_ids`, `hard_contribution`, `soft_contribution`, `unlocalized_penalties`, `class_summaries`, `movable_class_count`, `compatible_swap_pairs`, `available_operators`)
-- `recent_outcomes`: Last `5` intervention summaries (`generation`, `region_id`, `operator_id`, `validation`, `outcome`, `attempts`, `evaluations`, `elapsed_seconds`, `best_hard_change`, `best_internal_total_change`)
-- `allowed_actions`: `operators` (`["move", "swap", "destroy_repair", "no_op"]`), `execution_budget` (`[1, current_operator_limit]`), and `review_interval` (`[min_review_interval, max_review_interval]`)
+- `global`: Non-redundant population and budget metrics (`generation`, optional `remaining_seconds`, `evaluation_budget` + `remaining_evaluations` when budgeted or `evaluations` otherwise, `population_size`, `feasible_count`, optional `feasible_nondominated_count` when `feasible_count > 0`, `decision_diversity`, `placement_diversity`, optional `reference_direction_coverage`, `objective_distribution`, `incumbent_hard`, `incumbent_internal_total`, optional `best_hard`/`best_internal_total` fallback only if absent from `solutions`, `stagnant_generations`, `reviews_used`, `max_reviews`)
+- `solutions`: Per-solution map keyed by `solution_id` containing `hard`, `total`, optional `unlocalized_penalties`, and deduplicated `classes` (keyed by `class_id` with `current_time`, `time_options`, `room_options`, `current_time_penalty`, and `current_room_id`/`current_room_penalty` when `room_options > 0`)
+- `candidate_regions`: List of public region descriptors (`solution_id`, `region_id`, `boundary_id`, `class_ids`, `boundary_class_ids` truncated at 32 with `boundary_classes_omitted` when needed, `hard_contribution`, `soft_contribution`, `available_operators`, and `constraint_details` with non-overlapping `in_region_class_ids`/`outside_region_class_ids` in `violation_groups` plus conditional `params`, `penalty`, and `current_violations`)
+- `recent_outcomes`: Last `5` compacted intervention summaries (`generation`, `operator_id`, `validation`, plus non-null/non-zero `region_id`, `boundary_id`, `class_ids`, `outcome`, `attempts`, `evaluations`, `source_hard`, `source_total`, `best_trial_hard`, `best_trial_total`, `best_hard_change`, `best_internal_total_change`)
+- `allowed_actions`: `execution_budget` (`[1, current_operator_limit]`) and `review_interval` (`[min_review_interval, max_review_interval]`)
 
 ### Strict JSON Output and Action Validation
 

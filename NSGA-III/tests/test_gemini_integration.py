@@ -489,3 +489,140 @@ def test_state_packet_constraint_details_and_payload_truncation():
         assert key in outcome_row
     assert isinstance(outcome_row["source_hard"], int)
     assert isinstance(outcome_row["source_total"], int)
+
+
+def test_state_packet_omits_redundant_fields_and_multi_agent_uses_constraint_details():
+    import importlib.util
+    import time
+    from itc2019.instance import Class, Instance, Room, Time
+    from itc2019.nsga3 import Config, run
+    from itc2019.regions import ConstraintObservation, RegionBuilder
+
+    slots = (Time("1", "1", 0, 1), Time("1", "1", 1, 1))
+    classes = (
+        Class("C0", "C0", "1", "1", None, None, slots, (), True),
+        Class("C1", "C1", "1", "1", None, None, slots, (("1", 0), ("2", 1)), False),
+        Class("C2", "C2", "1", "1", None, None, slots, (("1", 0), ("2", 1)), False),
+    )
+    instance = Instance(
+        "clean-packet", 1, 1, 4, (1, 1, 1, 1),
+        {"1": Room("1", None, (), {}), "2": Room("2", None, (), {})},
+        classes, {}, (), (), {c.id: i for i, c in enumerate(classes)},
+    )
+    builder = RegionBuilder(instance)
+    observations = {
+        "distribution:0": ConstraintObservation(
+            "SameStart", True, 0, 1, (0, 1), violation_groups={(0, 1): 1},
+        ),
+        "distribution:1": ConstraintObservation(
+            "DifferentTime", False, 2, 3, (0, 1, 2), params=(1,),
+            violation_groups={(1, 2): 1, (0, 1): 1},
+        ),
+    }
+    details = builder._constraint_details(("distribution:0", "distribution:1"), {0, 1}, observations, {})
+    assert "penalty" not in details[0]
+    assert "params" not in details[0]
+    assert "current_violations" not in details[0]
+    assert details[1]["penalty"] == 2
+    assert details[1]["params"] == (1,)
+    assert details[1]["current_violations"] == 3
+    group = details[1]["violation_groups"][1]
+    assert "class_ids" not in group
+    assert group["in_region_class_ids"] == ("C1",)
+    assert group["outside_region_class_ids"] == ("C2",)
+
+    # Verify _encode_payload works when current_violations is omitted.
+    payload = {
+        "state": {"candidate_regions": [{
+            "solution_id": "0", "region_id": "0:0", "boundary_id": "b0",
+            "constraint_details": details,
+        }]}
+    }
+    encoded, omitted = llm._encode_payload(payload, 320)
+    assert omitted >= 1
+    assert json.loads(encoded)["state"]["candidate_regions"][0]["constraint_details_omitted"] == omitted
+
+    class PacketRecorder(ControllerCallback):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.packets = []
+
+        def decide(self, packet):
+            self.packets.append(packet)
+            plan = self._fallback()
+            return plan, [{"role": "single_agent", "status": "ok", "api_requests": 1}], "decision_received"
+
+    recorder = PacketRecorder(
+        instance, ControllerSettings(model="fake", warmup_generations=1,
+                                     review_interval=1, min_review_interval=1),
+        None, 17, time.perf_counter(), None,
+    )
+    run(instance, Config(population=4, partitions=1, generations=3, evaluations=80, seed=17,
+                         initial_repair_steps=0, offspring_repair_steps=0), callback=recorder)
+    assert len(recorder.packets) >= 2
+    packet = recorder.packets[1]
+    for removed in ("schema_version", "recent_best_quality"):
+        assert removed not in packet
+    g = packet["global"]
+    for removed in ("elapsed_seconds", "remaining_seconds", "evaluations",
+                    "best_hard", "best_internal_total", "best_feasible_internal_total",
+                    "best_feasible_official_score", "metric_source", "progress_mode"):
+        assert removed not in g
+    assert "evaluation_budget" in g and "remaining_evaluations" in g
+    assert "operators" not in packet["allowed_actions"]
+    assert packet["recent_outcomes"]
+    no_op_outcome = packet["recent_outcomes"][0]
+    for omitted_key in ("elapsed_seconds", "region_id", "boundary_id", "class_ids", "outcome",
+                        "attempts", "source_hard", "source_total", "best_trial_hard",
+                        "best_trial_total", "best_hard_change", "best_internal_total_change"):
+        assert omitted_key not in no_op_outcome
+    region = packet["candidate_regions"][0]
+    for removed in ("constraint_ids", "class_summaries", "solution_hard", "solution_total",
+                    "is_incumbent", "unlocalized_penalties", "movable_class_count",
+                    "compatible_swap_pairs", "boundary_class_count", "boundary_truncated"):
+        assert removed not in region
+    sol = packet["solutions"][region["solution_id"]]
+    assert isinstance(sol["hard"], int) and isinstance(sol["total"], int)
+    c0_summary = sol["classes"]["C0"]
+    assert "class_id" not in c0_summary
+    assert c0_summary["room_options"] == 0
+    assert "current_room_id" not in c0_summary and "current_room_penalty" not in c0_summary
+    assert "current_room_id" in sol["classes"]["C1"] and "current_room_penalty" in sol["classes"]["C1"]
+
+    spec = importlib.util.spec_from_file_location("multi_ctrl", ROOT / "Multi-Agent Controller/controller.py")
+    assert spec is not None and spec.loader is not None
+    multi_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(multi_mod)
+
+    class DiagnosisClient:
+        def __init__(self, cid: str):
+            self.cid = cid
+
+        def request(self, role: str, req_payload: dict, remaining_seconds=None):
+            if role == "inspector":
+                reg = req_payload["candidate_regions"][0]
+                return ({"solution_id": reg["solution_id"], "region_id": reg["region_id"],
+                         "boundary_id": reg["boundary_id"], "relevant_constraint_ids": [self.cid]},
+                        {"role": role, "status": "ok", "api_requests": 1, "latency_seconds": 0.0})
+            return ({"operator_id": "no_op", "execution_budget": 0, "next_review_interval": 1},
+                    {"role": role, "status": "ok", "api_requests": 1, "latency_seconds": 0.0})
+
+    multi_packet = {
+        "candidate_regions": [{
+            "solution_id": "0", "region_id": "0:0", "boundary_id": "b0",
+            "available_operators": ("move",), "constraint_details": list(details),
+        }]
+    }
+    valid_multi = multi_mod.MultiAgentController(
+        instance, ControllerSettings(model="fake", review_interval=1, min_review_interval=1),
+        DiagnosisClient("distribution:0"), 17, time.perf_counter(), None,
+    )
+    _, roles_ok, status_ok = valid_multi.decide(multi_packet)
+    assert status_ok == "decision_received" and len(roles_ok) == 2
+
+    bad_multi = multi_mod.MultiAgentController(
+        instance, ControllerSettings(model="fake", review_interval=1, min_review_interval=1),
+        DiagnosisClient("not_in_constraint_details"), 17, time.perf_counter(), None,
+    )
+    _, roles_bad, status_bad = bad_multi.decide(multi_packet)
+    assert status_bad == "invalid_inspector_constraints" and len(roles_bad) == 1

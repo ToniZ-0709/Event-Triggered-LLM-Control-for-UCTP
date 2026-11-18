@@ -583,7 +583,6 @@ class ControllerCallback(BaselineMonitor):
         self.last_review = -settings.min_review_interval
         self.events: list[dict[str, Any]] = []
         self.outcomes: list[dict[str, Any]] = []
-        self.quality_history: list[tuple[int, int]] = []
         self.progress_history: list[tuple[str, int]] = []
         self.last_progress_generation = 0
         self._stagnation_event_handled = False
@@ -670,17 +669,87 @@ class ControllerCallback(BaselineMonitor):
             reasons.append("low_diversity")
         return reasons
 
+    def _public_solutions(self, regions: list[RegionCandidate]) -> dict[str, dict[str, Any]]:
+        solutions: dict[str, dict[str, Any]] = {}
+        for region in regions:
+            sid = region.solution_id
+            if sid not in solutions:
+                entry: dict[str, Any] = {}
+                if region.solution_hard is not None:
+                    entry["hard"] = region.solution_hard
+                if region.solution_total is not None:
+                    entry["total"] = region.solution_total
+                if region.unlocalized_penalties:
+                    entry["unlocalized_penalties"] = region.unlocalized_penalties
+                entry["classes"] = {}
+                solutions[sid] = entry
+            classes = solutions[sid]["classes"]
+            for summary in region.class_summaries:
+                class_id = summary["class_id"]
+                if class_id not in classes:
+                    classes[class_id] = {k: v for k, v in summary.items() if k != "class_id"}
+        for entry in solutions.values():
+            if not entry["classes"]:
+                entry.pop("classes")
+        return {sid: entry for sid, entry in solutions.items() if entry}
+
+    def _public_outcome(self, row: dict[str, Any]) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "generation": row["generation"],
+            "operator_id": row["operator_id"],
+            "validation": row["validation"],
+        }
+        for key in ("region_id", "boundary_id", "outcome",
+                    "source_hard", "source_total", "best_trial_hard", "best_trial_total"):
+            if row[key] is not None:
+                result[key] = row[key]
+        if row["class_ids"]:
+            result["class_ids"] = row["class_ids"]
+        for key in ("attempts", "evaluations", "best_hard_change", "best_internal_total_change"):
+            if row[key]:
+                result[key] = row[key]
+        return result
+
     def _packet(self, metrics: dict, regions: list[RegionCandidate]) -> dict:
         s = self.settings
+        solutions = self._public_solutions(regions)
+        global_state: dict[str, Any] = {"generation": metrics["generation"]}
+        if metrics.get("remaining_seconds") is not None:
+            global_state["remaining_seconds"] = metrics["remaining_seconds"]
+        if metrics.get("evaluation_budget") is not None:
+            global_state["evaluation_budget"] = metrics["evaluation_budget"]
+            global_state["remaining_evaluations"] = metrics["remaining_evaluations"]
+        else:
+            global_state["evaluations"] = metrics["evaluations"]
+        global_state["population_size"] = metrics["population_size"]
+        global_state["feasible_count"] = metrics["feasible_count"]
+        if metrics["feasible_count"] > 0:
+            global_state["feasible_nondominated_count"] = metrics["feasible_nondominated_count"]
+        global_state["decision_diversity"] = metrics["decision_diversity"]
+        global_state["placement_diversity"] = metrics["placement_diversity"]
+        if metrics.get("reference_direction_coverage") is not None:
+            global_state["reference_direction_coverage"] = metrics["reference_direction_coverage"]
+        global_state["objective_distribution"] = metrics["objective_distribution"]
+        global_state["incumbent_hard"] = metrics["incumbent_hard"]
+        global_state["incumbent_internal_total"] = metrics["incumbent_internal_total"]
+        best_in_solutions = any(
+            entry.get("hard") == metrics["best_hard"] and entry.get("total") == metrics["best_internal_total"]
+            for entry in solutions.values()
+        )
+        if not best_in_solutions:
+            global_state["best_hard"] = metrics["best_hard"]
+            global_state["best_internal_total"] = metrics["best_internal_total"]
+        global_state["stagnant_generations"] = metrics["stagnant_generations"]
+        global_state["reviews_used"] = len(self.events)
+        global_state["max_reviews"] = s.max_reviews
         return {
-            "schema_version": 1,
             "instance": self.instance.name,
-            "global": {**metrics, "reviews_used": len(self.events), "max_reviews": s.max_reviews},
-            "recent_best_quality": self.quality_history[-s.stagnation_window:],
+            "global": global_state,
+            "solutions": solutions,
             "candidate_regions": [region.public() for region in regions],
-            "recent_outcomes": self.outcomes[-s.recent_outcomes:],
+            "recent_outcomes": [self._public_outcome(row)
+                                for row in self.outcomes[-s.recent_outcomes:]],
             "allowed_actions": {
-                "operators": [*OPERATORS, "no_op"],
                 "execution_budget": [1, self.current_operator_limit],
                 "review_interval": [s.min_review_interval, s.max_review_interval],
             },
@@ -713,12 +782,10 @@ class ControllerCallback(BaselineMonitor):
                                      self.remaining())
         self.best_observed = self._sync_incumbent(algorithm)
         metrics["incumbent_hard"], metrics["incumbent_internal_total"] = self.best_observed
-        self.quality_history.append(self.best_observed)
         progress_signal = _progress_signal(self.best_observed)
         if not self.progress_history or progress_signal != self.progress_history[-1]:
             self.last_progress_generation = metrics["generation"]
         self.progress_history.append(progress_signal)
-        metrics["progress_mode"] = progress_signal[0]
         metrics["stagnant_generations"] = metrics["generation"] - self.last_progress_generation
         reasons = self._trigger(metrics)
         available = metrics.get("remaining_evaluations")
@@ -774,7 +841,6 @@ class ControllerCallback(BaselineMonitor):
             after = population_metrics(algorithm, time.perf_counter() - self.started,
                                        self.remaining())
             self.best_observed = self._sync_incumbent(algorithm)
-            self.quality_history[-1] = self.best_observed
             after_progress = _progress_signal(self.best_observed)
             if after_progress != self.progress_history[-1]:
                 self.last_progress_generation = metrics["generation"]
