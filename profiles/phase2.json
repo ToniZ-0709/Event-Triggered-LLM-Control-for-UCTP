@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "name": "phase2-eighteen-instance-five-pipeline",
+  "solver": {
+    "population": 20,
+    "partitions": 3,
+    "mutation_rate": 0.35,
+    "mutation_fraction": 0.01,
+    "crossover_rate": 0.7,
+    "initial_repair_steps": 12,
+    "initial_pair_trials": 3,
+    "offspring_repair_steps": 8,
+    "offspring_pair_trials": 2,
+    "inner_partitions": null,
+    "inner_scale": 0.5,
+    "generations": 200,
+    "evaluations": 1200,
+    "time_limit_seconds": null
+  },
+  "repair": {
+    "interval": 5,
+    "near_feasible_hard": 12,
+    "neighborhood_classes": 32,
+    "neighborhood_options": 32,
+    "neighborhood_seconds": 8,
+    "neighborhood_deterministic_limit": 0.5,
+    "fallback_seconds": 2,
+    "fallback_evaluations": 128,
+    "failure_cooldown": 5,
+    "max_failure_cooldown": 20
+  },
+  "controller": {
+    "review_interval": 10,
+    "warmup_generations": 5,
+    "stagnation_window": 5,
+    "min_review_interval": 3,
+    "max_review_interval": 20,
+    "diversity_threshold": 0.2,
+    "diversity_recovery_threshold": 0.3,
+    "max_regions": 6,
+    "region_size": 5,
+    "max_operator_evaluations": 24,
+    "max_reviews": 12,
+    "api_timeout_seconds": 60,
+    "max_output_tokens": 1024
+  },
+  "llm": {
+    "provider": "gemini",
+    "model": "gemini-4-hydrogen",
+    "thinking_level": "low",
+    "free_tier_only": true,
+    "min_request_interval_seconds": 10.0,
+    "max_input_characters": 60000
+  },
+  "instances": {
+    "muni-fi-spr16": {},
+    "muni-fsps-spr17": {},
+    "yach-fal17": {},
+    "nbi-spr18": {},
+    "mary-fal18": {},
+    "bet-spr18": {},
+    "pu-cs-fal07": {},
+    "lums-spr18": {},
+    "tg-spr18": {},
+    "wbg-fal10": {},
+    "bet-sum18": {},
+    "agh-h-spr17": {},
+    "lums-fal17": {},
+    "mary-spr17": {},
+    "pu-d5-spr17": {},
+    "agh-ggos-spr17": {},
+    "muni-pdf-spr16": {},
+    "iku-spr18": {}
+  },
+  "provenance": {
+    "parent_profile": "profiles/phase1.json",
+    "seeds": [17, 42, 73],
+    "pipeline_order": ["baseline", "random", "greedy", "single", "multi"],
+    "planned_runs": 270,
+    "selection_rule": "Retain the eight Phase 1 instances plus tg-spr18, and select nine additional instances using XML counts for classes, rooms, students and distribution constraints, to broaden institution and workload coverage.",
+    "comparison_rule": "Match by instance, seed and evaluation count. Rank internal quality by hard violations first, then total internal soft penalty when hard counts tie. Report short or failed runs as unmatched at the target budget and record actual time, evaluations and API usage."
+  }
+}

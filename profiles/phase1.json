@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "name": "nine-instance-two-seed-controller-check",
+  "name": "phase1-eight-instance-two-seed-controller-check",
   "solver": {
     "population": 20, "partitions": 3,
     "mutation_rate": 0.35, "mutation_fraction": 0.01, "crossover_rate": 0.7,
@@ -29,26 +29,18 @@
   "instances": {
     "muni-fi-spr16": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 840},
     "muni-fsps-spr17": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 630},
-    "yach-fal17": {
-      "generations": 200, "evaluations": 1200, "time_limit_seconds": 1050,
-      "population": 12, "partitions": 2,
-      "repair_neighborhood_seconds": 15, "repair_neighborhood_deterministic_limit": 2
-    },
-    "nbi-spr18": {
-      "generations": 200, "evaluations": 1200, "time_limit_seconds": 750,
-      "population": 12, "partitions": 2
-    },
+    "yach-fal17": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1050},
+    "nbi-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 750},
     "mary-fal18": {"generations": 200, "evaluations": 1100, "time_limit_seconds": 810},
     "bet-spr18": {"generations": 230, "evaluations": 2300, "time_limit_seconds": 2880},
     "pu-cs-fal07": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200},
-    "lums-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200},
-    "tg-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200}
+    "lums-spr18": {"generations": 200, "evaluations": 1200, "time_limit_seconds": 1200}
   },
   "provenance": {
     "parent_profile": "profiles/pilot.json",
-    "original_six": "All search, repair, review, evaluation and wall-clock caps are unchanged; completed seed-17 runs may be reused only with matching source, data and configuration hashes.",
-    "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students), lums-spr18 (487 classes, 73 rooms, no students), tg-spr18 (676 classes, 24 rooms, no students). Different institutions and sizes; not a representative sample of all 36 instances.",
-    "new_budget_rule": "Provisional engineering caps fixed before examining controller outcomes: the existing default population 20 / partitions 3, 200 generations, 1200 logical evaluations, 1200 seconds per method. Not tuned or claimed optimal.",
+    "original_six": "Evaluation and wall-clock caps are retained from pilot.json, while all eight instances share population 20, partitions 3, and uniform repair defaults.",
+    "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students) and lums-spr18 (487 classes, 73 rooms, no students).",
+    "new_budget_rule": "Provisional engineering caps fixed before examining controller outcomes: default population 20 / partitions 3, 200 generations, 1200 logical evaluations, 1200 seconds per method.",
     "seeds": [17, 42],
     "pipeline_order": ["baseline", "single", "multi"],
     "comparison_rule": "Descriptive paired endpoints at shared caps. Rank soft scores only when both endpoints are feasible. Mark evaluation-censored runs separately; never treat API failures as losses.",
