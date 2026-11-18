@@ -14,7 +14,7 @@ See the [repository README](../README.md) for cross-pipeline setup, profile comp
 Generation end -> BaselineMonitor repairs & incumbent sync
   -> Evaluate review triggers (deadline | stagnation | low_diversity)
   -> Check gates (budget >= 4, API active, time > 0.1s, reviews < max_reviews)
-  -> RegionBuilder builds candidate regions + StatePacket (Schema v1)
+  -> RegionBuilder builds candidate regions + StatePacket
   -> Stage 1: Gemini Inspector (role="inspector", input=StatePacket)
      |-- api_* error -> api_disabled, force termination, exit 3
      |-- null IDs -> early stop ("inspector_no_target"), fallback no_op (0 Planner calls)
@@ -25,14 +25,14 @@ Generation end -> BaselineMonitor repairs & incumbent sync
          '-- bind Inspector target + Planner operator/budget/interval -> _validate & apply_operator
 ```
 
-### Event-Triggered Review Conditions and StatePacket (Schema v1)
+### Event-Triggered Review Conditions and StatePacket
 
 Review triggers and `StatePacket` construction are identical to the Single-Agent controller for fair comparison:
 
 - **Warmup and spacing**: No reviews before `--warmup-generations` (default `5`) or within `--min-review-interval` (default `3`) generations of `last_review`.
 - **Trigger reasons**: `deadline` (`generation >= next_review`), `stagnation` (`stagnant_generations >= --stagnation-window`, default `5`, resetting on incumbent progress), and `low_diversity` (`placement_diversity <= --diversity-threshold`, default `0.20`, re-arming above `--diversity-recovery-threshold`, default `0.30`).
 - **Pre-review gates**: Requires `remaining_evaluations >= 4` (else increments `budget_skipped_reviews`), `not api_disabled`, `api_calls < --max-api-calls`, `remaining_seconds > 0.1`, and `reviews < --max-reviews` (default `12`).
-- **`StatePacket` v1 contents**: Built by `RegionBuilder.build` in [../NSGA-III/itc2019/regions.py](../NSGA-III/itc2019/regions.py) across up to 2 diverse representative solutions and up to `--max-regions` (`6`) connected subgraphs of up to `--region-size` (`5`) classes, containing `schema_version` (`1`), `instance`, `global` metrics, `recent_best_quality`, `candidate_regions` (`solution_id`, `region_id`, `boundary_id`, `class_ids`, `boundary_class_ids` truncated at 32, `constraint_ids`, `hard_contribution`, `soft_contribution`, `unlocalized_penalties`, `class_summaries`, `movable_class_count`, `compatible_swap_pairs`, `available_operators`), `recent_outcomes`, and `allowed_actions`.
+- **`StatePacket` contents**: Built by `RegionBuilder.build` in [../NSGA-III/itc2019/regions.py](../NSGA-III/itc2019/regions.py) across up to 2 diverse representative solutions and up to `--max-regions` (`6`) connected subgraphs of up to `--region-size` (`5`) classes, containing `schema_version` (`1`), `instance`, `global` metrics, `recent_best_quality`, `candidate_regions` (`solution_id`, `region_id`, `boundary_id`, `class_ids`, `boundary_class_ids` truncated at 32, `constraint_ids`, `hard_contribution`, `soft_contribution`, `unlocalized_penalties`, `class_summaries`, `movable_class_count`, `compatible_swap_pairs`, `available_operators`), `recent_outcomes`, and `allowed_actions`.
 
 ### Stage 1: Inspector Schema, Validation, and Early Termination
 
@@ -81,7 +81,7 @@ Both Inspector and Planner share the same `GeminiDecisionClient` instance in [..
 
 | Setting | CLI flag / environment variable | Default / allowed values |
 | :--- | :--- | :--- |
-| **Allowed models (`FREE_TIER_MODELS`)** | `--model` / `GEMINI_MODEL` | `gemini-3.8-flash` (default), `gemini-3.5-flash-lite`, `gemini-4-hydrogen` |
+| **Allowed models (`FREE_TIER_MODELS`)** | `--model` / `GEMINI_MODEL` | `gemini-4-hydrogen` (default), `gemini-3.5-flash-lite` |
 | **Free Tier confirmation** | `--confirm-free-tier` / `GEMINI_FREE_TIER_CONFIRMED=1` | Required before instantiating the API client |
 | **API key** | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Environment only (never CLI args, redacted in errors, mismatched dual keys rejected) |
 | **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
@@ -89,7 +89,7 @@ Both Inspector and Planner share the same `GeminiDecisionClient` instance in [..
 | **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
 | **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `1024` tokens, `100` calls direct (`24` via `run_pilot.py` for `max_reviews=12`) |
 
-Note on pacing and call budgets: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_pilot.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). Profiles [profiles/pilot.json](../profiles/pilot.json) (`gemini-3.8-flash`) and [profiles/expanded_pilot.json](../profiles/expanded_pilot.json) (`gemini-3.5-flash-lite`) both use `thinking_level: "low"`.
+Note on pacing and call budgets: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_pilot.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). Profiles [profiles/pilot.json](../profiles/pilot.json) and [profiles/phase1.json](../profiles/phase1.json) use `gemini-3.5-flash-lite`, while [profiles/phase2.json](../profiles/phase2.json) uses `gemini-4-hydrogen`, all with `thinking_level: "low"`.
 
 **Fail-closed API and quota policy**:
 
@@ -123,7 +123,7 @@ python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --conf
 Run with an alternative profile, model, or thinking level:
 
 ```powershell
-python run_pilot.py --profile profiles/expanded_pilot.json --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini-3.8-flash --thinking-level medium --confirm-free-tier
+python run_pilot.py --profile profiles/phase1.json --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini-4-hydrogen --thinking-level medium --confirm-free-tier
 ```
 
 ### Direct CLI and Live Logging Options

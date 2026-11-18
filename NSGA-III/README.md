@@ -54,7 +54,7 @@ Near-feasible room-chain repairs are additionally gated by `FailureBackoff` in [
 [main.py](main.py) exports `main(controller_factory=..., pipeline_root=..., pipeline_name=..., controller_sources=...)` so all controller pipelines share the identical solver loop, repair budget, CLI options, and artifact writer:
 
 - `ControllerCallback` subclasses `BaselineMonitor` in [itc2019/controller.py](itc2019/controller.py), running the three periodic repairs first and then forwarding `room_chain_checked=True`, `room_plateau_checked=True`, `coordinated_checked=True` to `super().notify(...)` so repairs never execute twice in one generation.
-- When a review triggers (`deadline`, `stagnation`, or `low_diversity`), `RegionBuilder` constructs conflict/cost regions into `StatePacket` (Schema v1), validates the returned `ActionPlan`, executes `move`, `swap`, `destroy_repair`, or `no_op`, and feeds any improving candidate into NSGA-III environmental survival.
+- When a review triggers (`deadline`, `stagnation`, or `low_diversity`), `RegionBuilder` constructs conflict/cost regions into `StatePacket`, validates the returned `ActionPlan`, executes `move`, `swap`, `destroy_repair`, or `no_op`, and feeds any improving candidate into NSGA-III environmental survival.
 
 ---
 
@@ -79,11 +79,11 @@ python run_pilot.py --pipeline baseline --instance muni-fsps-spr17 --seed 17 --d
 python run_pilot.py --pipeline baseline --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all instances defined in the selected profile ([profiles/pilot.json](../profiles/pilot.json) by default, or pass `--profile profiles/expanded_pilot.json`).
+Omit `--instance` to run all instances defined in the selected profile ([profiles/pilot.json](../profiles/pilot.json) by default, or pass `--profile profiles/phase1.json` or `--profile profiles/phase2.json`).
 
 ### Direct CLI Options
 
-Direct invocations of `python NSGA-III/main.py` default to `population=20`, `generations=20`, `partitions=3`, `seed=42`, `mutation-rate=0.2`, `mutation-fraction=0.005`, and `crossover-rate=0.7` (whereas `run_pilot.py` applies profile presets such as `generations=200`, `mutation-rate=0.35`, `mutation-fraction=0.01`, and instance-specific overrides). Inspect all flags with `python NSGA-III/main.py --help`.
+Direct invocations of `python NSGA-III/main.py` default to `population=20`, `generations=20`, `partitions=3`, `seed=42`, `mutation-rate=0.2`, `mutation-fraction=0.005`, and `crossover-rate=0.7` (whereas `run_pilot.py` applies profile presets such as `generations=200`, `mutation-rate=0.35`, and `mutation-fraction=0.01`). Inspect all flags with `python NSGA-III/main.py --help`.
 
 | Option group | Flags | Notes |
 | :--- | :--- | :--- |

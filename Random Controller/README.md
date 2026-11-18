@@ -41,7 +41,7 @@ At each triggered review, `RandomController.decide(packet)` applies the followin
 
 ### `StatePacket` Fields Consumed
 
-Before calling `decide(packet)`, `ControllerCallback` builds a full `StatePacket` (`schema_version = 1`) containing:
+Before calling `decide(packet)`, `ControllerCallback` builds a full `StatePacket` containing:
 
 - `schema_version`, `instance`, and `global` (`population_metrics` plus `incumbent_hard`, `incumbent_internal_total`, `progress_mode`, `stagnant_generations`, and `remaining_evaluations` adjusted for region scoring).
 - `recent_best_quality`: last `stagnation_window` `(hard, internal_total)` incumbent snapshots.
@@ -87,7 +87,7 @@ Run via `run_pilot.py` using the default pilot profile (`profiles/pilot.json`, d
 python run_pilot.py --pipeline random --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all instances in the selected profile. Pass `--profile profiles/expanded_pilot.json` for the 9-instance set, `--output ExperimentResult/phase2` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
+Omit `--instance` to run all instances in the selected profile. Pass `--profile profiles/phase1.json` for the 8-instance Phase 1 set or `--profile profiles/phase2.json` for the 18-instance Phase 2 set, `--output ExperimentResult/phase2` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
 
 Run directly via `Random Controller/main.py` when specifying custom solver, repair, or review-gate flags:
 
@@ -120,7 +120,7 @@ Per-instance files under `<output>/<run_id>/<instance>/`:
 
 - `result.json`: runtime, evaluation breakdown (`objective_and_monitor`, `routine_repair`, `final_verification`), `score_engine`, `sectioning_fallback`, `stage_timing`, final score, internal feasibility status (`official_status: "not_run"`), `monitor` stats, and `controller` stats (`mode: "random"`, `reviews`, `budget_skipped_reviews`, `no_op`, `policy_no_op`, `fallback_no_op`, `interventions`, `selected_interventions`, `region_scoring_calls`, `operator_scoring_rechecks`, and `api_calls: 0`).
 - `anytime_trace.jsonl`: generation-by-generation `population_metrics`, cumulative stage timings, and incumbent quality (`best_observed_hard`, `best_observed_internal_total`).
-- `controller_trace.jsonl`: one JSON line per review containing `generation`, `trigger`, full `state` (`StatePacket` v1), `roles` (`role: "random"`, `policy: "uniform_random"`, `valid_pairs`, `chosen_index`, `api_requests: 0`, `latency_seconds: 0.0`, `status`), `decision_status`, `validation`, `action`, `outcome`, `population_after`, and `incumbent_after`.
+- `controller_trace.jsonl`: one JSON line per review containing `generation`, `trigger`, full `state` (`StatePacket`), `roles` (`role: "random"`, `policy: "uniform_random"`, `valid_pairs`, `chosen_index`, `api_requests: 0`, `latency_seconds: 0.0`, `status`), `decision_status`, `validation`, `action`, `outcome`, `population_after`, and `incumbent_after`.
 - `choices.npz`: compressed NumPy archive storing `time_indices` and `room_indices` of the final incumbent solution.
 - `run.log`: human-readable progress log (`[start]`, `[repair @ gen ...]`, `[gen ...]`, `[review #...]`, `decision:`, `outcome:`, and `[done]`).
 - `solution.xml` (plus `expected.json`): exported only when the final incumbent is internally feasible (`score.hard == 0`) with valid student sectioning. Official ITC 2019 validator verification is a separate step.
