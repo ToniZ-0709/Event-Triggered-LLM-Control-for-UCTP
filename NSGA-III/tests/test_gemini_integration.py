@@ -28,7 +28,7 @@ def adapter(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY","offline-test-key-never-send")
     monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
     calls=[]
-    response=NS(response_id="fake-id",model_version="gemini-3.8-flash-v1",
+    response=NS(response_id="fake-id",model_version="gemini-4-hydrogen-v1",
                 text=json.dumps(NO_OP),candidates=[NS(finish_reason="STOP")],prompt_feedback=None,
                 usage_metadata=NS(prompt_token_count=20,candidates_token_count=30,
                                   thoughts_token_count=12,total_token_count=62,cached_content_token_count=0))
@@ -54,6 +54,8 @@ def test_key_and_billing_confirmation_are_required_before_any_sdk_call(monkeypat
         llm.GeminiDecisionClient("gemini-4-argon",60,1024,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="permits"):
         llm.GeminiDecisionClient("gemini-3.6-flash",60,1024,free_tier_confirmed=True)
+    with pytest.raises(ValueError,match="permits"):
+        llm.GeminiDecisionClient("gemini-3.8-flash",60,1024,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="thinking_level"):
         llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,1024,free_tier_confirmed=True,
                                  thinking_level="turbo")
@@ -69,7 +71,8 @@ def test_allowlist_defaults_and_configurable_thinking_level(monkeypatch):
                                   thoughts_token_count=0,total_token_count=20,cached_content_token_count=0))
     fake=NS(models=NS(generate_content=lambda **kw:(calls.append(kw),response)[1]),close=lambda:None)
     monkeypatch.setattr(genai,"Client",lambda **kw:fake)
-    assert llm.FREE_TIER_MODELS==("gemini-3.8-flash","gemini-3.5-flash-lite","gemini-4-hydrogen")
+    assert llm.DEFAULT_MODEL=="gemini-4-hydrogen"
+    assert llm.FREE_TIER_MODELS==("gemini-4-hydrogen","gemini-3.5-flash-lite")
     assert llm.DEFAULT_TIMEOUT_SECONDS==60.0
     for model_name in llm.FREE_TIER_MODELS:
         client=llm.GeminiDecisionClient(model_name,free_tier_confirmed=True,
@@ -185,7 +188,7 @@ def test_native_sdk_serializes_schema_without_network(monkeypatch,finish_reason)
         assert request.url.host=="generativelanguage.googleapis.com"
         return httpx.Response(200,json={
             "candidates":[{"content":{"role":"model","parts":[{"text":json.dumps(NO_OP)}]},
-                           "finishReason":finish_reason}],"modelVersion":"gemini-3.8-flash-v1",
+                           "finishReason":finish_reason}],"modelVersion":"gemini-4-hydrogen-v1",
             "continuationToken":"must-not-be-followed",
             "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
     client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
@@ -262,7 +265,7 @@ def test_wrapper_applies_gemini_policy_only_to_controllers():
                          output=None,confirm_free_tier=True,thinking_level="high")[0]
         if mode in ("single","multi"):
             assert "--confirm-free-tier" in command
-            assert command[command.index("--model")+1]==llm.DEFAULT_MODEL
+            assert command[command.index("--model")+1]==profile["llm"]["model"]
             assert command[command.index("--api-timeout-seconds")+1]=="60"
             assert command[command.index("--thinking-level")+1]=="high"
             assert command.count("--provider")==1
@@ -388,3 +391,101 @@ def test_comparison_rejects_stale_official_receipt(tmp_path):
         "instance":"X","solution_sha256":"old-hash","official_status":"passed"}))
     with pytest.raises(ValueError,match="does not match XML"):
         compare(folders)
+
+
+def test_state_packet_constraint_details_and_payload_truncation():
+    import time
+    from itc2019.controller import ActionPlan
+    from itc2019.instance import Class, Instance, Room, Time
+    from itc2019.nsga3 import Config, run
+    from itc2019.regions import ConstraintObservation, RegionBuilder
+
+    slots = (Time("1", "1", 0, 1), Time("1", "1", 1, 1))
+    classes = tuple(
+        Class(f"C{i}", f"C{i}", "1", "1", None, None, slots, (("1", 0), ("2", 0)), False)
+        for i in range(4)
+    )
+    instance = Instance(
+        "packet-test", 1, 1, 4, (1, 1, 1, 1),
+        {"1": Room("1", None, (), {}), "2": Room("2", None, (), {})},
+        classes, {}, (), (), {c.id: i for i, c in enumerate(classes)},
+    )
+    builder = RegionBuilder(instance)
+    observations = {
+        "distribution:0": ConstraintObservation(
+            "NotOverlap", False, 5, 0, (0, 1), violation_groups={},
+        ),
+        "distribution:1": ConstraintObservation(
+            "DifferentTime", False, 2, 2, (0, 1, 2),
+            violation_groups={(1, 2): 1, (0, 1): 1},
+        ),
+        "distribution:2": ConstraintObservation(
+            "SameStart", True, 0, 1, (0, 1), violation_groups={(0, 1): 1},
+        ),
+    }
+    details = builder._constraint_details(
+        ("distribution:0", "distribution:1", "distribution:2"),
+        {0, 1}, observations, {},
+    )
+    assert [item["constraint_id"] for item in details] == ["distribution:2", "distribution:1"]
+    assert details[1]["violation_groups"][0]["outside_region_class_ids"] == ()
+    assert details[1]["violation_groups"][1]["outside_region_class_ids"] == ("C2",)
+
+    region_payload = {
+        "solution_id": "0", "region_id": "0:0", "boundary_id": "b0",
+        "constraint_details": [
+            {"constraint_id": "soft_cross", "required": False, "cross_boundary": True,
+             "current_violations": 4, "region_violation_units": 4},
+            {"constraint_id": "hard_cross", "required": True, "cross_boundary": True,
+             "current_violations": 2, "region_violation_units": 2},
+            {"constraint_id": "hard_in", "required": True, "cross_boundary": False,
+             "current_violations": 1, "region_violation_units": 1},
+            {"constraint_id": "diagnosed_soft", "required": False, "cross_boundary": True,
+             "current_violations": 1, "region_violation_units": 1},
+        ],
+    }
+    payload = {
+        "state": {"candidate_regions": [region_payload]},
+        "diagnosis": {
+            "solution_id": "0", "region_id": "0:0", "boundary_id": "b0",
+            "relevant_constraint_ids": ["diagnosed_soft"],
+        },
+    }
+    one_detail = {
+        "state": {"candidate_regions": [{
+            "solution_id": "0", "region_id": "0:0", "boundary_id": "b0",
+            "constraint_details": [
+                region_payload["constraint_details"][3],
+                region_payload["constraint_details"][2],
+            ],
+            "constraint_details_omitted": 2,
+        }]},
+        "diagnosis": payload["diagnosis"],
+    }
+    max_chars = len(json.dumps(one_detail, separators=(",", ":")))
+    encoded, omitted = llm._encode_payload(payload, max_chars)
+    assert omitted == 2
+    kept = json.loads(encoded)["state"]["candidate_regions"][0]["constraint_details"]
+    assert [item["constraint_id"] for item in kept] == ["diagnosed_soft", "hard_in"]
+
+    class OutcomeController(ControllerCallback):
+        def decide(self, packet):
+            region = packet["candidate_regions"][0]
+            plan = ActionPlan(
+                region["solution_id"], region["region_id"], region["boundary_id"],
+                "move", 1, 2,
+            )
+            return plan, [{"role": "single_agent", "status": "ok", "api_requests": 1}], "decision_received"
+
+    callback = OutcomeController(
+        instance, ControllerSettings(model="fake", warmup_generations=2,
+                                     review_interval=2, min_review_interval=1),
+        None, 17, time.perf_counter(), None,
+    )
+    run(instance, Config(population=4, partitions=1, generations=3, seed=17,
+                         initial_repair_steps=0, offspring_repair_steps=0), callback=callback)
+    outcome_row = callback.outcomes[0]
+    for key in ("source_hard", "source_total", "best_trial_hard", "best_trial_total"):
+        assert key in outcome_row
+    assert isinstance(outcome_row["source_hard"], int)
+    assert isinstance(outcome_row["source_total"], int)

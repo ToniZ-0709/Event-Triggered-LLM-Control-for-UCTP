@@ -15,7 +15,7 @@ from typing import Any
 
 from .operators import OPERATORS
 
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-4-hydrogen"
 DEFAULT_TIMEOUT_SECONDS = 60.0
 DEFAULT_THINKING_LEVEL = "low"
 VALID_THINKING_LEVELS = ("minimal", "low", "medium", "high")
@@ -24,7 +24,7 @@ RETRY_ATTEMPTS = 3
 TRANSIENT_RETRY_STATUS_CODES = (408, 500, 502, 503, 504)
 # Text models with a published Free Tier when this integration was prepared.
 # No latest/preview aliases or silent fallback to a different model/provider.
-FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.5-flash-lite", "gemini-4-hydrogen")
+FREE_TIER_MODELS = (DEFAULT_MODEL, "gemini-3.5-flash-lite")
 
 
 def _object(properties: dict[str, dict]) -> dict:
@@ -53,28 +53,141 @@ SCHEMAS = {
     }),
 }
 
+_STATE_GUIDANCE = (
+    "Compare solution_hard, then solution_total, with the incumbent scores in global. "
+    "is_incumbent marks the archived best schedule. A large regional penalty alone is "
+    "weak evidence if its source is far behind the incumbent. Work on a different source "
+    "only if its repair opportunity plausibly closes the gap or offers a distinct useful placement. "
+    "constraint_details lists active violations touching the region, ordered with hard and in-region "
+    "violations first; if it is empty, regional soft cost comes from unary current_time_penalty or "
+    "current_room_penalty in class_summaries. Use required to separate hard from soft constraints. "
+    "For distributions, current_violations covers the whole constraint; region_violation_units covers "
+    "only groups touching the region. Read params in the constraint type's order (e.g. MinGap's first "
+    "parameter is the minimum gap in time slots). In violation_groups, an empty "
+    "outside_region_class_ids means all violating classes are in the region and can change together; "
+    "when outside_region_class_ids is non-empty, those outside classes stay fixed, so inspect "
+    "class_summaries (time_options, room_options) to see if changing in-region classes can resolve "
+    "the violation. cross_boundary indicates whether any part of the constraint lies outside the "
+    "region; Group lists can be incomplete. Check boundary_id, overlapping class_ids, source_hard, "
+    "source_total, best_trial_hard, and best_trial_total in recent_outcomes to distinguish clusters "
+    "that are hard-stuck from those close to improving. Revisit a failed cluster only if the state "
+    "changed or a different operator fits better. "
+)
+_ACCEPTANCE_GUIDANCE = (
+    "The operator only passes a candidate to population selection if it improves its source "
+    "under these rules: for solution_hard > 0, the candidate must strictly reduce hard "
+    "violations; a lower total at the same hard count is insufficient. For solution_hard = 0, "
+    "the candidate must stay feasible and strictly reduce total. Use these rules to judge "
+    "whether a target is worth the evaluations. "
+)
+_BUDGET_GUIDANCE = (
+    "Region scoring, operator trials and any recheck share the entire search evaluation budget "
+    "(1,200 in the Phase 2 campaign; use global.evaluation_budget and remaining_evaluations "
+    "for this run). Even no_op consumes a review and region scoring has already spent evaluations. "
+    "Use reviews_used and max_reviews to preserve review opportunities and leave evaluations "
+    "for NSGA-III generations. "
+)
+_ACTION_GUIDANCE = (
+    "Use an operator in the target's available_operators and respect allowed_actions ranges. "
+    "move randomly resamples one class's time or room gene per trial; swap randomly samples "
+    "a compatible pair and exchanges their placements. For move or swap, use a small budget, "
+    "typically 2 to 5 evaluations within allowed_actions.execution_budget, and avoid spending 15 "
+    "evaluations on random probes by default. destroy_repair solves a bounded CP-SAT model over "
+    "room and required-distribution conflicts in the region, then sequentially rebuilds up to 3 "
+    "classes using low-penalty options; for coupled multi-class violations or bottlenecks, give "
+    "destroy_repair 6 to 10 evaluations within allowed_actions.execution_budget so both stages "
+    "have budget. If there is no promising target or the cluster has repeatedly failed, return "
+    "no_op with execution_budget=0 and set next_review_interval to 10-20 within the allowed range, "
+    "or the nearest allowed value. Choose 3-5 only when the current state shows a concrete "
+    "opportunity that needs an early follow-up. "
+    "next_review_interval sets the scheduled review. Stagnation or low diversity can trigger "
+    "an earlier review once the minimum review interval has elapsed. "
+)
+
 PROMPTS = {
     "single_agent": (
         "You control one bounded NSGA-III improvement step for ITC 2019. "
         "Select WHERE from candidate_regions, HOW from allowed_actions, and WHEN. "
-        "Choose an operator listed in the selected region's available_operators. "
-        "Use only listed IDs and integer ranges. Return no_op with null IDs and budget 0 "
-        "if no suitable action exists. Never output code or a timetable. "
+        + _STATE_GUIDANCE + _ACCEPTANCE_GUIDANCE + _BUDGET_GUIDANCE + _ACTION_GUIDANCE
+        + "Use only listed IDs. For no_op, return null solution_id, region_id and boundary_id. "
+        "Never output code or a timetable. "
         "The solver validates and executes your decision."
     ),
     "inspector": (
         "You are the Inspector for ITC 2019 NSGA-III. Choose only WHERE: one "
         "candidate region's solution_id, region_id, and boundary_id. "
-        "Return null IDs if no target is appropriate. Do not choose an operator or schedule."
+        + _STATE_GUIDANCE + _ACCEPTANCE_GUIDANCE + _BUDGET_GUIDANCE
+        + "Return only a short list of relevant_constraint_ids from the selected region's "
+        "constraint_details that explains why this region is worth repairing (or an empty list "
+        "if the region is selected for class time/room penalties). "
+        "If no target is promising, return null target IDs and an empty list. "
+        "Do not choose an operator or schedule."
     ),
     "planner": (
         "You are the Planner for ITC 2019 NSGA-III. The Inspector's target is fixed. "
-        "Choose only HOW and WHEN from allowed_actions and ranges; the operator must "
-        "appear in the target region's available_operators. "
-        "Return no_op with budget 0 if no suitable operator exists. "
-        "Never output code or a timetable."
+        "Choose only HOW and WHEN. Use the diagnosis IDs to look up the target's constraints. "
+        + _STATE_GUIDANCE + _ACCEPTANCE_GUIDANCE + _BUDGET_GUIDANCE + _ACTION_GUIDANCE
+        + "Never output code or a timetable."
     ),
 }
+
+
+def _encode_payload(payload: dict[str, Any], max_characters: int) -> tuple[str, int]:
+    def encode(value: dict) -> str:
+        return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+
+    body = encode(payload)
+    if len(body) <= max_characters:
+        return body, 0
+
+    state = payload.get("state", payload)
+    regions = state.get("candidate_regions") if isinstance(state, dict) else None
+    if not regions:
+        return body, 0
+    diagnosis = payload.get("diagnosis", {})
+    diagnosed_ids = set(diagnosis.get("relevant_constraint_ids", ()))
+    target_keys = ("solution_id", "region_id", "boundary_id")
+    ranked_details = []
+    for region in regions:
+        is_target = diagnosed_ids and all(region.get(key) == diagnosis.get(key) for key in target_keys)
+        required_ids = diagnosed_ids if is_target else set()
+        details = sorted(region.get("constraint_details", ()), key=lambda item: (
+            item["constraint_id"] not in required_ids,
+            not bool(item.get("region_violation_units", item["current_violations"])),
+            not item["required"],
+            item["cross_boundary"],
+            -item.get("region_violation_units", item["current_violations"]),
+        ))
+        keep = sum(item["constraint_id"] in required_ids for item in details)
+        ranked_details.append((region, details, keep))
+
+    def limited(limit: int) -> tuple[str, int]:
+        public_regions = []
+        omitted = 0
+        for region, details, keep in ranked_details:
+            count = max(limit, keep)
+            dropped = max(0, len(details) - count)
+            if dropped:
+                region = {**region, "constraint_details": details[:count],
+                          "constraint_details_omitted": dropped}
+            public_regions.append(region)
+            omitted += dropped
+        public_state = {**state, "candidate_regions": public_regions}
+        public_payload = public_state if state is payload else {**payload, "state": public_state}
+        return encode(public_payload), omitted
+
+    # Fit as many details per region as possible without changing IDs or the response schema.
+    best = limited(0)
+    low, high = 1, max(len(details) for _, details, _ in ranked_details)
+    while low <= high:
+        limit = (low + high) // 2
+        reduced = limited(limit)
+        if len(reduced[0]) <= max_characters:
+            best = reduced
+            low = limit + 1
+        else:
+            high = limit - 1
+    return best
 
 
 def validate_shape(role: str, value: Any) -> bool:
@@ -195,7 +308,9 @@ class GeminiDecisionClient:
             if self.blocked_reason:
                 record["status"] = self.blocked_reason
                 return None, record
-            body = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+            body, omitted_details = _encode_payload(payload, self.max_input_characters - len(prompt))
+            if omitted_details:
+                record["constraint_details_omitted"] = omitted_details
             record["input_characters"] = len(body)+len(prompt)
             if record["input_characters"] > self.max_input_characters:
                 record["status"] = "api_input_limit"

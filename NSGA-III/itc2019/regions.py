@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 import hashlib
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from itertools import combinations
 
 import numpy as np
@@ -13,6 +13,10 @@ from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
 from .instance import Instance
 from .scoring import distribution_violations, evaluate, overlaps, attendee_conflict
+
+
+_MAX_VIOLATION_GROUPS = 4
+_MAX_OUTSIDE_CLASSES_PER_GROUP = 8
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +35,10 @@ class RegionCandidate:
     movable_class_count: int
     compatible_swap_pairs: int
     available_operators: tuple[str, ...]
+    solution_hard: int | None = None
+    solution_total: int | None = None
+    is_incumbent: bool = False
+    constraint_details: tuple[dict, ...] = ()
 
     def public(self) -> dict:
         result = asdict(self)
@@ -39,6 +47,17 @@ class RegionCandidate:
         result["boundary_truncated"] = len(self.boundary_class_ids) > 32
         result["boundary_class_ids"] = self.boundary_class_ids[:32]
         return result
+
+
+@dataclass(frozen=True, slots=True)
+class ConstraintObservation:
+    kind: str
+    required: bool
+    penalty: int
+    current_violations: int
+    class_indices: tuple[int, ...]
+    params: tuple[int, ...] = ()
+    violation_groups: dict[tuple[int, ...], int] = field(default_factory=dict)
 
 
 def swap_targets(instance: Instance, choices: np.ndarray, left: int,
@@ -144,8 +163,10 @@ class RegionBuilder:
             for index in distribution.classes:
                 self.by_class[index].append(distribution)
 
-    def _contributions(self, choices: np.ndarray) -> tuple[
-            list[float], list[float], list[set[int]], list[set[str]], tuple[str, ...]]:
+    def _contributions(self, choices: np.ndarray, *,
+                       observations: dict[str, ConstraintObservation] | None = None,
+                       student_conflicts: defaultdict[int, Counter[int]] | None = None) -> tuple[
+                           list[float], list[float], list[set[int]], list[set[str]], tuple[str, ...]]:
         instance = self.instance
         n = len(instance.classes)
         times = [cls.times[int(choices[i])] for i, cls in enumerate(instance.classes)]
@@ -163,7 +184,11 @@ class RegionBuilder:
                 by_room[rooms[i]].append(i)
                 if any(overlaps(times[i], blocked) for blocked in instance.rooms[rooms[i]].unavailable):
                     hard[i] += 1
-                    constraint_ids[i].add(f"room_unavailable:{cls.id}")
+                    constraint_id = f"room_unavailable:{cls.id}"
+                    constraint_ids[i].add(constraint_id)
+                    if observations is not None:
+                        observations[constraint_id] = ConstraintObservation(
+                            "room_unavailable", True, 0, 1, (i,), violation_groups={(i,): 1})
         for indices in by_room.values():
             for offset, left in enumerate(indices):
                 for right in indices[offset + 1:]:
@@ -175,11 +200,22 @@ class RegionBuilder:
                         conflict_id = f"room_conflict:{instance.classes[left].id}:{instance.classes[right].id}"
                         constraint_ids[left].add(conflict_id)
                         constraint_ids[right].add(conflict_id)
+                        if observations is not None:
+                            observations[conflict_id] = ConstraintObservation(
+                                "room_conflict", True, 0, 1, (left, right),
+                                violation_groups={(left, right): 1})
         for distribution_index, distribution in enumerate(instance.distributions):
+            constraint_id = f"distribution:{distribution_index}"
             for i in distribution.classes:
                 neighbors[i].update(j for j in distribution.classes if j != i)
-                constraint_ids[i].add(f"distribution:{distribution_index}")
-            violations = distribution_violations(instance, distribution, times, rooms)
+                constraint_ids[i].add(constraint_id)
+            groups = {} if observations is not None else None
+            violations = distribution_violations(instance, distribution, times, rooms,
+                                                 violation_groups=groups)
+            if observations is not None:
+                observations[constraint_id] = ConstraintObservation(
+                    distribution.kind, distribution.required, distribution.penalty, violations,
+                    distribution.classes, distribution.params, groups if groups is not None else {})
             if not violations:
                 continue
             contribution = (violations if distribution.required else
@@ -221,13 +257,78 @@ class RegionBuilder:
                             neighbors[b].add(a)
                             constraint_ids[a].add("student_conflict")
                             constraint_ids[b].add("student_conflict")
+                            if student_conflicts is not None:
+                                student_conflicts[a][b] += 1
+                                student_conflicts[b][a] += 1
         if score.unassigned_requests:
             unlocalized.append("unassigned_requests")
         return hard, soft, neighbors, constraint_ids, tuple(unlocalized)
 
+    def _constraint_details(self, constraint_ids: tuple[str, ...], active: set[int],
+                            observations: dict[str, ConstraintObservation],
+                            student_conflicts: dict[int, Counter[int]]) -> tuple[dict, ...]:
+        details = []
+        for constraint_id in constraint_ids:
+            if constraint_id == "student_conflict":
+                # Count each student/class-pair conflict once, even if both classes are in the region.
+                groups = {}
+                for left in active:
+                    for right, count in student_conflicts.get(left, {}).items():
+                        if right not in active or left < right:
+                            groups[tuple(sorted((left, right)))] = count
+                cross_boundary = any(not active.issuperset(group) for group in groups)
+                kind, required, penalty, params = "student_conflict", False, 1, ()
+                violations = sum(groups.values())
+            else:
+                observation = observations[constraint_id]
+                kind, required, penalty = observation.kind, observation.required, observation.penalty
+                params = observation.params
+                violations = observation.current_violations
+                cross_boundary = not active.issuperset(observation.class_indices)
+                groups = {group: units for group, units in observation.violation_groups.items()
+                          if not active.isdisjoint(group)}
+            if not groups:
+                continue
+            detail = {
+                "constraint_id": constraint_id, "kind": kind, "required": required,
+                "penalty": penalty, "params": params, "current_violations": violations,
+                "cross_boundary": cross_boundary, "region_violation_units": sum(groups.values()),
+            }
+            ranked = sorted(groups, key=lambda group: (not active.issuperset(group), -groups[group], group))
+            detail["violation_groups"] = tuple(self._public_violation(group, groups[group], active)
+                                               for group in ranked[:_MAX_VIOLATION_GROUPS])
+            omitted = len(ranked) - len(detail["violation_groups"])
+            if omitted:
+                detail["violation_groups_omitted"] = omitted
+            details.append(detail)
+        details.sort(key=lambda item: (
+            not item["required"],
+            item["cross_boundary"],
+            -item["region_violation_units"],
+            -item["current_violations"],
+            -item["penalty"],
+            item["constraint_id"],
+        ))
+        return tuple(details)
+
+    def _public_violation(self, group: tuple[int, ...], units: int, active: set[int]) -> dict:
+        outside = tuple(i for i in group if i not in active)
+        shown_outside = set(outside[:_MAX_OUTSIDE_CLASSES_PER_GROUP])
+        classes = self.instance.classes
+        result = {
+            "class_ids": tuple(classes[i].id for i in group if i in active or i in shown_outside),
+            "outside_region_class_ids": tuple(classes[i].id for i in outside[:_MAX_OUTSIDE_CLASSES_PER_GROUP]),
+            "violation_units": units,
+        }
+        if len(outside) > _MAX_OUTSIDE_CLASSES_PER_GROUP:
+            result["outside_region_classes_omitted"] = len(outside) - _MAX_OUTSIDE_CLASSES_PER_GROUP
+        return result
+
     def build(self, algorithm, max_regions: int, region_size: int) -> list[RegionCandidate]:
-        self.score_fn = getattr(getattr(algorithm, "problem", None), "score_state", None)
-        self.engine = getattr(getattr(algorithm, "problem", None), "engine", None)
+        problem = getattr(algorithm, "problem", None)
+        self.score_fn = getattr(problem, "score_state", None)
+        self.engine = getattr(problem, "engine", None)
+        incumbent_choices = getattr(getattr(problem, "incumbent", None), "choices", None)
         pop = algorithm.pop
         hard = np.asarray(pop.get("G"), dtype=float).reshape(-1)
         totals = np.asarray(pop.get("F"), dtype=float).sum(axis=1)
@@ -260,8 +361,11 @@ class RegionBuilder:
             target_count = (max_regions if position == len(representatives) - 1 else
                             min(max_regions, per_solution * (position + 1)))
             choices = np.asarray(pop[solution_index].X, dtype=np.int32)
+            is_incumbent = incumbent_choices is not None and np.array_equal(choices, incumbent_choices)
+            observations: dict[str, ConstraintObservation] = {}
+            student_conflicts: defaultdict[int, Counter[int]] = defaultdict(Counter)
             hard_by_class, soft_by_class, neighbors, by_class_constraints, unlocalized = (
-                self._contributions(choices))
+                self._contributions(choices, observations=observations, student_conflicts=student_conflicts))
             ranked = sorted(range(len(self.instance.classes)),
                             key=lambda i: (-hard_by_class[i], -soft_by_class[i], i))
             for center in ranked:
@@ -308,6 +412,7 @@ class RegionBuilder:
                     available.extend(("move", "destroy_repair"))
                 if swap_count:
                     available.append("swap")
+                constraint_ids = tuple(sorted(set().union(*(by_class_constraints[i] for i in active))))
                 candidates.append(RegionCandidate(
                     solution_id=str(solution_index),
                     region_id=f"{solution_index}:{len(candidates)}",
@@ -315,8 +420,7 @@ class RegionBuilder:
                     class_indices=active,
                     class_ids=tuple(self.instance.classes[i].id for i in active),
                     boundary_class_ids=boundary_ids,
-                    constraint_ids=tuple(sorted(set().union(
-                        *(by_class_constraints[i] for i in active)))),
+                    constraint_ids=constraint_ids,
                     hard_contribution=sum(hard_by_class[i] for i in active),
                     soft_contribution=sum(soft_by_class[i] for i in active),
                     unlocalized_penalties=unlocalized,
@@ -324,6 +428,11 @@ class RegionBuilder:
                     movable_class_count=movable,
                     compatible_swap_pairs=swap_count,
                     available_operators=tuple(available),
+                    solution_hard=int(hard[solution_index]),
+                    solution_total=int(totals[solution_index]),
+                    is_incumbent=is_incumbent,
+                    constraint_details=self._constraint_details(
+                        constraint_ids, component, observations, student_conflicts),
                 ))
                 if len(candidates) >= max_regions:
                     return candidates

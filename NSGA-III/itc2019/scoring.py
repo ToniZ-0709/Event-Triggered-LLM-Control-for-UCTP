@@ -95,15 +95,19 @@ def _blocks(intervals: list[tuple[int, int]], gap: int) -> list[tuple[int, int, 
 
 
 def distribution_violations(instance: Instance, distribution: Distribution,
-                            times: list[Time], room_ids: list[str | None]) -> int:
-    """Number of pair violations, or excess units for a special constraint."""
+                            times: list[Time], room_ids: list[str | None], *,
+                            violation_groups: dict[tuple[int, ...], int] | None = None) -> int:
+    """Count violation units and optionally record the class groups that contribute them."""
     kind = distribution.kind
     indices = distribution.classes
     if kind == "MaxDays":
         days = 0
         for index in indices:
             days |= times[index].day_mask
-        return max(0, days.bit_count() - distribution.params[0])
+        excess = max(0, days.bit_count() - distribution.params[0])
+        if excess and violation_groups is not None:
+            violation_groups[indices] = excess
+        return excess
 
     if kind in {"MaxDayLoad", "MaxBreaks", "MaxBlock"}:
         excess = 0
@@ -115,15 +119,30 @@ def distribution_violations(instance: Instance, distribution: Distribution,
                             times[i].day_mask & day_bit and times[i].week_mask & week_bit]
                 if not meetings:
                     continue
+                violating_blocks = ()
                 if kind == "MaxDayLoad":
-                    excess += max(0, sum(t.length for t in meetings) - distribution.params[0])
+                    amount = max(0, sum(t.length for t in meetings) - distribution.params[0])
                 else:
                     blocks = _blocks([(t.start, t.end) for t in meetings], distribution.params[1])
                     if kind == "MaxBreaks":
-                        excess += max(0, len(blocks) - distribution.params[0] - 1)
+                        amount = max(0, len(blocks) - distribution.params[0] - 1)
+                    elif violation_groups is None:
+                        amount = sum(count > 1 and end - start > distribution.params[0]
+                                     for start, end, count in blocks)
                     else:
-                        excess += sum(count > 1 and end - start > distribution.params[0]
-                                      for start, end, count in blocks)
+                        violating_blocks = tuple((start, end) for start, end, count in blocks
+                                                 if count > 1 and end - start > distribution.params[0])
+                        amount = len(violating_blocks)
+                excess += amount
+                if amount and violation_groups is not None:
+                    members = tuple(i for i in indices if
+                                    times[i].day_mask & day_bit and times[i].week_mask & week_bit)
+                    if kind == "MaxBlock":
+                        for start, end in violating_blocks:
+                            group = tuple(i for i in members if start <= times[i].start <= end)
+                            violation_groups[group] = violation_groups.get(group, 0) + 1
+                    else:
+                        violation_groups[members] = violation_groups.get(members, 0) + amount
         return excess
 
     count = 0
@@ -167,6 +186,9 @@ def distribution_violations(instance: Instance, distribution: Distribution,
         else:
             raise ValueError(f"Unsupported distribution type {kind}")
         count += not valid
+        if not valid and violation_groups is not None:
+            pair = (left, right)
+            violation_groups[pair] = violation_groups.get(pair, 0) + 1
     return count
 
 

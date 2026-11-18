@@ -110,7 +110,7 @@ def test_interval_zero_emits_only_events_not_periodic_generations(tiny_dataset, 
 def test_llm_review_lines_summarize_roles_and_survive_partial_records(
         tiny_dataset, role_mode, roles, expected_tokens):
     instance = load_instance(tiny_dataset / "tiny.xml")
-    settings = ControllerSettings(model="gemini-3.8-flash", warmup_generations=5,
+    settings = ControllerSettings(model="gemini-4-hydrogen", warmup_generations=5,
                                   review_interval=5, min_review_interval=1)
 
     class FakeLLMController(ControllerCallback):

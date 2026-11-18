@@ -675,7 +675,7 @@ class ControllerCallback(BaselineMonitor):
         return {
             "schema_version": 1,
             "instance": self.instance.name,
-            "global": metrics,
+            "global": {**metrics, "reviews_used": len(self.events), "max_reviews": s.max_reviews},
             "recent_best_quality": self.quality_history[-s.stagnation_window:],
             "candidate_regions": [region.public() for region in regions],
             "recent_outcomes": self.outcomes[-s.recent_outcomes:],
@@ -815,6 +815,8 @@ class ControllerCallback(BaselineMonitor):
             self._last_logged_review_gen = metrics["generation"]
             self.outcomes.append({"generation": metrics["generation"],
                                   "region_id": plan.region_id,
+                                  "boundary_id": region.boundary_id if region is not None else None,
+                                  "class_ids": region.class_ids if region is not None else (),
                                   "operator_id": plan.operator_id,
                                   "validation": validation,
                                   "outcome": None if outcome is None else outcome.status,
@@ -823,6 +825,10 @@ class ControllerCallback(BaselineMonitor):
                                   if outcome is None else outcome.evaluations,
                                   "elapsed_seconds": 0 if outcome is None else
                                   round(outcome.elapsed_seconds, 3),
+                                  "source_hard": None if outcome is None else outcome.source_hard,
+                                  "source_total": None if outcome is None else outcome.source_total,
+                                  "best_trial_hard": None if outcome is None else outcome.best_trial_hard,
+                                  "best_trial_total": None if outcome is None else outcome.best_trial_total,
                                   "best_hard_change": self.best_observed[0] - metrics["incumbent_hard"],
                                   "best_internal_total_change": (
                                       self.best_observed[1] - metrics["incumbent_internal_total"])})
