@@ -40,8 +40,7 @@ def plot(root: Path, output: Path, seed: int, instance: str, graph_types=("final
             if not traces[method] or (method != "baseline" and not reviews[method]):
                 raise ValueError(f"Missing trace for {method}: {child}")
     output.mkdir(parents=True, exist_ok=True)
-    note = "No global time cap" if campaign == "tg_no_timecap" else "Original time-capped campaign"
-    title = f"{instance} | seed {seed} | {note}"
+    title = f"{instance} | seed {seed} | Original time-capped campaign"
 
     if "final_quality" in graph_types:
         fig, ax = plt.subplots(figsize=(8, 4), layout="constrained")

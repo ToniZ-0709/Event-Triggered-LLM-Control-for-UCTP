@@ -36,7 +36,7 @@ def archived_runs(root: Path = ARCHIVE):
 
 def report_rows(root: Path = ARCHIVE):
     rows = []
-    for campaign in ("expanded_pilot", "tg_no_timecap"):
+    for campaign in ("expanded_pilot",):
         report = read_json(root / campaign / "reports" / f"{campaign}_comparison.json")
         rows.extend((campaign, row) for row in report["instances"])
     return rows

@@ -1,5 +1,5 @@
 {
-  "experiment": "nine_instance_three_pipeline_two_seed_check",
+  "experiment": "eight_instance_three_pipeline_two_seed_check",
   "seeds": [
     17,
     42
@@ -13,10 +13,9 @@
     "mary-fal18",
     "bet-spr18",
     "pu-cs-fal07",
-    "lums-spr18",
-    "tg-spr18"
+    "lums-spr18"
   ],
-  "expected_cells": 54,
+  "expected_cells": 48,
   "completed_cells": 48,
   "completed_triples": 16,
   "evaluation_matched_triples": 16,
@@ -4379,28 +4378,7 @@
       }
     }
   ],
-  "missing": [
-    {
-      "instance": "tg-spr18",
-      "seed": 17,
-      "incomplete_or_missing": [
-        "baseline",
-        "single",
-        "multi"
-      ],
-      "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
-    },
-    {
-      "instance": "tg-spr18",
-      "seed": 42,
-      "incomplete_or_missing": [
-        "baseline",
-        "single",
-        "multi"
-      ],
-      "reason": "Superseded capped runs deleted at user request; uncapped results are in tg_no_timecap_comparison.json."
-    }
-  ],
+  "missing": [],
   "excluded": [],
   "all_attempts": [
     {
@@ -5130,8 +5108,8 @@
     "incomplete_runs": 0,
     "unpublished_runs": 1,
     "usage_has_unknown_unpublished_component": true,
-    "usage_has_unknown_removed_component": true,
-    "scope": "Retained attempts only; deleted capped tg usage excluded. Previously deleted API-failure usage remains unknown."
+    "usage_has_unknown_removed_component": false,
+    "scope": "Retained Phase 1 attempts only (8 instances, 48 completed runs). Previously deleted API-failure usage remains unknown."
   },
   "interpretation": [
     "Sequential local jobs at shared caps; not an equal-runtime comparison.",
@@ -5143,12 +5121,11 @@
     "Failed API attempts were deleted at user request; comparisons use completed runs only; historical usage includes an unknown deleted component.",
     "Reported tokens may omit usage from failed API requests.",
     "Unpublished failures are retained separately, never counted as completed cells or quality losses. Their API calls/tokens may be unknown and are not included in the reported totals.",
-    "Superseded time-capped tg-spr18 results for seeds 17 and 42 were removed at user request; use tg_no_timecap_comparison.json for the completed 1200-evaluation results. Aggregates cover retained original-campaign records only."
+    "Aggregates cover the 8 retained Phase 1 instances (48 completed runs)."
   ],
-  "profile_sha256": "597577b1cfccf6028554281a8263979d362b81d866b897e40d29832ac8ebc96d",
   "profile_snapshot": {
     "schema_version": 1,
-    "name": "nine-instance-two-seed-controller-check",
+    "name": "eight-instance-two-seed-controller-check",
     "solver": {
       "population": 20,
       "partitions": 3,
@@ -5242,17 +5219,12 @@
         "generations": 200,
         "evaluations": 1200,
         "time_limit_seconds": 1200
-      },
-      "tg-spr18": {
-        "generations": 200,
-        "evaluations": 1200,
-        "time_limit_seconds": 1200
       }
     },
     "provenance": {
       "parent_profile": "profiles/pilot.json",
       "original_six": "All search, repair, review, evaluation and wall-clock caps are unchanged; completed seed-17 runs may be reused only with matching source, data and configuration hashes.",
-      "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students), lums-spr18 (487 classes, 73 rooms, no students), tg-spr18 (676 classes, 24 rooms, no students). Different institutions and sizes; not a representative sample of all 36 instances.",
+      "additional_instances": "pu-cs-fal07 (174 classes, 13 rooms, 2002 students) and lums-spr18 (487 classes, 73 rooms, no students).",
       "new_budget_rule": "Provisional engineering caps fixed before examining controller outcomes: the existing default population 20 / partitions 3, 200 generations, 1200 logical evaluations, 1200 seconds per method. Not tuned or claimed optimal.",
       "seeds": [
         17,

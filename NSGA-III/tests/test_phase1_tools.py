@@ -4,11 +4,18 @@ from pathlib import Path
 
 from tools.audit_expanded_pilot import audit_attempt
 from tools.phase1_data import archived_runs, report_rows
+from tools.plot_phase1 import select_comparisons
 
 
 def test_archive_covers_every_reported_run():
     runs = archived_runs()
-    for campaign, row in report_rows():
+    rows = report_rows()
+    assert len(rows) == 16
+    assert len(runs) == 48
+    assert {campaign for campaign, _ in rows} == {"expanded_pilot"}
+    assert "tg-spr18" not in {row["instance"] for _, row in rows}
+    assert len(select_comparisons(Path(__file__).resolve().parents[2] / "ExperimentResult" / "phase1")) == 16
+    for campaign, row in rows:
         for method in ("baseline", "single", "multi"):
             folder, _ = runs[(campaign, row["seed"], row["instance"], method)]
             assert (folder / row["instance"] / "anytime_trace.jsonl").is_file()
