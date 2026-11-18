@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 import importlib.util
 import io
 import json
@@ -164,6 +165,10 @@ def test_llm_review_lines_summarize_roles_and_survive_partial_records(
 @pytest.mark.parametrize("improvable", [True, False])
 def test_greedy_progress_logs_probes_and_no_op_outcome(tiny_dataset, improvable):
     instance = load_instance(tiny_dataset / "tiny.xml")
+    if not improvable:
+        instance = replace(instance, classes=tuple(
+            replace(cls, room_options=tuple((room, 0) for room, _ in cls.room_options))
+            for cls in instance.classes))
     start = [0, 0, 0, 0] if improvable else [1, 1, 0, 1]
     pop = Population.new("X", np.array([start]))
     problem = PlacementProblem(instance, evaluation_budget=25)

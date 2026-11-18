@@ -6,17 +6,98 @@ from collections import Counter, defaultdict
 from dataclasses import replace
 from itertools import combinations
 import time
+from typing import Callable
 
 import numpy as np
 
-from .instance import Distribution, Instance
-from .scoring import Score, distribution_violations, evaluate, overlaps, _blocks
+from .instance import Distribution, Instance, Time
+from .scoring import Score, attendee_conflict, distribution_violations, evaluate, overlaps, _blocks
 
 
 class _BuildDeadline(Exception):
     pass
 
 _GLOBAL = {"MaxDays", "MaxDayLoad", "MaxBreaks", "MaxBlock"}
+_WEEK_AVERAGED = _GLOBAL - {"MaxDays"}
+
+
+class LocalSoftCosts:
+    """Soft placement costs touching a small region, with sectioning held fixed."""
+
+    def __init__(self, instance: Instance, active: set[int], assignments=None) -> None:
+        self.instance = instance
+        self.active = active
+        self.pairs: dict[tuple[int, int], list[Distribution]] = defaultdict(list)
+        self.neighbors: dict[int, set[int]] = defaultdict(set)
+        self.globals: list[Distribution] = []
+        self.globals_by_class: dict[int, list[Distribution]] = defaultdict(list)
+        self.student_neighbors: dict[int, Counter[int]] = defaultdict(Counter)
+        if instance.weights[2]:
+            for d in instance.distributions:
+                if d.required or not d.penalty:
+                    continue
+                touching = active.intersection(d.classes)
+                if not touching:
+                    continue
+                if d.kind in _GLOBAL:
+                    self.globals.append(d)
+                    for i in touching:
+                        self.globals_by_class[i].append(d)
+                    continue
+                for pos, i in enumerate(d.classes):
+                    if i not in touching:
+                        continue
+                    for other_pos, j in enumerate(d.classes):
+                        if pos == other_pos or (j in touching and other_pos < pos):
+                            continue
+                        a, b = sorted((i, j))
+                        # Retain the distribution's order, particularly for Precedence.
+                        order = (0, 1) if (i < j) == (pos < other_pos) else (1, 0)
+                        self.pairs[a, b].append(replace(d, classes=order))
+                        self.neighbors[i].add(j)
+                        if j in touching:
+                            self.neighbors[j].add(i)
+        if assignments and instance.weights[3]:
+            attending = defaultdict(list)
+            for i, students in assignments.items():
+                for student in students:
+                    attending[student].append(i)
+            for i in active:
+                for student in assignments.get(i, ()):
+                    self.student_neighbors[i].update(j for j in attending[student] if j != i)
+
+    def pair_cost(self, left: int, a: Time, room_a: str | None,
+                  right: int, b: Time, room_b: str | None) -> int:
+        if left > right:
+            left, right, a, b, room_a, room_b = right, left, b, a, room_b, room_a
+        return self.instance.weights[2] * sum(
+            d.penalty * distribution_violations(self.instance, d, (a, b), (room_a, room_b))
+            for d in self.pairs.get((left, right), ()))
+
+    def boundary_cost(self, index, chosen, room, times, rooms) -> int:
+        return sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
+                   for j in self.neighbors.get(index, ()) if j not in self.active)
+
+    def option_cost(self, index, chosen, room, times, rooms) -> int:
+        cost = sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
+                   for j in self.neighbors.get(index, ()))
+        cost += self.instance.weights[3] * sum(
+            count for j, count in self.student_neighbors.get(index, {}).items()
+            if attendee_conflict(self.instance, chosen, room, times[j], rooms[j]))
+        return cost
+
+    def global_option_cost(self, index, chosen, times, rooms) -> int:
+        if not self.globals_by_class.get(index):
+            return 0
+        old = times[index]
+        times[index] = chosen
+        try:
+            return self.instance.weights[2] * sum(
+                d.penalty * distribution_violations(self.instance, d, times, rooms) //
+                (self.instance.nr_weeks if d.kind in _WEEK_AVERAGED else 1)
+                for d in self.globals_by_class[index])
+        finally:
+            times[index] = old
 
 
 class PlacementNeighborhood:
@@ -151,13 +232,14 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
                              source_score: Score | None = None,
                              seed_classes=None, require_room_improvement: bool = True,
                              allowed_classes=None, allow_soft_improvement: bool = False,
-                             max_full_scoring_calls: int = 5, score_fn=None
+                             max_full_scoring_calls: int = 5, score_fn=None,
+                             admit_candidate: Callable[[Score, Score], bool] | None = None
                              ) -> tuple[np.ndarray | None, dict]:
     """Solve a small hard-cost model, then check the entire modified timetable.
 
-    The local model includes pairwise/global required distributions and room
-    conflicts against the fixed boundary. Student sectioning and the complete
-    timetable are checked by the full scorer before returning an improvement.
+    The controller may supply its own final admission rule and, for a feasible
+    source, minimize the weighted placement and soft distribution costs locally.
+    The full scorer still checks the complete timetable and student sectioning.
     """
     from ortools.sat.python import cp_model
 
@@ -185,12 +267,15 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
     if not active:
         return None, stats
     active_set = set(active)
+    optimize_soft = source_score.hard == 0 and (allow_soft_improvement or admit_candidate is not None)
+    local_soft = LocalSoftCosts(instance, active_set) if optimize_soft and admit_candidate else None
     domains = {}
     unary = {}
     originals = {}
     for index in active:
         ranked = []
         current = neighborhood.current(index)
+        global_by_time: dict[int, int] = {}
         for option in neighborhood.options(index):
             if time.perf_counter() >= deadline:
                 stats["status"] = "time_budget_exhausted"
@@ -199,7 +284,18 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
             chosen, room = neighborhood.placement(index, option)
             soft = chosen.penalty + (0 if room is None else
                                       instance.classes[index].room_options[option[1]][1])
-            ranked.append((cost, option != current, soft, option))
+            if local_soft is None:
+                ranked.append((cost, option != current, soft, option))
+            else:
+                if option[0] not in global_by_time:
+                    global_by_time[option[0]] = local_soft.global_option_cost(
+                        index, chosen, neighborhood.times, neighborhood.rooms)
+                soft = (chosen.penalty * instance.weights[0] +
+                        (0 if room is None else instance.classes[index].room_options[option[1]][1]
+                         * instance.weights[1]) +
+                        local_soft.boundary_cost(index, chosen, room, neighborhood.times, neighborhood.rooms) +
+                        global_by_time[option[0]])
+                ranked.append((cost, soft, option != current, option))
         ranked.sort()
         selected = ranked[:max_options]
         if not any(item[3] == current for item in selected):
@@ -213,9 +309,12 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
                     for i in active}
     pairs = [(a, b) for a, b in combinations(active, 2)
              if room_domains[a].intersection(room_domains[b]) or (a, b) in neighborhood.pairs]
-    cells = sum(len(domains[a]) * len(domains[b]) for a, b in pairs)
+    soft_pairs = [pair for pair in combinations(active, 2)
+                  if local_soft is not None and pair in local_soft.pairs]
+    table_pairs = pairs + soft_pairs
+    cells = sum(len(domains[a]) * len(domains[b]) for a, b in table_pairs)
     if cells > max_table_cells:
-        cap = max(4, int((max_table_cells / max(1, len(pairs))) ** 0.5))
+        cap = max(4, int((max_table_cells / max(1, len(table_pairs))) ** 0.5))
         for index in active:
             kept = list(range(min(cap, len(domains[index]))))
             if originals[index] not in kept:
@@ -224,7 +323,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
             unary[index] = [unary[index][j] for j in kept]
             originals[index] = kept.index(originals[index])
         stats["options"] = sum(map(len, domains.values()))
-        cells = sum(len(domains[a]) * len(domains[b]) for a, b in pairs)
+        cells = sum(len(domains[a]) * len(domains[b]) for a, b in table_pairs)
         stats["resource_domain_cap"] = cap
     stats["table_cells"] = cells
     stats["external_zero_options"] = {instance.classes[i].id: unary[i].count(0) for i in active}
@@ -270,21 +369,36 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         return None, stats
     baseline_local += global_before
     stats["modeled_global_constraints"] = global_count
-    if baseline_local == 0 and not (allow_soft_improvement and source_score.hard == 0):
+    if baseline_local == 0 and not (optimize_soft or admit_candidate is not None):
         stats["status"] = "no_modeled_violation"
         return None, stats
-    model.add(sum(costs) <= baseline_local if allow_soft_improvement and source_score.hard == 0
+    model.add(sum(costs) <= baseline_local if optimize_soft or admit_candidate is not None
               else sum(costs) < baseline_local)
-    if allow_soft_improvement and source_score.hard == 0:
+    if admit_candidate is not None:
+        model.add(sum(changed) >= 1)
+    if optimize_soft:
         soft_costs = []
         for i in active:
             cls = instance.classes[i]
             values = [cls.times[ti].penalty * instance.weights[0] +
                       (0 if ri == -1 else cls.room_options[ri][1] * instance.weights[1])
                       for ti, ri in domains[i]]
+            if local_soft is not None:
+                values = [
+                    value + local_soft.boundary_cost(i, *neighborhood.placement(i, option),
+                                                     neighborhood.times, neighborhood.rooms)
+                    for value, option in zip(values, domains[i])
+                ]
             value = model.new_int_var(0, max(values), f"soft_{i}")
             model.add_element(variables[i], values, value)
             soft_costs.append(value)
+        try:
+            if local_soft is not None:
+                _add_soft_distribution_costs(model, variables, domains, originals, active_set,
+                                             neighborhood, local_soft, soft_pairs, soft_costs, deadline)
+        except _BuildDeadline:
+            stats["status"] = "soft_model_budget_exhausted"
+            return None, stats
         model.minimize(sum(soft_costs) * (len(active) + 1) + sum(changed))
     else:
         model.minimize(sum(costs) * (len(active) + 1) + sum(changed))
@@ -307,7 +421,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         solver.parameters.max_time_in_seconds = remaining
         solver.parameters.max_deterministic_time = deterministic_limit
         solver.parameters.max_memory_in_mb = 512
-        solver.parameters.stop_after_first_solution = not (allow_soft_improvement and source_score.hard == 0)
+        solver.parameters.stop_after_first_solution = not optimize_soft
         status = solver.solve(model)
         stats["status"] = solver.status_name(status)
         stats["solver_deterministic_time"] += solver.response_proto.deterministic_time
@@ -327,7 +441,9 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         hard_improved = score.hard < source_score.hard
         soft_improved = (allow_soft_improvement and source_score.hard == score.hard == 0
                          and score.total < source_score.total)
-        if ((hard_improved or soft_improved) and (not require_room_improvement or
+        admitted = (admit_candidate(source_score, score) if admit_candidate is not None
+                    else hard_improved or soft_improved)
+        if (admitted and (not require_room_improvement or
                 score.room_conflicts + score.room_unavailable <
                 source_score.room_conflicts + source_score.room_unavailable)):
             stats["changed_classes"] = int(sum(
@@ -365,8 +481,53 @@ def distribution_neighborhood_repair(instance, choices, *, deadline, seed=42,
     return candidate, stats
 
 
-def _global_costs(model, variables, domains, originals, active, neighborhood, costs, deadline):
-    """Encode required global distributions with the outside timetable fixed."""
+def _add_soft_distribution_costs(model, variables, domains, originals, active, neighborhood,
+                                 local_soft, pairs, costs, deadline):
+    for left, right in pairs:
+        table = []
+        for a, option_a in enumerate(domains[left]):
+            if time.perf_counter() >= deadline:
+                raise _BuildDeadline()
+            ta, ra = neighborhood.placement(left, option_a)
+            for b, option_b in enumerate(domains[right]):
+                tb, rb = neighborhood.placement(right, option_b)
+                amount = local_soft.pair_cost(left, ta, ra, right, tb, rb)
+                table.append((a, b, amount))
+        maximum = max(row[2] for row in table)
+        if maximum:
+            cost = model.new_int_var(0, maximum, f"soft_pair_{left}_{right}")
+            model.add_allowed_assignments([variables[left], variables[right], cost], table)
+            costs.append(cost)
+    instance = neighborhood.instance
+    for number, distribution in enumerate(local_soft.globals, len(neighborhood.globals)):
+        terms = []
+        local_before, _ = _global_costs(
+            model, variables, domains, originals, active, neighborhood, terms, deadline,
+            distributions=(distribution,), first_number=number)
+        weight = distribution.penalty * instance.weights[2]
+        if distribution.kind not in _WEEK_AVERAGED:
+            costs.append(sum(terms) * weight)
+            continue
+        # The encoders omit constant week/day patterns. Restore their units before
+        # applying the same per-constraint integer division as the full scorer.
+        if not terms:
+            continue
+        before = distribution_violations(instance, distribution, neighborhood.times, neighborhood.rooms)
+        maximum_per_day = (sum(max(t.length for t in instance.classes[i].times)
+                               for i in distribution.classes)
+                           if distribution.kind == "MaxDayLoad" else len(distribution.classes))
+        maximum = maximum_per_day * instance.nr_days * instance.nr_weeks
+        raw = model.new_int_var(0, maximum, f"soft_units_{number}")
+        model.add(raw == sum(terms) + before - local_before)
+        amount = model.new_int_var(0, maximum * distribution.penalty // instance.nr_weeks,
+                                   f"soft_global_{number}")
+        model.add_division_equality(amount, raw * distribution.penalty, instance.nr_weeks)
+        costs.append(amount * instance.weights[2])
+
+
+def _global_costs(model, variables, domains, originals, active, neighborhood, costs, deadline,
+                  *, distributions=None, first_number=0):
+    """Encode raw global violation units with the outside timetable fixed."""
     before = count = 0
     load_cache = {}
 
@@ -380,7 +541,8 @@ def _global_costs(model, variables, domains, originals, active, neighborhood, co
             load_cache[key] = value
         return load_cache[key]
 
-    for number, distribution in enumerate(neighborhood.globals):
+    for number, distribution in enumerate(neighborhood.globals if distributions is None else distributions,
+                                          first_number):
         if time.perf_counter() >= deadline:
             raise _BuildDeadline()
         indices = sorted(active.intersection(distribution.classes))

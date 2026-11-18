@@ -374,8 +374,8 @@ class RegionBuilder:
                     float(np.mean(np.asarray(pop[i].X) != np.asarray(pop[first].X))), -i))
         per_solution = math.ceil(max_regions / len(representatives))
         candidates: list[RegionCandidate] = []
-        seen: set[tuple[int, tuple[int, ...]]] = set()
         for position, solution_index in enumerate(representatives):
+            selected_regions: list[set[int]] = []
             target_count = (max_regions if position == len(representatives) - 1 else
                             min(max_regions, per_solution * (position + 1)))
             choices = np.asarray(pop[solution_index].X, dtype=np.int32)
@@ -396,10 +396,11 @@ class RegionBuilder:
                         break
                     component.add(min(frontier, key=lambda i: (-hard_by_class[i], -soft_by_class[i], i)))
                 active = tuple(sorted(component))
-                key = (solution_index, active)
-                if key in seen:
+                # Require 80% overlap of both regions before dropping the later one.
+                if any(5 * len(component & previous) >= 4 * max(len(component), len(previous))
+                       for previous in selected_regions):
                     continue
-                seen.add(key)
+                selected_regions.append(component)
                 boundary = sorted(set().union(*(neighbors[i] for i in active)) - set(active))
                 boundary_ids = tuple(self.instance.classes[i].id for i in boundary)
                 stamp = hashlib.sha256(repr((active, boundary)).encode()).hexdigest()[:12]

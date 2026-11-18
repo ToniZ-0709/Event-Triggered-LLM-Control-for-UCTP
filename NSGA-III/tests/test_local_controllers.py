@@ -89,6 +89,11 @@ def test_random_draws_over_pairs_plus_one_no_op_and_leaves_operator_rng_alone(da
 def test_greedy_uses_one_budget_and_injects_at_most_once(
         dataset, improvable, evaluation_budget, region_calls, quotas):
     instance = load_instance(dataset)
+    if not improvable:
+        # Start with a zero vector so no trade-off can improve an objective.
+        instance = replace(instance, classes=tuple(
+            replace(cls, room_options=tuple((room, 0) for room, _ in cls.room_options))
+            for cls in instance.classes))
     start = [0, 0, 0, 0] if improvable else [1, 1, 0, 1]
     pop = Population.new("X", np.array([start]))
     problem = PlacementProblem(instance, evaluation_budget=evaluation_budget)
@@ -143,6 +148,28 @@ def test_greedy_uses_one_budget_and_injects_at_most_once(
         assert algorithm.pop is pop
         assert controller.report()["fallback_no_op"] == 0
     assert controller.report()["probe_evaluations"] == used
+
+
+def test_greedy_proposes_a_feasible_pareto_tradeoff(dataset):
+    instance = load_instance(dataset)
+    first, second = instance.classes
+    first = replace(first, times=(replace(first.times[0], penalty=1), first.times[1]),
+                    room_options=(("1", 0), ("2", 7)))
+    instance = replace(instance, classes=(first, second))
+    pop = Population.new("X", np.array([[0, 1, 0, 0]]))
+    problem = PlacementProblem(instance)
+    evaluator = Evaluator()
+    evaluator.eval(problem, pop)
+    algorithm = SimpleNamespace(problem=problem, pop=pop, evaluator=evaluator)
+    controller = GreedyController(instance, SETTINGS, None, 17, time.perf_counter(), None)
+    controller.current_operator_limit = 4
+    target = replace(region(("destroy_repair",)), class_indices=(0,), class_ids=("1",),
+                     hard_contribution=0)
+    decision = controller._review(algorithm, {}, [target])
+    assert decision.plan.operator_id == "destroy_repair"
+    assert decision.probe.source_hard == 0 and decision.probe.source_total == 1
+    assert decision.probe.candidate_quality == (0, 7)
+    assert decision.probe_evaluations <= 4 and algorithm.pop is pop
 
 
 @pytest.mark.parametrize("method, factory", [("random", RandomController), ("greedy", GreedyController)])

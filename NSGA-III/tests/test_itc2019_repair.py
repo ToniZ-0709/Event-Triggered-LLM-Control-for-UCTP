@@ -9,18 +9,19 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from pymoo.core.evaluator import Evaluator
 from pymoo.core.population import Population
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from itc2019.instance import Class, Config as ITCConfig, Course, Distribution, Instance, Room, Student, Time
 from itc2019.controller import BaselineMonitor, ControllerCallback, ControllerSettings, _progress_signal
-from itc2019.nsga3 import (Config, _improve_hard, _joint_improve_hard, _room_chain_repair,
+from itc2019.nsga3 import (Config, PlacementProblem, _improve_hard, _joint_improve_hard, _room_chain_repair,
                           _seeded_cv_tournament, evaluation_count, reference_directions, run)
 from itc2019.neighborhood import room_neighborhood_repair
 from itc2019.repair_policy import FailureBackoff
-from itc2019.operators import _admissible_candidate
-from itc2019.regions import RegionBuilder, placement_diversity
+from itc2019.operators import _admissible_candidate, _admit_repair, probe_operator
+from itc2019.regions import RegionBuilder, RegionCandidate, placement_diversity
 from itc2019.room_search import room_plateau_repair
 from itc2019.scoring import evaluate
 
@@ -130,6 +131,71 @@ def test_neighborhood_models_days_and_load_with_fixed_outside_classes() -> None:
     assert stats["modeled_global_constraints"] == 2
     assert stats["local_hard_after"] == score.hard
     assert candidate[2] == source[2] and candidate[5] == source[5]
+
+
+def test_controller_neighborhood_can_improve_soft_at_the_same_positive_hard() -> None:
+    instance = _chain_instance()
+    cls = replace(instance.classes[2], times=(Time("1", "1", 0, 1, 10),
+                                              Time("1", "1", 1, 1)),
+                  room_options=(("2", 0),))
+    instance = replace(instance, classes=(*instance.classes[:2], cls), slots_per_day=2)
+    source = np.zeros(6, dtype=np.int32)
+    before, _ = evaluate(instance, source[:3], source[3:])
+    args = dict(source_score=before, allowed_classes=(2,), require_room_improvement=False)
+    assert room_neighborhood_repair(instance, source, deadline=time.perf_counter() + 3,
+                                    **args)[0] is None
+    candidate, stats = room_neighborhood_repair(
+        instance, source, deadline=time.perf_counter() + 3, admit_candidate=_admit_repair, **args)
+    assert candidate is not None and stats["full_scoring_calls"] == 1
+    after, _ = evaluate(instance, candidate[:3], candidate[3:])
+    assert before.hard == after.hard == 1 and after.total < before.total
+
+
+@pytest.mark.parametrize("distribution,expected", [
+    (Distribution("Precedence", (), False, 10, (1, 0)), 0),
+    (Distribution("MaxDayLoad", (1,), False, 10, (0, 1)), 5),
+])
+def test_controller_neighborhood_optimizes_soft_distribution_at_fixed_boundary(
+        distribution, expected) -> None:
+    first = Time("1", "10", 0, 2)
+    if distribution.kind == "Precedence":
+        fixed, bad, good = (Time("1", "10", 0, 1), Time("1", "10", 0, 1),
+                            Time("1", "10", 2, 1, 1))
+    else:
+        fixed, bad, good = Time("1", "01", 0, 2), Time("1", "10", 1, 2), Time("1", "10", 0, 1, 1)
+    base = _chain_instance()
+    classes = (replace(base.classes[0], times=(first, bad, good)),
+               replace(base.classes[2], times=(fixed,), room_options=(("2", 0),)))
+    instance = replace(base, classes=classes, class_index={"A": 0, "C": 1}, nr_weeks=2,
+                       slots_per_day=5, distributions=(distribution,))
+    source = np.zeros(4, dtype=np.int32)
+    candidate, stats = room_neighborhood_repair(
+        instance, source, deadline=time.perf_counter() + 3, allowed_classes=(0,),
+        source_score=evaluate(instance, source[:2], source[2:])[0],
+        require_room_improvement=False, admit_candidate=_admit_repair,
+        max_full_scoring_calls=1)
+    assert candidate is not None and stats["full_scoring_calls"] == 1
+    assert candidate.tolist() == [2, 0, 0, 0]
+    assert evaluate(instance, candidate[:2], candidate[2:])[0].distribution == expected
+
+
+def test_controller_neighborhood_models_soft_pairs_between_moving_classes() -> None:
+    base = _chain_instance()
+    early, late = Time("1", "1", 0, 1), Time("1", "1", 1, 1)
+    classes = (replace(base.classes[0], times=(early, late), room_options=(("1", 0), ("2", 1))),
+               replace(base.classes[1], times=(late, early), room_options=(("2", 0), ("1", 1))))
+    instance = replace(base, classes=classes, class_index={"A": 0, "B": 1},
+                       slots_per_day=2, distributions=(Distribution("SameRoom", (), False, 10, (0, 1)),))
+    source = np.zeros(4, dtype=np.int32)
+    before, _ = evaluate(instance, source[:2], source[2:])
+    candidate, stats = room_neighborhood_repair(
+        instance, source, deadline=time.perf_counter() + 3, allowed_classes=(0, 1),
+        source_score=before, require_room_improvement=False, admit_candidate=_admit_repair,
+        max_full_scoring_calls=1)
+    assert candidate is not None and stats["full_scoring_calls"] == 1
+    after, _ = evaluate(instance, candidate[:2], candidate[2:])
+    assert before.hard == after.hard == 0
+    assert before.distribution == 10 and after.distribution == 0 and after.total == 1
 
 
 def test_repair_failure_backoff_allows_progress_and_caps_cooldown() -> None:
@@ -267,6 +333,21 @@ def test_region_builder_backfills_duplicate_centers_and_solutions() -> None:
     assert len({region.class_indices for region in regions}) == 3
 
 
+def test_region_builder_skips_four_of_five_overlap_on_a_source(monkeypatch) -> None:
+    base = _chain_instance()
+    classes = tuple(replace(base.classes[0], id=str(i)) for i in range(9))
+    instance = replace(base, classes=classes, class_index={cls.id: i for i, cls in enumerate(classes)})
+    pop = Population.new("X", np.zeros((1, 18), dtype=np.int32),
+                         "G", np.zeros((1, 1)), "F", np.zeros((1, 4)))
+    # Two partial neighborhoods share classes 0..3. The third is disjoint.
+    neighbors = [{1, 2, 3, 4, 5}, {0}, {0}, {0}, {0}, {0}, {7, 8}, {6}, {6}]
+    builder = RegionBuilder(instance)
+    monkeypatch.setattr(builder, "_contributions", lambda *a, **k: (
+        list(range(9, 0, -1)), [0] * 9, neighbors, [set() for _ in classes], ()))
+    regions = builder.build(SimpleNamespace(pop=pop), max_regions=3, region_size=5)
+    assert [r.class_indices for r in regions] == [(0, 1, 2, 3, 4), (6, 7, 8)]
+
+
 def test_stagnation_uses_hard_until_feasibility() -> None:
     assert _progress_signal((5, 100)) == _progress_signal((5, 80))
     assert _progress_signal((0, 100)) != _progress_signal((0, 80))
@@ -322,13 +403,35 @@ def test_student_pair_cache_preserves_conflict_and_non_conflict_scores() -> None
     assert clashing.student == 2 and separated.student == 0
     assert assignments == {0: ["S1", "S2"], 1: ["S1", "S2"]}
 
+    # A cheap non-improving alternative ties the original placement. With only
+    # one fallback evaluation, student-aware ranking must try the costly time.
+    options = (first, first, replace(second, penalty=1))
+    instance = replace(instance, classes=(classes[0], replace(classes[1], times=options)),
+                       weights=(1, 1, 1, 10))
+    source = Population.new("X", np.zeros((1, 4), dtype=np.int32))
+    problem = PlacementProblem(instance)
+    evaluator = Evaluator()
+    evaluator.eval(problem, source)
+    details = ({"violation_groups": ({"in_region_class_ids": ("B",), "violation_units": 2},)},)
+    region = RegionCandidate("0", "r", "b", (1,), ("B",), ("A",), ("student_conflict",),
+                             0, 20, (), (), 1, 0, ("destroy_repair",), constraint_details=details)
+    probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
+                           instance, region, "destroy_repair", 2, np.random.default_rng(17), None)
+    assert probe.candidate_quality == (0, 1)
+    assert probe.evaluations == 2 and evaluator.n_eval == problem.engine.requests == 3
+
 
 def test_controller_acceptance_preserves_hard_priority() -> None:
-    assert _admissible_candidate(2, 100, 1, 10000)
-    assert not _admissible_candidate(2, 100, 2, 1)
-    assert not _admissible_candidate(0, 100, 1, 1)
-    assert not _admissible_candidate(0, 100, 0, 100)
-    assert _admissible_candidate(0, 100, 0, 99)
+    source = (50, 50, 0, 0)
+    assert _admissible_candidate(2, source, 1, (10000, 0, 0, 0))
+    assert _admissible_candidate(2, source, 2, (1, 0, 0, 0))
+    assert not _admissible_candidate(2, source, 2, (25, 100, 0, 0))
+    assert not _admissible_candidate(2, source, 3, (1, 0, 0, 0))
+    assert not _admissible_candidate(0, source, 1, (1, 0, 0, 0))
+    assert not _admissible_candidate(0, source, 0, source)
+    assert not _admissible_candidate(0, source, 0, (50, 51, 0, 0))
+    assert _admissible_candidate(0, source, 0, (49, 50, 0, 0))
+    assert _admissible_candidate(0, source, 0, (25, 100, 0, 0))
 
 
 def test_coordinated_repair_is_shared_and_accounted_for() -> None:

@@ -56,6 +56,8 @@ Only published Gemini Free Tier text models are permitted by `NSGA-III/itc2019/l
 
 Set `GEMINI_API_KEY` locally in your environment (never pass a key as a CLI argument or commit it, and avoid setting a conflicting `GOOGLE_API_KEY`). Because an API key alone does not expose its project billing tier, confirm in Google AI Studio that the project is on the Free Tier and either pass `--confirm-free-tier` or set `GEMINI_FREE_TIER_CONFIRMED=1`.
 
+The local campaign runner reads numbered Gemini keys from the repository-root `.env` file (`GEMINI_API_KEY_001`, `GEMINI_API_KEY_002`, and so on). Keep existing slots in order and append new ones using the next number so the quota ledger can keep tracking the same keys. Direct CLI runs read `GEMINI_API_KEY` from the process environment.
+
 Run the offline preflight check (zero network calls) from the repository root (`Experiment/`):
 
 ```powershell
@@ -88,7 +90,18 @@ Run all commands from the repository root (`Experiment/`). Add `--dry-run` with 
 | :--- | :--- | :--- | :--- |
 | [profiles/pilot.json](profiles/pilot.json) | 6 instances (`muni-fi-spr16`, `muni-fsps-spr17`, `yach-fal17`, `nbi-spr18`, `mary-fal18`, `bet-spr18`) | `gemini-3.5-flash-lite` | Pilot profile with uniform `population=20`, `partitions=3`, default repair, and measured Phase 1 eval/time caps |
 | [profiles/phase1.json](profiles/phase1.json) | 8 instances  (`muni-fi-spr16`, `muni-fsps-spr17`, `yach-fal17`, `nbi-spr18`, `mary-fal18`, `bet-spr18`, `pu-cs-fal07`, `lums-spr18`) | `gemini-3.5-flash-lite` | Phase 1 benchmark profile (`population=20`, `partitions=3`, default repair) |
-| [profiles/phase2.json](profiles/phase2.json) | 18 instances | `gemini-4-hydrogen`, thinking `low` | Main experiment with all five pipelines, seeds 17, 42 and 73, uniform `population=20`, `partitions=3`, default repair, up to 1,200 evaluations and 200 generations per run, and no global time cap |
+| [profiles/phase2.json](profiles/phase2.json) | 18 instances | `gemini-4-hydrogen`, thinking `low` | Main experiment with all five pipelines, seeds 17, 42 and 73, uniform `population=20`, `partitions=3`, default repair, up to 1,800 evaluations and 200 generations per run, and no global time cap |
+
+### Running Stage 2A from PowerShell
+
+Run the diagnostic slice for `bet-spr18`, `muni-fsps-spr17`, and `iku-spr18` with seed 17 and all five pipelines:
+
+```powershell
+.\tools\run_stage2a.ps1 -DryRun
+.\tools\run_stage2a.ps1 -ConfirmFreeTier
+```
+
+The second command streams progress in the terminal and prints each job's `stderr.log` path. Results, per-job logs, and Hydrogen HTTP counts are saved under a timestamped directory in `tmp/stage2a/`. The default is one worker. Use `-Workers 3` to overlap offline jobs with a single Gemini job. Gemini jobs use the campaign's `.env` pool and shared quota tracker.
 
 ### Previewing Commands (`--dry-run`)
 

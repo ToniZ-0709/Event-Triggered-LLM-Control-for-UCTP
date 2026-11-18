@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 from collections import defaultdict, OrderedDict
+from collections.abc import Sequence
 import numpy as np
 
 from .instance import Distribution, Instance, Time
@@ -95,7 +96,7 @@ def _blocks(intervals: list[tuple[int, int]], gap: int) -> list[tuple[int, int, 
 
 
 def distribution_violations(instance: Instance, distribution: Distribution,
-                            times: list[Time], room_ids: list[str | None], *,
+                            times: Sequence[Time], room_ids: Sequence[str | None], *,
                             violation_groups: dict[tuple[int, ...], int] | None = None) -> int:
     """Count violation units and optionally record the class groups that contribute them."""
     kind = distribution.kind
