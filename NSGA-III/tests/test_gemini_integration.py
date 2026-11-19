@@ -631,9 +631,13 @@ def test_state_packet_omits_redundant_fields_and_multi_agent_uses_constraint_det
 def test_prompts_give_balanced_operator_and_repeat_avoidance_guidance():
     from itc2019.llm import PROMPTS
 
+    for key in ("single_agent", "planner", "inspector"):
+        assert "Prefer the smallest change" not in PROMPTS[key]
+        assert "depend mainly on outside_region classes" not in PROMPTS[key]
     for key in ("single_agent", "planner"):
         prompt = PROMPTS[key]
         assert "randomly resamples" not in prompt
+        assert "eviction" in prompt
         for token in ("move", "swap", "destroy_repair", "no_op", "recent_outcomes"):
             assert token in prompt
     assert "recent_outcomes" in PROMPTS["inspector"]

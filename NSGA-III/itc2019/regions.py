@@ -104,6 +104,31 @@ def swap_options(instance: Instance, choices: np.ndarray, left: int, right: int
     return tuple(options)
 
 
+def can_swap_pair(instance: Instance, choices: np.ndarray, left: int, right: int,
+                  *, shared_conflict: bool = False) -> bool:
+    """Return True if a pair can swap directly, hand off a room/time, or coordinate moves."""
+    if swap_options(instance, choices, left, right):
+        return True
+    a, b = instance.classes[left], instance.classes[right]
+    if not ((len(a.times) > 1 or len(a.room_options) > 1) and
+            (len(b.times) > 1 or len(b.room_options) > 1)):
+        return False
+    if shared_conflict:
+        return True
+    n = len(instance.classes)
+    a_ti, a_ri = int(choices[left]), int(choices[n + left])
+    b_ti, b_ri = int(choices[right]), int(choices[n + right])
+    a_rooms = {room_id for room_id, _ in a.room_options}
+    b_rooms = {room_id for room_id, _ in b.room_options}
+    a_room = None if a.no_room or a_ri < 0 else a.room_options[a_ri][0]
+    b_room = None if b.no_room or b_ri < 0 else b.room_options[b_ri][0]
+    if ((a_room is not None and a_room in b_rooms) or
+            (b_room is not None and b_room in a_rooms) or bool(a_rooms & b_rooms)):
+        return True
+    a_time, b_time = a.times[a_ti], b.times[b_ti]
+    return any(overlaps(a_time, opt) for opt in b.times) or any(overlaps(b_time, opt) for opt in a.times)
+
+
 def placement_diversity(chromosomes: np.ndarray) -> float:
     """Mean pairwise fraction of classes with a different time or room."""
     chromosomes = np.asarray(chromosomes, dtype=np.int32)
@@ -428,8 +453,13 @@ class RegionBuilder:
                         summary["current_room_id"] = room_id
                         summary["current_room_penalty"] = cls.room_options[room_index][1]
                     summaries.append(summary)
-                swap_count = sum(bool(swap_options(self.instance, choices, left, right))
-                                 for left, right in combinations(active, 2))
+                swap_count = sum(
+                    can_swap_pair(
+                        self.instance, choices, left, right,
+                        shared_conflict=bool(by_class_constraints[left] & by_class_constraints[right]),
+                    )
+                    for left, right in combinations(active, 2)
+                )
                 available = []
                 if movable:
                     available.extend(("move", "destroy_repair"))

@@ -8,12 +8,14 @@ from itertools import combinations
 import time
 
 import numpy as np
-from pymoo.algorithms.moo.nsga3 import NSGA3
+from pymoo.algorithms.moo.nsga3 import NSGA3, ReferenceDirectionSurvival
 from pymoo.core.crossover import Crossover
 from pymoo.core.mutation import Mutation
+from pymoo.core.population import Population
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.repair import Repair
 from pymoo.core.sampling import Sampling
+from pymoo.core.survival import split_by_feasibility
 from pymoo.core.termination import Termination
 from pymoo.optimize import minimize
 from pymoo.operators.selection.tournament import TournamentSelection
@@ -676,10 +678,80 @@ class FeasibleSolutionTermination(Termination):
         return 1.0 if np.any(feasible) else 0.0
 
 
+class TimetableSurvival(ReferenceDirectionSurvival):
+    """Rank unique chromosomes first and break infeasible CV ties by lower total soft cost."""
+
+    def do(self, problem, pop, *args, n_survive=None, random_state=None,
+           return_indices=False, **kwargs):
+        if len(pop) == 0:
+            return pop
+        if n_survive is None:
+            n_survive = len(pop)
+        n_survive = min(n_survive, len(pop))
+        if self.filter_infeasible and problem.has_constraints():
+            feas, infeas = split_by_feasibility(pop, sort_infeas_by_cv=False)
+            if len(feas) == 0:
+                survivors = Population()
+            else:
+                feas_ranked = self._rank_by_uniqueness(pop, feas, prefer_latest=True)
+                unique_feas = [index for index, dup in feas_ranked if dup == 0]
+                dup_feas = [index for index, dup in feas_ranked if dup > 0]
+                survivors = self._do(
+                    problem, pop[unique_feas], *args,
+                    n_survive=min(len(unique_feas), n_survive),
+                    random_state=random_state, **kwargs,
+                )
+                need_feas = min(len(feas), n_survive) - len(survivors)
+                if need_feas > 0 and dup_feas:
+                    survivors = Population.merge(survivors, pop[dup_feas[:need_feas]])
+            n_remaining = n_survive - len(survivors)
+            if n_remaining > 0 and len(infeas) > 0:
+                infeas_ranked = [index for index, _ in self._rank_by_uniqueness(
+                    pop, infeas, prefer_latest=True)]
+                chosen_infeas = pop[infeas_ranked[:n_remaining]]
+                if len(survivors) == 0:
+                    self.opt = chosen_infeas[:1]
+                survivors = Population.merge(survivors, chosen_infeas)
+        else:
+            survivors = self._do(
+                problem, pop, *args, n_survive=n_survive,
+                random_state=random_state, **kwargs,
+            )
+        if return_indices:
+            lookup = {individual: index for index, individual in enumerate(pop)}
+            return [lookup[survivor] for survivor in survivors]
+        return survivors
+
+    @staticmethod
+    def _rank_by_uniqueness(pop, indices, *, prefer_latest: bool = True) -> list[tuple[int, int]]:
+        """Rank unique chromosomes ahead of clones by (dup_count, CV, sum(F), order)."""
+        by_chromosome: dict[bytes, int] = {}
+        entries = []
+        for idx in indices:
+            individual = pop[int(idx)]
+            cv_arr = individual.CV if individual.CV is not None else individual.G
+            cv = float(np.asarray(cv_arr, dtype=float).reshape(-1)[0]) if cv_arr is not None else 0.0
+            f_arr = individual.F
+            total = float(np.asarray(f_arr, dtype=float).sum()) if f_arr is not None else 0.0
+            x_arr = individual.X
+            key_bytes = (np.asarray(x_arr, dtype=np.int32).tobytes()
+                         if x_arr is not None else str(int(idx)).encode())
+            order_tie = -int(idx) if prefer_latest else int(idx)
+            entries.append((int(idx), key_bytes, cv, total, order_tie))
+        entries.sort(key=lambda item: (item[2], item[3], item[4]))
+        ranked = []
+        for idx, key_bytes, cv, total, order_tie in entries:
+            dup = by_chromosome.get(key_bytes, 0)
+            by_chromosome[key_bytes] = dup + 1
+            ranked.append(((dup, cv, total, order_tie), idx, dup))
+        ranked.sort(key=lambda item: item[0])
+        return [(idx, dup) for _, idx, dup in ranked]
+
+
 def _seeded_cv_tournament(pop, pairs: np.ndarray,
                           random_state: np.random.Generator | None = None,
                           **kwargs) -> np.ndarray:
-    """Use the solver RNG for every tournament tie, including infeasible ties.
+    """Use the solver RNG for every tournament tie, breaking infeasible CV ties by total soft cost.
 
     pymoo 0.6.2's default NSGA-III comparator does not pass its RNG into the
     infeasible-tie branch, so two runs with the same seed can diverge.
@@ -698,6 +770,18 @@ def _seeded_cv_tournament(pop, pairs: np.ndarray,
             if b_cv < a_cv:
                 winners[index] = b
                 continue
+            a_f, b_f = pop[a].F, pop[b].F
+            if a_f is not None and b_f is not None:
+                a_vec = np.asarray(a_f, dtype=float)
+                b_vec = np.asarray(b_f, dtype=float)
+                if a_vec.size > 0 and b_vec.size > 0:
+                    a_total, b_total = float(a_vec.sum()), float(b_vec.sum())
+                    if a_total < b_total:
+                        winners[index] = a
+                        continue
+                    if b_total < a_total:
+                        winners[index] = b
+                        continue
         winners[index] = int(random_state.choice([a, b]))
     return winners[:, None]
 
@@ -715,6 +799,7 @@ def run(instance: Instance, config: Config, *, callback=None,
                       repair=RoomRepair(config.offspring_repair_steps,
                                         config.offspring_pair_trials),
                       selection=TournamentSelection(func_comp=_seeded_cv_tournament),
+                      survival=TimetableSurvival(directions),
                       eliminate_duplicates=False)
     terminations = [MaximumGenerationTermination(config.generations)]
     if time_limit_seconds is not None:

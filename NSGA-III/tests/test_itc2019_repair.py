@@ -16,8 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from itc2019.instance import Class, Config as ITCConfig, Course, Distribution, Instance, Room, Student, Time
 from itc2019.controller import BaselineMonitor, ControllerCallback, ControllerSettings, _progress_signal
-from itc2019.nsga3 import (Config, PlacementProblem, _improve_hard, _joint_improve_hard, _room_chain_repair,
-                          _seeded_cv_tournament, evaluation_count, reference_directions, run)
+from itc2019.nsga3 import (Config, PlacementProblem, TimetableSurvival, _improve_hard,
+                           _joint_improve_hard, _room_chain_repair, _seeded_cv_tournament,
+                           evaluation_count, reference_directions, run)
 from itc2019.neighborhood import room_neighborhood_repair
 from itc2019.repair_policy import FailureBackoff
 from itc2019.operators import _admissible_candidate, _admit_repair, inject_operator_candidate, probe_operator
@@ -740,3 +741,74 @@ def test_guided_swap_accepts_partial_exchange_and_preserves_outside(exchange) ->
     assert probe.candidate_quality == (0, 0)
     assert probe.candidate[0].X.tolist() == target
     assert source[0].X.tolist() == [0, 0, 0, 0, 0, 0]
+
+
+def test_guided_swap_resolves_two_class_eviction_handoff() -> None:
+    first = Time("1", "1", 0, 1)
+    # Class A collides with fixed class C in room 1 and can only move into room 2,
+    # which is currently occupied by class B; B cannot use room 1, so symmetric
+    # direct swap_options() is empty and single-class moves cannot reduce hard.
+    classes = (
+        Class("A", "CA", "1", "1", None, None, (first,), (("1", 0), ("2", 0)), False),
+        Class("B", "CB", "1", "1", None, None, (first,), (("2", 0), ("3", 0)), False),
+        Class("C", "CC", "1", "1", None, None, (first,), (("1", 0),), False),
+    )
+    rooms = {str(i): Room(str(i), None, (), {}) for i in (1, 2, 3)}
+    instance = Instance("swap-eviction", 1, 1, 1, (1, 1, 1, 1),
+                        rooms, classes, {}, (), (), {"A": 0, "B": 1, "C": 2})
+    source = Population.new("X", np.zeros((1, 6), dtype=np.int32))
+    problem, evaluator = PlacementProblem(instance), Evaluator()
+    evaluator.eval(problem, source)
+    algorithm = SimpleNamespace(pop=source, evaluator=evaluator, problem=problem)
+
+    region, = RegionBuilder(instance).build(algorithm, max_regions=1, region_size=3)
+    assert region.class_ids == ("A", "B", "C")
+    assert "swap" in region.available_operators
+
+    move_probe = probe_operator(algorithm, instance, region, "move", 4, np.random.default_rng(17), None)
+    assert move_probe.candidate_quality is None
+
+    swap_probe = probe_operator(algorithm, instance, region, "swap", 1, np.random.default_rng(17), None)
+    assert swap_probe.evaluations == 1
+    assert swap_probe.candidate_quality == (0, 0)
+    assert swap_probe.candidate[0].X.tolist() == [0, 0, 0, 1, 1, 0]
+
+
+def test_seeded_cv_tournament_breaks_infeasible_cv_ties_by_soft_total() -> None:
+    pop = Population.new(
+        "CV", np.asarray([[5.0], [5.0]]),
+        "F", np.asarray([[10.0, 10.0, 10.0, 10.0], [5.0, 5.0, 5.0, 5.0]]),
+    )
+    pairs = np.asarray([[0, 1]] * 10 + [[1, 0]] * 10)
+    winners = _seeded_cv_tournament(pop, pairs, np.random.default_rng(17))
+    assert np.all(winners == 1)
+
+
+def test_timetable_survival_keeps_same_hard_soft_improvement_and_unique_clones() -> None:
+    instance = _chain_instance()
+    problem = PlacementProblem(instance)
+    survival = TimetableSurvival(reference_directions(Config(population=4, partitions=1)))
+
+    # 4 identical infeasible clones at H=2, total=40 plus 1 candidate at H=2, total=20
+    clones = np.zeros((4, 6), dtype=np.int32)
+    cand = np.asarray([[0, 1, 0, 0, 0, 0]], dtype=np.int32)
+    pop = Population.new("X", clones, "G", np.full((4, 1), 2.0), "F", np.full((4, 4), 10.0))
+    cand_pop = Population.new("X", cand, "G", np.array([[2.0]]), "F", np.full((1, 4), 5.0))
+    survived = survival.do(problem, Population.merge(pop, cand_pop), n_survive=4,
+                           random_state=np.random.default_rng(17))
+    assert any(ind is cand_pop[0] for ind in survived)
+    assert survived[0] is cand_pop[0]
+
+    # Feasible stage: unique chromosomes should survive before identical lower/equal clones.
+    x_feas = np.asarray([[0, 1, 0, 0, 1, 1],
+                         [0, 1, 0, 0, 1, 1],
+                         [0, 1, 0, 0, 1, 1],
+                         [0, 1, 0, 0, 0, 1],
+                         [0, 0, 0, 0, 1, 1]], dtype=np.int32)
+    f_feas = np.asarray([[10, 0, 0, 0], [10, 0, 0, 0], [10, 0, 0, 0],
+                         [20, 0, 0, 0], [30, 0, 0, 0]], dtype=float)
+    feas_pop = Population.new("X", x_feas, "G", np.zeros((5, 1)), "F", f_feas)
+    kept_feas = survival.do(problem, feas_pop, n_survive=3,
+                            random_state=np.random.default_rng(17))
+    unique_chroms = {tuple(map(int, ind.X)) for ind in kept_feas}
+    assert len(unique_chroms) == 3

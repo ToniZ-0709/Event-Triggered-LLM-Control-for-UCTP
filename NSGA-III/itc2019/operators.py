@@ -12,7 +12,7 @@ from pymoo.core.population import Population
 
 from .instance import Instance
 from .regions import RegionCandidate, swap_options
-from .scoring import Score
+from .scoring import Score, overlaps
 from .neighborhood import LocalSoftCosts, PlacementNeighborhood, room_neighborhood_repair
 
 
@@ -131,18 +131,139 @@ def _swap_cost(instance, hard, soft, left, right):
     return hard_cost, soft_cost
 
 
+def _top_single_options(instance: Instance, region: RegionCandidate,
+                        hard: PlacementNeighborhood, soft: LocalSoftCosts,
+                        rng: np.random.Generator, deadline: float | None,
+                        *, limit: int = 4, per_class_seconds: float = 0.10
+                        ) -> dict[int, list[tuple[int, int]]]:
+    """Collect the top locally ranked single-class moves for each mutable region class."""
+    order = [i for i in _rebuild_order(region, rng)
+             if len(instance.classes[i].times) > 1 or len(instance.classes[i].room_options) > 1]
+    top_single: dict[int, list[tuple[int, int]]] = {}
+    for index in order:
+        if deadline is not None and time.perf_counter() >= deadline:
+            break
+        cls_deadline = time.perf_counter() + per_class_seconds
+        if deadline is not None:
+            cls_deadline = min(cls_deadline, deadline)
+        opts = list(_placement_options(instance, index, hard, soft, cls_deadline, by_delta=True))
+        if opts:
+            rng.shuffle(opts)
+            opts.sort(key=lambda item: item[0])
+            top_single[index] = [opt for _, opt in opts[:limit]]
+    return top_single
+
+
+def _coupled_pair_set(instance: Instance, region: RegionCandidate) -> set[tuple[int, int]]:
+    """Return sorted index pairs that appear together in a violated regional constraint."""
+    pairs: set[tuple[int, int]] = set()
+    id_to_index = instance.class_index
+    for detail in region.constraint_details:
+        for group in detail.get("violation_groups", ()):
+            in_region = sorted(id_to_index[cid] for cid in group.get("in_region_class_ids", ())
+                               if cid in id_to_index)
+            for a, b in combinations(in_region, 2):
+                pairs.add((a, b))
+    return pairs
+
+
+def _class_room_id(instance: Instance, index: int, room_index: int) -> str | None:
+    cls = instance.classes[index]
+    return None if cls.no_room or room_index < 0 else cls.room_options[room_index][0]
+
+
+def _eviction_options(instance: Instance, index: int, target_room: str | None,
+                      target_time, current_opt: tuple[int, int],
+                      top_opts: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Build placement options for `index` moving into `target_room` vacated by its partner."""
+    cls = instance.classes[index]
+    if target_room is None or cls.no_room:
+        return []
+    room_idx = next((i for i, (room_id, _) in enumerate(cls.room_options) if room_id == target_room), None)
+    if room_idx is None:
+        return []
+    options: list[tuple[int, int]] = []
+    target_key = (target_time.days, target_time.weeks, target_time.start, target_time.length)
+    candidates = [(current_opt[0], room_idx)]
+    matching_ti = next((ti for ti, opt_time in enumerate(cls.times)
+                        if (opt_time.days, opt_time.weeks, opt_time.start, opt_time.length) == target_key), None)
+    if matching_ti is not None:
+        candidates.append((matching_ti, room_idx))
+    candidates.extend((ti, ri) for ti, ri in top_opts if ri == room_idx)
+    for cand in candidates:
+        if cand != current_opt and cand not in options:
+            options.append(cand)
+    return options
+
+
+def _pair_swap_candidates(instance: Instance, source: np.ndarray,
+                          hard: PlacementNeighborhood, left: int, right: int,
+                          top_single: dict[int, list[tuple[int, int]]],
+                          coupled_pairs: set[tuple[int, int]]) -> list[tuple[int, int, int, int, int]]:
+    """Enumerate direct exchanges, room-eviction handoffs, and coupled two-class moves."""
+    original_left, original_right = hard.current(left), hard.current(right)
+    l_cls, r_cls = instance.classes[left], instance.classes[right]
+    l_old_time, r_old_time = hard.times[left], hard.times[right]
+    l_old_room, r_old_room = hard.rooms[left], hard.rooms[right]
+    pair_key = (min(left, right), max(left, right))
+    has_pair_conflict = (pair_key in coupled_pairs or
+                         hard.pair_cost(left, original_left, right, original_right) > 0)
+
+    seen = set(swap_options(instance, source, left, right))
+    candidates = [(*quad, 0) for quad in seen]
+    left_top = top_single.get(left, ())
+    right_top = top_single.get(right, ())
+
+    for a_opt in _eviction_options(instance, left, r_old_room, r_old_time, original_left, left_top):
+        for b_opt in right_top:
+            quad = (*a_opt, *b_opt)
+            if quad not in seen:
+                seen.add(quad)
+                candidates.append((*quad, 0))
+
+    for b_opt in _eviction_options(instance, right, l_old_room, l_old_time, original_right, right_top):
+        for a_opt in left_top:
+            quad = (*a_opt, *b_opt)
+            if quad not in seen:
+                seen.add(quad)
+                candidates.append((*quad, 0))
+
+    for a_t, a_r in left_top:
+        a_time = l_cls.times[a_t]
+        a_room = _class_room_id(instance, left, a_r)
+        for b_t, b_r in right_top:
+            quad = (a_t, a_r, b_t, b_r)
+            if quad in seen:
+                continue
+            b_time = r_cls.times[b_t]
+            b_room = _class_room_id(instance, right, b_r)
+            room_handoff = ((a_room is not None and a_room == r_old_room) or
+                            (b_room is not None and b_room == l_old_room))
+            time_handoff = overlaps(a_time, r_old_time) or overlaps(b_time, l_old_time)
+            if room_handoff or time_handoff or has_pair_conflict:
+                seen.add(quad)
+                candidates.append((*quad, 0 if (room_handoff or has_pair_conflict) else 1))
+    return candidates
+
+
 def _rank_swap_options(instance, source, region, hard, soft, rng, deadline):
+    started = time.perf_counter()
+    single_deadline = (started + 0.55 * max(0.05, deadline - started)
+                       if deadline is not None else None)
+    top_single = _top_single_options(instance, region, hard, soft, rng, single_deadline)
+    coupled_pairs = _coupled_pair_set(instance, region)
     ranked = []
     for left, right in combinations(region.class_indices, 2):
-        if time.perf_counter() >= deadline:
+        if deadline is not None and time.perf_counter() >= deadline:
             break
-        options = swap_options(instance, source, left, right)
-        if not options:
+        candidates = _pair_swap_candidates(
+            instance, source, hard, left, right, top_single, coupled_pairs)
+        if not candidates:
             continue
         original_left, original_right = hard.current(left), hard.current(right)
         before_hard, before_soft = _swap_cost(instance, hard, soft, left, right)
-        for a_time, a_room, b_time, b_room in options:
-            if time.perf_counter() >= deadline:
+        for a_time, a_room, b_time, b_room, tier in candidates:
+            if deadline is not None and time.perf_counter() >= deadline:
                 break
             hard.move(left, a_time, a_room)
             hard.move(right, b_time, b_room)
@@ -151,7 +272,7 @@ def _rank_swap_options(instance, source, region, hard, soft, rng, deadline):
             finally:
                 hard.move(left, *original_left)
                 hard.move(right, *original_right)
-            ranked.append(((after_hard - before_hard, after_soft - before_soft),
+            ranked.append(((after_hard - before_hard, after_soft - before_soft, tier),
                            ((left, a_time, a_room), (right, b_time, b_room))))
     rng.shuffle(ranked)
     ranked.sort(key=lambda item: item[0])

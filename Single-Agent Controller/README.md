@@ -73,9 +73,9 @@ The serialized `StatePacket` contains:
 Valid interventions run through `apply_operator` in [../NSGA-III/itc2019/operators.py](../NSGA-III/itc2019/operators.py), scoped strictly to `region.class_indices` of `region.solution_id`:
 
 - `move`: Tries ranked time and room combinations for one class at a time inside the region.
-- `swap`: Tries ranked room-only, time-only, and full exchanges between compatible class pairs inside the region.
+- `swap`: Coordinates two classes inside the region across direct room/time exchanges, two-class eviction hand-offs (one class takes the partner's room or overlapping slot while the partner moves to its best free option), and coupled conflict-pair moves.
 - `destroy_repair`: First runs OR-Tools CP-SAT `room_neighborhood_repair` over `region.class_indices` with the outside timetable fixed (up to `3.0s` or remaining deadline, allowing soft-cost improvement when already feasible), then sequentially rebuilds up to 3 mutable region classes under the remaining `execution_budget`.
-- **Admissibility and survival**: When `source_hard > 0`, a trial candidate is admissible only if `trial_hard < source_hard`. Once feasible (`source_hard == 0`), it must preserve `trial_hard == 0` and reduce `trial_total < source_total`. At most one best admissible candidate is rechecked with `score_state` (`+1` `operator_scoring_rechecks`) and passed to NSGA-III `survival.do`, updating `Incumbent` if improved.
+- **Admissibility and survival**: When `source_hard > 0`, a trial candidate is admissible if `trial_hard < source_hard` or `(trial_hard == source_hard and trial_total < source_total)`. Once feasible (`source_hard == 0`), it must preserve `trial_hard == 0` and improve at least one weighted objective. At most one best admissible candidate is rechecked with `score_state` (`+1` `operator_scoring_rechecks`) and passed to `TimetableSurvival` (ranking unique chromosomes first and breaking infeasible `CV` ties by lower total soft cost), updating `Incumbent` if improved.
 
 ---
 
