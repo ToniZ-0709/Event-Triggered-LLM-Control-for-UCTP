@@ -189,7 +189,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         parser.add_argument("--review-interval", type=int, default=10,
                             help="Default controller review interval in generations")
     if uses_llm:
-        from itc2019.llm import (DEFAULT_MODEL, DEFAULT_THINKING_LEVEL,
+        from itc2019.llm import (DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_MODEL, DEFAULT_THINKING_LEVEL,
                                DEFAULT_TIMEOUT_SECONDS, VALID_THINKING_LEVELS)
         parser.add_argument("--provider", choices=("gemini",), default="gemini")
         parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
@@ -203,7 +203,8 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                             help="Pace API request starts; actual project quota must still be checked")
         parser.add_argument("--api-max-input-characters", type=int, default=60000)
         parser.add_argument("--api-timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
-        parser.add_argument("--max-output-tokens", type=int, default=1024)
+        parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS,
+                            help=f"Gemini output budget including thinking (default: {DEFAULT_MAX_OUTPUT_TOKENS})")
         parser.add_argument("--max-api-calls", type=int, default=100)
     if controller_factory is not None:
         parser.add_argument("--warmup-generations", type=int, default=5)

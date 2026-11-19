@@ -18,6 +18,7 @@ from .operators import OPERATORS
 DEFAULT_MODEL = "gemini-4-hydrogen"
 DEFAULT_TIMEOUT_SECONDS = 60.0
 DEFAULT_THINKING_LEVEL = "low"
+DEFAULT_MAX_OUTPUT_TOKENS = 4096
 VALID_THINKING_LEVELS = ("minimal", "low", "medium", "high")
 RETRY_ATTEMPTS = 3
 # Retry transient timeouts and 5xx errors only; keep 429 fail-closed per quota policy.
@@ -94,17 +95,22 @@ _BUDGET_GUIDANCE = (
 )
 _ACTION_GUIDANCE = (
     "Use an operator in the target's available_operators and respect allowed_actions ranges. "
-    "move randomly resamples one class's time or room gene per trial; swap randomly samples "
-    "a compatible pair and exchanges their placements. For move or swap, use a small budget, "
-    "typically 2 to 5 evaluations within allowed_actions.execution_budget, and avoid spending 15 "
-    "evaluations on random probes by default. destroy_repair solves a bounded CP-SAT model over "
-    "room and required-distribution conflicts in the region, including soft distribution "
-    "costs for a feasible source. Its sequential rebuild prioritizes classes in violation groups "
-    "and ranks placements by time, room, distribution, and estimated student-conflict costs. "
-    "For coupled multi-class violations or bottlenecks, give "
-    "destroy_repair 6 to 10 evaluations within allowed_actions.execution_budget so both stages "
-    "have budget. If there is no promising target or the cluster has repeatedly failed, return "
-    "no_op with execution_budget=0 and set next_review_interval to 10-20 within the allowed range, "
+    "All operators act only inside the selected region and charge full scoring on trial evaluations. "
+    "Prefer the smallest change supported by the current violations. "
+    "move ranks time-and-room placements for one in-region class by hard conflicts then soft costs, "
+    "including estimated student conflicts (typically 2 to 5 evaluations). Use it when one class "
+    "can resolve a boundary conflict or reduce a time, room, or student penalty. "
+    "swap ranks room-only, time-only, and full exchanges between compatible in-region classes "
+    "(typically 3 to 6 evaluations). Use it when an exchange between two classes can address the "
+    "conflict. "
+    "destroy_repair runs bounded CP-SAT over hard conflicts (and soft distributions when feasible) "
+    "followed by a ranked sequential rebuild (typical budget 6 to 10 evaluations); use it for coupled "
+    "multi-class conflicts inside the region, though it can stall when violations depend mainly on "
+    "outside_region classes. "
+    "Check recent_outcomes before choosing: if the same operator recently returned "
+    "no_improving_candidate on a similar source or region, switch to a different operator, region, "
+    "or no_op instead of repeating the same call. "
+    "For no_op, set execution_budget=0 and next_review_interval to 10-20 within the allowed range, "
     "or the nearest allowed value. Choose 3-5 only when the current state shows a concrete "
     "opportunity that needs an early follow-up. "
     "next_review_interval sets the scheduled review. Stagnation or low diversity can trigger "
@@ -124,10 +130,13 @@ PROMPTS = {
         "You are the Inspector for ITC 2019 NSGA-III. Choose only WHERE: one "
         "candidate region's solution_id, region_id, and boundary_id. "
         + _STATE_GUIDANCE + _ACCEPTANCE_GUIDANCE + _BUDGET_GUIDANCE
-        + "Return only a short list of relevant_constraint_ids from the selected region's "
+        + "Check recent_outcomes first: if an overlapping cluster already returned "
+        "no_improving_candidate on a similar source state, avoid repeating the same target when another "
+        "candidate_region or solution_id offers a distinct repair opportunity, or return null target IDs "
+        "and an empty list if no target is promising. "
+        "Return only a short list of relevant_constraint_ids from the selected region's "
         "constraint_details that explains why this region is worth repairing (or an empty list "
         "if the region is selected for class time/room penalties). "
-        "If no target is promising, return null target IDs and an empty list. "
         "Do not choose an operator or schedule."
     ),
     "planner": (
@@ -242,7 +251,7 @@ class GeminiDecisionClient:
     provider = "gemini"
 
     def __init__(self, model: str, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
-                 max_output_tokens: int = 1024, *, free_tier_confirmed: bool = False,
+                 max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS, *, free_tier_confirmed: bool = False,
                  min_request_interval_seconds: float = 10.0,
                  max_input_characters: int = 60_000,
                  thinking_level: str = DEFAULT_THINKING_LEVEL) -> None:

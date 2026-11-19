@@ -1,5 +1,7 @@
 [CmdletBinding()]
 param(
+    [Parameter(Mandatory)]
+    [string] $Batch,
     [switch] $DryRun,
     [switch] $ConfirmFreeTier,
     [ValidateRange(1, 15)]
@@ -21,7 +23,7 @@ if (-not $Python) {
     }
 }
 
-$stageArgs = @('--workers', $Workers)
+$stageArgs = @('--batch', $Batch, '--workers', $Workers)
 if ($DryRun) { $stageArgs += '--dry-run' }
 if ($ConfirmFreeTier) { $stageArgs += '--confirm-free-tier' }
 

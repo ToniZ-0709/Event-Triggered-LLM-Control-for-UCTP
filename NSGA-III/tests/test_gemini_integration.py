@@ -37,7 +37,7 @@ def adapter(monkeypatch):
         return response
     fake=NS(models=NS(generate_content=generate),close=lambda:None)
     monkeypatch.setattr(genai,"Client",lambda **kw:fake)
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True,
+    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True,
                                   min_request_interval_seconds=0)
     return client,response,calls
 
@@ -47,17 +47,17 @@ def test_key_and_billing_confirmation_are_required_before_any_sdk_call(monkeypat
     monkeypatch.delenv("GEMINI_API_KEY",raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
     with pytest.raises(RuntimeError,match="Free Tier"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024)
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15)
     with pytest.raises(RuntimeError,match="GEMINI_API_KEY"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-4-argon",60,1024,free_tier_confirmed=True)
+        llm.GeminiDecisionClient("gemini-4-argon",60,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-3.6-flash",60,1024,free_tier_confirmed=True)
+        llm.GeminiDecisionClient("gemini-3.6-flash",60,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-3.8-flash",60,1024,free_tier_confirmed=True)
+        llm.GeminiDecisionClient("gemini-3.8-flash",60,free_tier_confirmed=True)
     with pytest.raises(ValueError,match="thinking_level"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,1024,free_tier_confirmed=True,
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,free_tier_confirmed=True,
                                  thinking_level="turbo")
 
 
@@ -97,7 +97,7 @@ def test_valid_json_usage_and_bounded_native_config(adapter):
     assert config.http_options.retry_options.attempts==3
     assert 429 not in config.http_options.retry_options.http_status_codes
     assert {500,503,504}<=set(config.http_options.retry_options.http_status_codes)
-    assert config.max_output_tokens==1024 and config.candidate_count==1
+    assert config.max_output_tokens==4096 and config.candidate_count==1
     assert config.automatic_continuation is False and config.automatic_function_calling.disable is True
     assert config.thinking_config.thinking_level==types.ThinkingLevel.LOW
     assert config.tools is None
@@ -191,7 +191,7 @@ def test_native_sdk_serializes_schema_without_network(monkeypatch,finish_reason)
                            "finishReason":finish_reason}],"modelVersion":"gemini-4-hydrogen-v1",
             "continuationToken":"must-not-be-followed",
             "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,1024,free_tier_confirmed=True)
+    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True)
     client.close()
     client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
         http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
@@ -216,7 +216,7 @@ def test_native_sdk_does_not_retry_429(monkeypatch):
         requests.append(request)
         return httpx.Response(429,json={"error":{"code":429,"status":"RESOURCE_EXHAUSTED",
                                                  "message":"fake test quota"}})
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,1024,free_tier_confirmed=True)
+    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,free_tier_confirmed=True)
     client.close()
     client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
         http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
@@ -245,7 +245,7 @@ def test_native_sdk_retries_transient_504_up_to_3_attempts(monkeypatch):
                            "finishReason":"STOP"}],
             "modelVersion":"gemini-4-hydrogen-v1",
             "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
-    client=llm.GeminiDecisionClient("gemini-4-hydrogen",60,1024,free_tier_confirmed=True)
+    client=llm.GeminiDecisionClient("gemini-4-hydrogen",60,free_tier_confirmed=True)
     client.close()
     client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
         http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
@@ -626,3 +626,15 @@ def test_state_packet_omits_redundant_fields_and_multi_agent_uses_constraint_det
     )
     _, roles_bad, status_bad = bad_multi.decide(multi_packet)
     assert status_bad == "invalid_inspector_constraints" and len(roles_bad) == 1
+
+
+def test_prompts_give_balanced_operator_and_repeat_avoidance_guidance():
+    from itc2019.llm import PROMPTS
+
+    for key in ("single_agent", "planner"):
+        prompt = PROMPTS[key]
+        assert "randomly resamples" not in prompt
+        for token in ("move", "swap", "destroy_repair", "no_op", "recent_outcomes"):
+            assert token in prompt
+    assert "recent_outcomes" in PROMPTS["inspector"]
+    assert "no_improving_candidate" in PROMPTS["inspector"]

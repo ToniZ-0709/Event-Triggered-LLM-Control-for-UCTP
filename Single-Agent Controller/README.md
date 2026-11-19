@@ -72,8 +72,8 @@ The serialized `StatePacket` contains:
 
 Valid interventions run through `apply_operator` in [../NSGA-III/itc2019/operators.py](../NSGA-III/itc2019/operators.py), scoped strictly to `region.class_indices` of `region.solution_id`:
 
-- `move`: Re-samples one movable class's time or room gene inside the region.
-- `swap`: Exchanges compatible `(time, room)` assignments between two classes inside the region.
+- `move`: Tries ranked time and room combinations for one class at a time inside the region.
+- `swap`: Tries ranked room-only, time-only, and full exchanges between compatible class pairs inside the region.
 - `destroy_repair`: First runs OR-Tools CP-SAT `room_neighborhood_repair` over `region.class_indices` with the outside timetable fixed (up to `3.0s` or remaining deadline, allowing soft-cost improvement when already feasible), then sequentially rebuilds up to 3 mutable region classes under the remaining `execution_budget`.
 - **Admissibility and survival**: When `source_hard > 0`, a trial candidate is admissible only if `trial_hard < source_hard`. Once feasible (`source_hard == 0`), it must preserve `trial_hard == 0` and reduce `trial_total < source_total`. At most one best admissible candidate is rechecked with `score_state` (`+1` `operator_scoring_rechecks`) and passed to NSGA-III `survival.do`, updating `Incumbent` if improved.
 
@@ -91,7 +91,7 @@ All API transport rules live in [../NSGA-III/itc2019/llm.py](../NSGA-III/itc2019
 | **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
 | **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (`DEFAULT_TIMEOUT_SECONDS = 60.0`) |
 | **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
-| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `1024` tokens, `100` calls direct (`12` via `run_pilot.py`) |
+| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`12` via `run_pilot.py`) |
 
 Note on profiles: [profiles/pilot.json](../profiles/pilot.json) and [profiles/phase1.json](../profiles/phase1.json) configure `gemini-3.5-flash-lite`, while [profiles/phase2.json](../profiles/phase2.json) configures `gemini-4-hydrogen`. All three set `thinking_level: "low"` and `max_reviews: 12`.
 

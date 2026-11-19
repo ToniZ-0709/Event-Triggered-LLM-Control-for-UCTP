@@ -39,7 +39,7 @@
     "max_operator_evaluations": 24,
     "max_reviews": 12,
     "api_timeout_seconds": 60,
-    "max_output_tokens": 1024
+    "max_output_tokens": 4096
   },
   "llm": {
     "provider": "gemini",

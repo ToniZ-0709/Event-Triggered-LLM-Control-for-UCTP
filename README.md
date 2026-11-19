@@ -21,7 +21,7 @@ All five pipelines share the same chromosome encoding, constraint evaluation eng
 The four controller pipelines (`random`, `greedy`, `single`, `multi`) inherit `ControllerCallback` (`NSGA-III/itc2019/controller.py`) and share the same event-triggered review loop:
 
 - **Review triggers (WHEN):** After a 5-generation warmup (`--warmup-generations`) and subject to a minimum gap of 3 generations (`--min-review-interval`), a review fires on a scheduled deadline (default every 10 generations, bounded in `[3, 20]`), search stagnation (5 generations without hard or feasible-soft progress), or placement diversity dropping to `0.20` (re-armed above `0.30`). Reviews stop once `max_reviews` (default `12`) is reached or fewer than 4 evaluations remain.
-- **Candidate regions (WHERE) and operators (HOW):** `RegionBuilder` extracts up to `max_regions` (`6`) local conflict regions of up to `region_size` (`5`) classes from up to 2 representative individuals. Valid operators are `move`, `swap`, `destroy_repair`, and `no_op`.
+- **Candidate regions (WHERE) and operators (HOW):** `RegionBuilder` extracts up to `max_regions` (`6`) local conflict regions of up to `region_size` (`5`) classes from up to 2 representative individuals. The shared operators are guided single-class `move`, guided two-class `swap`, and joint `destroy_repair`. All edits are within the selected region. A controller can also choose `no_op`.
 - **Execution budgets:** `Random` and `Greedy` fix `execution_budget` at `min(10, current_operator_limit)` and lock `next_review_interval` to `review_interval` (`10`). `Single-agent` and `Multi-agent` choose `execution_budget` in `[1, current_operator_limit]` (capped by `max_operator_evaluations`, default `24`) and `next_review_interval` in `[3, 20]`.
 - **Solver validation:** Every decision is validated against active region IDs, legal operators, and integer bounds before any operator executes or modifies the population.
 
@@ -94,14 +94,20 @@ Run all commands from the repository root (`Experiment/`). Add `--dry-run` with 
 
 ### Running Stage 2A from PowerShell
 
-Run the diagnostic slice for `bet-spr18`, `muni-fsps-spr17`, and `iku-spr18` with seed 17 and all five pipelines:
+Finish the Single and Multi runs in an existing Stage 2A batch. The launcher checks the nine completed Baseline, Random, and Greedy results, then queues the remaining runs with `gemini-3.5-flash-lite` and a 4,096-token output cap.
 
 ```powershell
-.\tools\run_stage2a.ps1 -DryRun
-.\tools\run_stage2a.ps1 -ConfirmFreeTier
+.\tools\run_stage2a.ps1 -Batch 20261118-201223-774332 -DryRun
+.\tools\run_stage2a.ps1 -Batch 20261118-201223-774332 -ConfirmFreeTier
 ```
 
-The second command streams progress in the terminal and prints each job's `stderr.log` path. Results, per-job logs, and Hydrogen HTTP counts are saved under a timestamped directory in `tmp/stage2a/`. The default is one worker. Use `-Workers 3` to overlap offline jobs with a single Gemini job. Gemini jobs use the campaign's `.env` pool and shared quota tracker.
+The second command streams progress and HTTP errors in the terminal and prints each job's `stderr.log` path. Results, per-job logs, and HTTP counts stay in the selected `tmp/stage2a/` batch. Single and Multi run one job at a time, using the first Gemini key in `.env` and the Flash-Lite quota ledger.
+
+If PowerShell blocks `.ps1` files, launch the Python runner directly:
+
+```powershell
+python -B -u .\tools\run_stage2a.py --batch 20261118-201223-774332 --confirm-free-tier
+```
 
 ### Previewing Commands (`--dry-run`)
 

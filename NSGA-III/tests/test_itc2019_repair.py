@@ -1,7 +1,7 @@
 """Regression checks for bounded repair and controller acceptance."""
 
 from pathlib import Path
-from dataclasses import replace
+from dataclasses import asdict, replace
 import importlib.util
 import sys
 import time
@@ -20,7 +20,7 @@ from itc2019.nsga3 import (Config, PlacementProblem, _improve_hard, _joint_impro
                           _seeded_cv_tournament, evaluation_count, reference_directions, run)
 from itc2019.neighborhood import room_neighborhood_repair
 from itc2019.repair_policy import FailureBackoff
-from itc2019.operators import _admissible_candidate, _admit_repair, probe_operator
+from itc2019.operators import _admissible_candidate, _admit_repair, inject_operator_candidate, probe_operator
 from itc2019.regions import RegionBuilder, RegionCandidate, placement_diversity
 from itc2019.room_search import room_plateau_repair
 from itc2019.scoring import evaluate
@@ -418,6 +418,7 @@ def test_student_pair_cache_preserves_conflict_and_non_conflict_scores() -> None
     probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
                            instance, region, "destroy_repair", 2, np.random.default_rng(17), None)
     assert probe.candidate_quality == (0, 1)
+    assert probe.candidate_origin == "sequential_rebuild"
     assert probe.evaluations == 2 and evaluator.n_eval == problem.engine.requests == 3
 
 
@@ -432,6 +433,29 @@ def test_controller_acceptance_preserves_hard_priority() -> None:
     assert not _admissible_candidate(0, source, 0, (50, 51, 0, 0))
     assert _admissible_candidate(0, source, 0, (49, 50, 0, 0))
     assert _admissible_candidate(0, source, 0, (25, 100, 0, 0))
+
+
+@pytest.mark.parametrize("status", ["selected", "rejected_by_selection", "scoring_mismatch"])
+def test_operator_outcome_serializes_candidate_origin(status) -> None:
+    instance = _chain_instance()
+    source = Population.new("X", np.asarray([[0, 0, 0, 0, 1, 0]], dtype=np.int32))
+    problem, evaluator = PlacementProblem(instance), Evaluator()
+    evaluator.eval(problem, source)
+    algorithm = SimpleNamespace(pop=source, evaluator=evaluator, problem=problem,
+                                random_state=np.random.default_rng(17), _set_optimum=lambda: None)
+    region = RegionCandidate("0", "r", "b", (2,), ("C",), ("B",), (), 0, 0, (), (), 1, 0, ("move",))
+    probe = probe_operator(algorithm, instance, region, "move", 1, np.random.default_rng(17), None)
+    assert probe.candidate_origin == "move"
+
+    if status == "scoring_mismatch":
+        probe = replace(probe, candidate_quality=(probe.source_hard, probe.source_total))
+    algorithm.survival = SimpleNamespace(
+        do=lambda _problem, population, **_: population[-1:] if status == "selected" else population[:1])
+
+    outcome = asdict(inject_operator_candidate(algorithm, probe))
+
+    assert outcome["status"] == status
+    assert outcome["candidate_origin"] == "move"
 
 
 def test_coordinated_repair_is_shared_and_accounted_for() -> None:
@@ -567,3 +591,152 @@ def test_pilot_runner_keeps_per_instance_budgets_and_role_call_caps() -> None:
     assert multi[0][multi[0].index("--evaluations") + 1] == "1200"
     with pytest.raises(ValueError, match="No measured budget"):
         commands(profile, pipeline="baseline", seed=17, instances=["C"], model=None, output=None)
+
+
+def test_destroy_repair_rebuild_prefers_hard_safe_options_over_cheap_clashes() -> None:
+    first, second = Time("1", "1", 0, 1), Time("1", "1", 1, 1)
+    # C and D outside the region already clash at (first, room 1), making source_hard=1
+    # while leaving B locally free (baseline_local=0) so Stage 1 CP-SAT hands off to rebuild.
+    # For B, the cheapest placement uses room 1 when it is unavailable.
+    # Moving to room 3 in the second time slot preserves hard and improves soft.
+    classes = (
+        Class("B", "CB", "1", "1", None, None,
+              (replace(first, penalty=10), replace(second, penalty=1)),
+              (("1", 0), ("2", 10), ("3", 1)), False),
+        Class("C", "CC", "1", "1", None, None, (first,), (("1", 0),), False),
+        Class("D", "CD", "1", "1", None, None, (first,), (("1", 0),), False),
+    )
+    instance = Instance("rebuild-hard-safety", 1, 1, 2, (1, 1, 1, 1),
+                        {"1": Room("1", None, (second,), {}), "2": Room("2", None, (), {}),
+                         "3": Room("3", None, (), {})},
+                        classes, {}, (), (), {cls.id: i for i, cls in enumerate(classes)})
+    source = Population.new("X", np.asarray([[0, 0, 0, 1, 0, 0]], dtype=np.int32))
+    problem = PlacementProblem(instance)
+    evaluator = Evaluator()
+    evaluator.eval(problem, source)
+    assert int(source[0].G[0]) == 1
+
+    region = RegionCandidate("0", "r", "b", (0,), ("B",), (), (),
+                             0, 20, (), (), 1, 0, ("destroy_repair",))
+    probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
+                           instance, region, "destroy_repair", 2, np.random.default_rng(17), None)
+    assert probe.evaluations == 2
+    assert probe.candidate_quality == (1, 2)
+
+
+def test_placement_neighborhood_move_updates_room_occupants_for_sequential_steps() -> None:
+    from itc2019.neighborhood import PlacementNeighborhood
+
+    first = Time("1", "1", 0, 1)
+    classes = (
+        Class("A", "CA", "1", "1", None, None, (first,), (("1", 0), ("2", 0)), False),
+        Class("B", "CB", "1", "1", None, None, (first,), (("1", 0), ("2", 0)), False),
+    )
+    instance = Instance("seq-move", 1, 1, 2, (1, 1, 1, 1),
+                        {str(i): Room(str(i), None, (), {}) for i in (1, 2)},
+                        classes, {}, (), (), {cls.id: i for i, cls in enumerate(classes)})
+    hn = PlacementNeighborhood(instance, np.asarray([0, 0, 0, 1], dtype=np.int32))
+    assert hn.external_cost(1, (0, 0), set())[0] == 1  # A currently occupies room 1
+    assert hn.external_cost(1, (0, 1), set())[0] == 0  # room 2 is empty
+    hn.move(0, 0, 1)  # move A into room 2
+    assert hn.external_cost(1, (0, 0), set())[0] == 0  # room 1 is now free
+    assert hn.external_cost(1, (0, 1), set())[0] == 1  # room 2 now has A
+
+def test_guided_move_can_change_time_and_room_with_one_evaluation() -> None:
+    first = Time("1", "1", 0, 1)
+    second = Time("1", "1", 1, 1, penalty=1)
+    classes = (
+        Class("A", "CA", "1", "1", None, None, (first,), (("1", 0),), False),
+        Class("B", "CB", "1", "1", None, None, (first, second), (("2", 5), ("1", 0)), False),
+    )
+    courses = {"CA": Course("CA", (ITCConfig("1", ((0,),)),)),
+               "CB": Course("CB", (ITCConfig("1", ((1,),)),))}
+    instance = Instance("guided-move", 1, 1, 2, (1, 1, 1, 10),
+                        {str(i): Room(str(i), None, (), {}) for i in (1, 2)},
+                        classes, courses, (), (Student("S", ("CA", "CB")),), {"A": 0, "B": 1})
+    source = Population.new("X", np.zeros((1, 4), dtype=np.int32))
+    problem, evaluator = PlacementProblem(instance), Evaluator()
+    evaluator.eval(problem, source)
+    region = RegionCandidate("0", "r", "b", (1,), ("B",), ("A",), (), 0, 15, (), (), 1, 0, ("move",))
+
+    probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
+                           instance, region, "move", 1, np.random.default_rng(17), None)
+
+    assert probe.evaluations == 1 and evaluator.n_eval == 2
+    assert probe.candidate_quality == (0, 1)
+    assert probe.candidate[0].X.tolist() == [0, 1, 0, 1]
+    assert source[0].X.tolist() == [0, 0, 0, 0]
+
+
+def test_guided_move_ranks_improvement_across_classes_with_one_evaluation() -> None:
+    first, second = Time("1", "1", 0, 1), Time("1", "1", 1, 1)
+    classes = (
+        Class("A", "CA", "1", "1", None, None, (first, replace(second, penalty=1)), (("1", 0),), False),
+        Class("B", "CB", "1", "1", None, None,
+              (replace(first, penalty=100), replace(second, penalty=50)), (("2", 0),), False),
+    )
+    instance = Instance("guided-move-delta", 1, 1, 2, (1, 1, 1, 1),
+                        {str(i): Room(str(i), None, (), {}) for i in (1, 2)},
+                        classes, {}, (), (), {"A": 0, "B": 1})
+    source = Population.new("X", np.zeros((1, 4), dtype=np.int32))
+    problem, evaluator = PlacementProblem(instance), Evaluator()
+    evaluator.eval(problem, source)
+    region = RegionCandidate("0", "r", "b", (0, 1), ("A", "B"), (), (), 0, 100, (), (), 2, 0, ("move",))
+
+    probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
+                           instance, region, "move", 1, np.random.default_rng(17), None)
+
+    assert probe.evaluations == 1 and evaluator.n_eval == 2
+    assert probe.candidate_quality == (0, 50)
+    assert probe.candidate[0].X.tolist() == [0, 1, 0, 0]
+
+
+@pytest.mark.parametrize("exchange", ["room", "time", "full"])
+def test_guided_swap_accepts_partial_exchange_and_preserves_outside(exchange) -> None:
+    first, second = Time("1", "1", 0, 1), Time("1", "1", 1, 1)
+    if exchange == "room":
+        classes = (
+            Class("A", "CA", "1", "1", None, None, (first,), (("1", 10), ("2", 0)), False),
+            Class("B", "CB", "1", "1", None, None, (second,), (("2", 10), ("1", 0)), False),
+        )
+        target = [0, 0, 0, 1, 1, 0]
+    elif exchange == "time":
+        classes = (
+            Class("A", "CA", "1", "1", None, None,
+                  (replace(first, penalty=10), second), (("1", 0),), False),
+            Class("B", "CB", "1", "1", None, None,
+                  (replace(second, penalty=10), first), (("2", 0),), False),
+        )
+        target = [1, 1, 0, 0, 0, 0]
+    else:
+        classes = (
+            Class("A", "CA", "1", "1", None, None,
+                  (replace(first, penalty=10), second), (("1", 10), ("2", 0)), False),
+            Class("B", "CB", "1", "1", None, None,
+                  (replace(second, penalty=10), first), (("2", 10), ("1", 0)), False),
+        )
+        target = [1, 1, 0, 1, 1, 0]
+    classes += (Class("C", "CC", "1", "1", None, None, (first,), (("3", 0),), False),)
+    rooms = {str(i): Room(str(i), None, (), {}) for i in (1, 2, 3)}
+    if exchange == "full":
+        # Both partial swaps would place a class in the unavailable room.
+        rooms["1"] = replace(rooms["1"], unavailable=(second,))
+    instance = Instance("guided-swap", 1, 1, 2, (1, 1, 1, 1),
+                        rooms, classes, {}, (), (), {"A": 0, "B": 1, "C": 2})
+    source = Population.new("X", np.zeros((1, 6), dtype=np.int32))
+    problem, evaluator = PlacementProblem(instance), Evaluator()
+    evaluator.eval(problem, source)
+    algorithm = SimpleNamespace(pop=source, evaluator=evaluator, problem=problem)
+    if exchange == "time":
+        region = RegionCandidate("0", "r", "b", (0, 1), ("A", "B"), ("C",), (),
+                                 0, 20, (), (), 2, 1, ("swap",))
+    else:
+        region, = RegionBuilder(instance).build(algorithm, max_regions=1, region_size=2)
+        assert region.class_ids == ("A", "B") and "swap" in region.available_operators
+
+    probe = probe_operator(algorithm, instance, region, "swap", 1, np.random.default_rng(17), None)
+
+    assert probe.evaluations == 1 and evaluator.n_eval == 2
+    assert probe.candidate_quality == (0, 0)
+    assert probe.candidate[0].X.tolist() == target
+    assert source[0].X.tolist() == [0, 0, 0, 0, 0, 0]

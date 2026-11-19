@@ -70,35 +70,38 @@ class ConstraintObservation:
     violation_groups: dict[tuple[int, ...], int] = field(default_factory=dict)
 
 
-def swap_targets(instance: Instance, choices: np.ndarray, left: int,
-                 right: int) -> tuple[int, int, int, int] | None:
-    """Return legal target option indices for exchanging two placements."""
+def swap_options(instance: Instance, choices: np.ndarray, left: int, right: int
+                 ) -> tuple[tuple[int, int, int, int], ...]:
+    """List distinct legal room, time, and full-placement exchanges for this pair."""
     n = len(instance.classes)
     a, b = instance.classes[left], instance.classes[right]
-    a_time, b_time = a.times[int(choices[left])], b.times[int(choices[right])]
-    a_room = None if a.no_room else a.room_options[int(choices[n + left])][0]
-    b_room = None if b.no_room else b.room_options[int(choices[n + right])][0]
+    a_ti, a_ri = int(choices[left]), int(choices[n + left])
+    b_ti, b_ri = int(choices[right]), int(choices[n + right])
+    a_room = None if a.no_room else a.room_options[a_ri][0]
+    b_room = None if b.no_room else b.room_options[b_ri][0]
 
-    def target(cls, other_time, other_room):
-        ti = next((i for i, option in enumerate(cls.times)
-                   if (option.days, option.weeks, option.start, option.length) ==
-                   (other_time.days, other_time.weeks, other_time.start,
-                    other_time.length)), None)
+    def time_key(option):
+        return option.days, option.weeks, option.start, option.length
+
+    def time_index(cls, key):
+        return next((i for i, option in enumerate(cls.times) if time_key(option) == key), None)
+
+    def room_index(cls, room):
         if cls.no_room:
-            ri = -1 if other_room is None else None
-        else:
-            ri = next((i for i, (room_id, _) in enumerate(cls.room_options)
-                       if room_id == other_room), None)
-        return ti, ri
+            return -1 if room is None else None
+        return next((i for i, (room_id, _) in enumerate(cls.room_options) if room_id == room), None)
 
-    new_a = target(a, b_time, b_room)
-    new_b = target(b, a_time, a_room)
-    if None in new_a or None in new_b:
-        return None
-    if (new_a == (int(choices[left]), int(choices[n + left])) and
-            new_b == (int(choices[right]), int(choices[n + right]))):
-        return None
-    return new_a[0], new_a[1], new_b[0], new_b[1]
+    a_key, b_key = time_key(a.times[a_ti]), time_key(b.times[b_ti])
+    times = (time_index(a, b_key), time_index(b, a_key)) if a_key != b_key else (a_ti, b_ti)
+    rooms = (room_index(a, b_room), room_index(b, a_room)) if a_room != b_room else (a_ri, b_ri)
+    options = []
+    if a_room != b_room and None not in rooms:
+        options.append((a_ti, rooms[0], b_ti, rooms[1]))
+    if a_key != b_key and None not in times:
+        options.append((times[0], a_ri, times[1], b_ri))
+    if a_room != b_room and a_key != b_key and None not in (*times, *rooms):
+        options.append((times[0], rooms[0], times[1], rooms[1]))
+    return tuple(options)
 
 
 def placement_diversity(chromosomes: np.ndarray) -> float:
@@ -425,7 +428,7 @@ class RegionBuilder:
                         summary["current_room_id"] = room_id
                         summary["current_room_penalty"] = cls.room_options[room_index][1]
                     summaries.append(summary)
-                swap_count = sum(swap_targets(self.instance, choices, left, right) is not None
+                swap_count = sum(bool(swap_options(self.instance, choices, left, right))
                                  for left, right in combinations(active, 2))
                 available = []
                 if movable:

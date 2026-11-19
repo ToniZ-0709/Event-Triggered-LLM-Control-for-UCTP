@@ -78,13 +78,20 @@ class LocalSoftCosts:
         return sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
                    for j in self.neighbors.get(index, ()) if j not in self.active)
 
-    def option_cost(self, index, chosen, room, times, rooms) -> int:
+    def option_cost(self, index, chosen, room, times, rooms, *, exclude=None) -> int:
         cost = sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
-                   for j in self.neighbors.get(index, ()))
+                   for j in self.neighbors.get(index, ()) if j != exclude)
         cost += self.instance.weights[3] * sum(
             count for j, count in self.student_neighbors.get(index, {}).items()
-            if attendee_conflict(self.instance, chosen, room, times[j], rooms[j]))
+            if j != exclude and attendee_conflict(self.instance, chosen, room, times[j], rooms[j]))
         return cost
+
+    def global_cost(self, indices, times, rooms) -> int:
+        affected = {id(d): d for index in indices for d in self.globals_by_class.get(index, ())}
+        return self.instance.weights[2] * sum(
+            d.penalty * distribution_violations(self.instance, d, times, rooms) //
+            (self.instance.nr_weeks if d.kind in _WEEK_AVERAGED else 1)
+            for d in affected.values())
 
     def global_option_cost(self, index, chosen, times, rooms) -> int:
         if not self.globals_by_class.get(index):
@@ -92,10 +99,7 @@ class LocalSoftCosts:
         old = times[index]
         times[index] = chosen
         try:
-            return self.instance.weights[2] * sum(
-                d.penalty * distribution_violations(self.instance, d, times, rooms) //
-                (self.instance.nr_weeks if d.kind in _WEEK_AVERAGED else 1)
-                for d in self.globals_by_class[index])
+            return self.global_cost((index,), times, rooms)
         finally:
             times[index] = old
 
@@ -117,11 +121,14 @@ class PlacementNeighborhood:
         self.pairs: dict[tuple[int, int], list[Distribution]] = defaultdict(list)
         self.related: list[set[int]] = [set() for _ in instance.classes]
         self.globals = []
+        self.globals_by_class: list[list[Distribution]] = [[] for _ in instance.classes]
         for distribution in instance.distributions:
             if not distribution.required:
                 continue
             if distribution.kind in _GLOBAL:
                 self.globals.append(distribution)
+                for index in distribution.classes:
+                    self.globals_by_class[index].append(distribution)
                 continue
             for left, right in combinations(distribution.classes, 2):
                 pair = (min(left, right), max(left, right))
@@ -136,6 +143,35 @@ class PlacementNeighborhood:
 
     def current(self, index: int) -> tuple[int, int]:
         return int(self.source[index]), int(self.source[self.n + index])
+
+    def move(self, index: int, ti: int, ri: int) -> None:
+        """Update one class placement in place so sequential steps see prior moves."""
+        old_room = self.rooms[index]
+        chosen, new_room = self.placement(index, (ti, ri))
+        self.source[index], self.source[self.n + index] = ti, ri
+        self.times[index] = chosen
+        self.rooms[index] = new_room
+        if old_room != new_room:
+            if old_room is not None:
+                self.by_room[old_room].remove(index)
+            if new_room is not None:
+                self.by_room[new_room].append(index)
+
+    def global_hard_cost(self, index: int, chosen: Time) -> int:
+        """Count required global distribution violations for one class time option."""
+        if not self.globals_by_class[index]:
+            return 0
+        old_time = self.times[index]
+        self.times[index] = chosen
+        try:
+            return self.global_hard_cost_current((index,))
+        finally:
+            self.times[index] = old_time
+
+    def global_hard_cost_current(self, indices) -> int:
+        affected = {id(d): d for index in indices for d in self.globals_by_class[index]}
+        return sum(distribution_violations(self.instance, d, self.times, self.rooms)
+                   for d in affected.values())
 
     def pair_cost(self, left: int, a: tuple[int, int], right: int,
                   b: tuple[int, int]) -> int:

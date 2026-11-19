@@ -11,12 +11,13 @@ import numpy as np
 from pymoo.core.population import Population
 
 from .instance import Instance
-from .regions import RegionCandidate, swap_targets
+from .regions import RegionCandidate, swap_options
 from .scoring import Score
-from .neighborhood import LocalSoftCosts, room_neighborhood_repair
+from .neighborhood import LocalSoftCosts, PlacementNeighborhood, room_neighborhood_repair
 
 
 OPERATORS = ("move", "swap", "destroy_repair")
+_GUIDED_RANKING_SECONDS = 1.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +35,7 @@ class OperatorOutcome:
     candidate_weighted: tuple[int, int, int, int] | None
     scoring_rechecks: int
     elapsed_seconds: float
+    candidate_origin: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,71 +50,42 @@ class OperatorProbe:
     best_trial: tuple[int, int] | None
     candidate: Population | None
     candidate_quality: tuple[int, int] | None
+    candidate_origin: str | None = None
 
 
-def _move(instance: Instance, source: np.ndarray, indices: tuple[int, ...],
-          rng: np.random.Generator) -> np.ndarray | None:
-    n = len(instance.classes)
-    movable = [i for i in indices if len(instance.classes[i].times) > 1 or
-               len(instance.classes[i].room_options) > 1]
-    if not movable:
-        return None
-    index = int(rng.choice(movable))
+def _placement_options(instance: Instance, index: int, hard: PlacementNeighborhood,
+                       soft: LocalSoftCosts, deadline: float | None, *, by_delta: bool = False):
+    """Yield local costs and placements with the rest of the timetable fixed."""
     cls = instance.classes[index]
-    candidate = source.copy()
-    genes = []
-    if len(cls.times) > 1:
-        genes.append(index)
-    if len(cls.room_options) > 1:
-        genes.append(n + index)
-    gene = int(rng.choice(genes))
-    count = len(cls.times) if gene == index else len(cls.room_options)
-    current = int(source[gene])
-    draw = int(rng.integers(count - 1))
-    candidate[gene] = draw + (draw >= current)
-    return candidate
-
-
-def _swap(instance: Instance, source: np.ndarray, indices: tuple[int, ...],
-          rng: np.random.Generator) -> np.ndarray | None:
-    if len(indices) < 2:
-        return None
-    n = len(instance.classes)
-    pairs = [(left, right, target) for left, right in combinations(indices, 2)
-             if (target := swap_targets(instance, source, left, right)) is not None]
-    if not pairs:
-        return None
-    left, right, (a_time, a_room, b_time, b_room) = pairs[int(rng.integers(len(pairs)))]
-    candidate = source.copy()
-    candidate[left], candidate[n + left] = a_time, a_room
-    candidate[right], candidate[n + right] = b_time, b_room
-    return candidate
-
-
-def _repair_options(instance: Instance, current: np.ndarray, index: int, local_soft: LocalSoftCosts,
-                    times, rooms, rng: np.random.Generator, deadline: float | None
-                    ) -> list[tuple[int, int]]:
-    """Rank placements by affected soft costs without re-running student sectioning."""
-    n = len(instance.classes)
-    cls = instance.classes[index]
-    old_t, old_r = int(current[index]), int(current[n + index])
+    old_t, old_r = hard.current(index)
     room_options = ((-1, None, 0),) if cls.no_room else tuple(
         (ri, room, penalty) for ri, (room, penalty) in enumerate(cls.room_options))
-    ranked = []
+    active = set()
+
+    def time_cost(chosen):
+        return (hard.global_hard_cost(index, chosen), chosen.penalty * instance.weights[0] +
+                soft.global_option_cost(index, chosen, hard.times, hard.rooms))
+
+    def placement_cost(ti, ri, room, penalty, time_hard, time_soft):
+        pair_hard, _ = hard.external_cost(index, (ti, ri), active)
+        soft_amount = (time_soft + penalty * instance.weights[1] +
+                       soft.option_cost(index, cls.times[ti], room, hard.times, hard.rooms))
+        return time_hard + pair_hard, soft_amount
+
+    source_hard = source_soft = 0
+    if by_delta:
+        _, room, penalty = room_options[old_r]
+        source_hard, source_soft = placement_cost(old_t, old_r, room, penalty, *time_cost(cls.times[old_t]))
+
     for ti, chosen in enumerate(cls.times):
         if deadline is not None and time.perf_counter() >= deadline:
             break
-        time_cost = (chosen.penalty * instance.weights[0] +
-                     local_soft.global_option_cost(index, chosen, times, rooms))
+        time_hard, time_soft = time_cost(chosen)
         for ri, room, penalty in room_options:
             if (ti, ri) == (old_t, old_r):
                 continue
-            amount = (time_cost + penalty * instance.weights[1] +
-                      local_soft.option_cost(index, chosen, room, times, rooms))
-            ranked.append((amount, (ti, ri)))
-    rng.shuffle(ranked)
-    ranked.sort(key=lambda item: item[0])
-    return [option for _, option in ranked]
+            new_hard, new_soft = placement_cost(ti, ri, room, penalty, time_hard, time_soft)
+            yield (new_hard - source_hard, new_soft - source_soft), (ti, ri)
 
 
 def _rebuild_order(region: RegionCandidate, rng: np.random.Generator) -> list[int]:
@@ -127,7 +100,62 @@ def _rebuild_order(region: RegionCandidate, rng: np.random.Generator) -> list[in
     return [index for index, _ in order]
 
 
-_PROPOSALS = {"move": _move, "swap": _swap}
+def _rank_move_options(instance, _source, region, hard, soft, rng, deadline):
+    order = [i for i in _rebuild_order(region, rng)
+             if len(instance.classes[i].times) > 1 or len(instance.classes[i].room_options) > 1]
+    ranked = []
+    for index in order:
+        if time.perf_counter() >= deadline:
+            break
+        ranked.extend((delta, (index, ti, ri)) for delta, (ti, ri) in
+                      _placement_options(instance, index, hard, soft, deadline, by_delta=True))
+    rng.shuffle(ranked)
+    ranked.sort(key=lambda item: item[0])
+    return ((change,) for _, change in ranked)
+
+
+def _swap_cost(instance, hard, soft, left, right):
+    pair = (left, right)
+    active = set(pair)
+    hard_cost = sum(hard.external_cost(i, hard.current(i), active)[0] for i in pair)
+    hard_cost += hard.pair_cost(left, hard.current(left), right, hard.current(right))
+    hard_cost += hard.global_hard_cost_current(pair)
+    soft_cost = soft.global_cost(pair, hard.times, hard.rooms)
+    for i in pair:
+        time_option, room = hard.times[i], hard.rooms[i]
+        room_index = hard.current(i)[1]
+        room_penalty = 0 if room is None else instance.classes[i].room_options[room_index][1]
+        soft_cost += time_option.penalty * instance.weights[0] + room_penalty * instance.weights[1]
+        soft_cost += soft.option_cost(i, time_option, room, hard.times, hard.rooms,
+                                      exclude=left if i == right else None)
+    return hard_cost, soft_cost
+
+
+def _rank_swap_options(instance, source, region, hard, soft, rng, deadline):
+    ranked = []
+    for left, right in combinations(region.class_indices, 2):
+        if time.perf_counter() >= deadline:
+            break
+        options = swap_options(instance, source, left, right)
+        if not options:
+            continue
+        original_left, original_right = hard.current(left), hard.current(right)
+        before_hard, before_soft = _swap_cost(instance, hard, soft, left, right)
+        for a_time, a_room, b_time, b_room in options:
+            if time.perf_counter() >= deadline:
+                break
+            hard.move(left, a_time, a_room)
+            hard.move(right, b_time, b_room)
+            try:
+                after_hard, after_soft = _swap_cost(instance, hard, soft, left, right)
+            finally:
+                hard.move(left, *original_left)
+                hard.move(right, *original_right)
+            ranked.append(((after_hard - before_hard, after_soft - before_soft),
+                           ((left, a_time, a_room), (right, b_time, b_room))))
+    rng.shuffle(ranked)
+    ranked.sort(key=lambda item: item[0])
+    return (changes for _, changes in ranked)
 
 
 def _admissible_candidate(source_hard: int, source_weighted: tuple[int, ...],
@@ -156,16 +184,18 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
     source_total = sum(source_weighted)
     best_pop = None
     best_key = None
+    candidate_origin = None
     best_trial: tuple[int, int] | None = None
     attempts = evaluations = 0
     evaluated: set[tuple[int, ...]] = set()
 
     def result() -> OperatorProbe:
         return OperatorProbe(started, attempts, evaluations, source_hard, source_total,
-                             best_trial, best_pop, None if best_key is None else best_key[:2])
+                             best_trial, best_pop, None if best_key is None else best_key[:2],
+                             candidate_origin)
 
-    def consider(trial: np.ndarray) -> tuple[int, int] | None:
-        nonlocal attempts, evaluations, best_pop, best_key, best_trial
+    def consider(trial: np.ndarray, origin: str) -> tuple[int, int] | None:
+        nonlocal attempts, evaluations, best_pop, best_key, best_trial, candidate_origin
         if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
             return None
         attempts += 1
@@ -189,6 +219,7 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
         key = (hard, total, identity)
         if best_key is None or key < best_key:
             best_pop, best_key = candidate_pop, key
+            candidate_origin = origin
         return rank
 
     if deadline is not None and time.perf_counter() >= deadline:
@@ -223,6 +254,7 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
             best_trial = score.hard, score.total
             if _admissible_candidate(source_hard, source_weighted, score.hard, score.weighted):
                 best_key = (score.hard, score.total, tuple(map(int, candidate)))
+                candidate_origin = "cp_sat"
                 best_pop = Population.new("X", candidate[None], "F", np.asarray([score.weighted]),
                                           "G", np.asarray([[score.hard]]))
         # Rebuild up to three classes sequentially. Each proposed placement is
@@ -235,10 +267,8 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
         working = source.copy()
         working_rank = (source_hard, source_total)
         n = len(instance.classes)
+        hard_neighborhood = PlacementNeighborhood(instance, working)
         local_soft = LocalSoftCosts(instance, set(region.class_indices), assignments)
-        times = [cls.times[int(working[i])] for i, cls in enumerate(instance.classes)]
-        rooms = [None if cls.no_room else cls.room_options[int(working[n+i])][0]
-                 for i, cls in enumerate(instance.classes)]
         for position, index in enumerate(selected):
             if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
                 break
@@ -246,22 +276,39 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
             quota = max(1, (budget - evaluations) // remaining_classes)
             local_best = working_rank
             local_choice = working
-            for ti, ri in _repair_options(instance, working, index, local_soft, times, rooms,
-                                          rng, deadline)[:quota]:
+            options = list(_placement_options(instance, index, hard_neighborhood, local_soft, deadline))
+            rng.shuffle(options)
+            options.sort(key=lambda item: item[0])
+            for _, (ti, ri) in options[:quota]:
                 trial = working.copy()
                 trial[index], trial[n + index] = ti, ri
-                rank = consider(trial)
+                rank = consider(trial, "sequential_rebuild")
                 if rank is not None and rank < local_best:
                     local_best, local_choice = rank, trial
             working, working_rank = local_choice, local_best
-            cls = instance.classes[index]
-            times[index] = cls.times[int(working[index])]
-            rooms[index] = None if cls.no_room else cls.room_options[int(working[n+index])][0]
+            new_ti, new_ri = int(working[index]), int(working[n + index])
+            hard_neighborhood.move(index, new_ti, new_ri)
     else:
-        for _ in range(budget * 5):
+        ranking_deadline = started + _GUIDED_RANKING_SECONDS
+        if deadline is not None:
+            ranking_deadline = min(ranking_deadline, deadline)
+        engine = algorithm.problem.engine
+        cached = engine.cache.get(engine.key(source))
+        # Region scoring normally has this sectioning cached. Ranking itself never
+        # spends a full evaluation; the complete scorer re-sections each trial.
+        assignments = cached[1] if cached else None
+        hard = PlacementNeighborhood(instance, source)
+        soft = LocalSoftCosts(instance, set(region.class_indices), assignments)
+        rank_options = _rank_move_options if operator_id == "move" else _rank_swap_options
+        options = rank_options(instance, source, region, hard, soft, rng, ranking_deadline)
+        n = len(instance.classes)
+        for changes in options:
             if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):
                 break
-            consider(_PROPOSALS[operator_id](instance, source, region.class_indices, rng))
+            trial = source.copy()
+            for i, ti, ri in changes:
+                trial[i], trial[n + i] = ti, ri
+            consider(trial, operator_id)
 
     return result()
 
@@ -283,7 +330,7 @@ def inject_operator_candidate(algorithm, probe: OperatorProbe) -> OperatorOutcom
         return OperatorOutcome("scoring_mismatch", attempts, evaluations, False,
                                source_hard, source_total, trial_hard, trial_total,
                                score.hard, score.total, score.weighted, 1,
-                               time.perf_counter() - started)
+                               time.perf_counter() - started, candidate_origin=probe.candidate_origin)
     population_size = len(algorithm.pop)
     algorithm.pop = algorithm.survival.do(
         algorithm.problem, Population.merge(algorithm.pop, best_pop),
@@ -294,7 +341,7 @@ def inject_operator_candidate(algorithm, probe: OperatorProbe) -> OperatorOutcom
                            attempts, evaluations, selected, source_hard, source_total,
                            trial_hard, trial_total,
                            score.hard, score.total, score.weighted, 1,
-                           time.perf_counter() - started)
+                           time.perf_counter() - started, candidate_origin=probe.candidate_origin)
 
 
 def apply_operator(algorithm, instance: Instance, region: RegionCandidate,
