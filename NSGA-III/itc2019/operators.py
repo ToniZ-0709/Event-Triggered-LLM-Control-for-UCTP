@@ -127,7 +127,7 @@ def _swap_cost(instance, hard, soft, left, right):
         room_penalty = 0 if room is None else instance.classes[i].room_options[room_index][1]
         soft_cost += time_option.penalty * instance.weights[0] + room_penalty * instance.weights[1]
         soft_cost += soft.option_cost(i, time_option, room, hard.times, hard.rooms,
-                                      exclude=left if i == right else None)
+                                      excluded=(left,) if i == right else ())
     return hard_cost, soft_cost
 
 
@@ -363,7 +363,8 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
             instance, source, deadline=local_deadline, seed=int(rng.integers(2147483647)),
             max_classes=len(region.class_indices), max_options=32, max_table_cells=50000,
             deterministic_limit=0.25, allowed_classes=region.class_indices,
-            require_room_improvement=False, source_score=source_score, admit_candidate=_admit_repair,
+            require_room_improvement=False, source_score=source_score, assignments=assignments,
+            admit_candidate=_admit_repair,
             # Leave one full evaluation for the student-aware rebuild when possible.
             max_full_scoring_calls=remaining - int(remaining > 1), score_fn=algorithm.problem.score_state)
         used = stats["full_scoring_calls"]

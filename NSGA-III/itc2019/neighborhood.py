@@ -75,15 +75,14 @@ class LocalSoftCosts:
             for d in self.pairs.get((left, right), ()))
 
     def boundary_cost(self, index, chosen, room, times, rooms) -> int:
-        return sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
-                   for j in self.neighbors.get(index, ()) if j not in self.active)
+        return self.option_cost(index, chosen, room, times, rooms, excluded=self.active)
 
-    def option_cost(self, index, chosen, room, times, rooms, *, exclude=None) -> int:
+    def option_cost(self, index, chosen, room, times, rooms, *, excluded=()) -> int:
         cost = sum(self.pair_cost(index, chosen, room, j, times[j], rooms[j])
-                   for j in self.neighbors.get(index, ()) if j != exclude)
+                   for j in self.neighbors.get(index, ()) if j not in excluded)
         cost += self.instance.weights[3] * sum(
             count for j, count in self.student_neighbors.get(index, {}).items()
-            if j != exclude and attendee_conflict(self.instance, chosen, room, times[j], rooms[j]))
+            if j not in excluded and attendee_conflict(self.instance, chosen, room, times[j], rooms[j]))
         return cost
 
     def global_cost(self, indices, times, rooms) -> int:
@@ -268,13 +267,14 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
                              source_score: Score | None = None,
                              seed_classes=None, require_room_improvement: bool = True,
                              allowed_classes=None, allow_soft_improvement: bool = False,
-                             max_full_scoring_calls: int = 5, score_fn=None,
+                             max_full_scoring_calls: int = 5, score_fn=None, assignments=None,
                              admit_candidate: Callable[[Score, Score], bool] | None = None
                              ) -> tuple[np.ndarray | None, dict]:
     """Solve a small hard-cost model, then check the entire modified timetable.
 
     The controller may supply its own final admission rule and, for a feasible
     source, minimize the weighted placement and soft distribution costs locally.
+    Controller repairs can include student conflicts with the source sectioning held fixed.
     The full scorer still checks the complete timetable and student sectioning.
     """
     from ortools.sat.python import cp_model
@@ -304,7 +304,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         return None, stats
     active_set = set(active)
     optimize_soft = source_score.hard == 0 and (allow_soft_improvement or admit_candidate is not None)
-    local_soft = LocalSoftCosts(instance, active_set) if optimize_soft and admit_candidate else None
+    local_soft = LocalSoftCosts(instance, active_set, assignments) if optimize_soft and admit_candidate else None
     domains = {}
     unary = {}
     originals = {}
@@ -345,8 +345,9 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
                     for i in active}
     pairs = [(a, b) for a, b in combinations(active, 2)
              if room_domains[a].intersection(room_domains[b]) or (a, b) in neighborhood.pairs]
-    soft_pairs = [pair for pair in combinations(active, 2)
-                  if local_soft is not None and pair in local_soft.pairs]
+    soft_pairs = [] if local_soft is None else [
+        (a, b) for a, b in combinations(active, 2)
+        if (a, b) in local_soft.pairs or b in local_soft.student_neighbors.get(a, ())]
     table_pairs = pairs + soft_pairs
     cells = sum(len(domains[a]) * len(domains[b]) for a, b in table_pairs)
     if cells > max_table_cells:
@@ -430,8 +431,8 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
             soft_costs.append(value)
         try:
             if local_soft is not None:
-                _add_soft_distribution_costs(model, variables, domains, originals, active_set,
-                                             neighborhood, local_soft, soft_pairs, soft_costs, deadline)
+                _add_soft_costs(model, variables, domains, originals, active_set,
+                                neighborhood, local_soft, soft_pairs, soft_costs, deadline)
         except _BuildDeadline:
             stats["status"] = "soft_model_budget_exhausted"
             return None, stats
@@ -517,9 +518,11 @@ def distribution_neighborhood_repair(instance, choices, *, deadline, seed=42,
     return candidate, stats
 
 
-def _add_soft_distribution_costs(model, variables, domains, originals, active, neighborhood,
-                                 local_soft, pairs, costs, deadline):
+def _add_soft_costs(model, variables, domains, originals, active, neighborhood,
+                    local_soft, pairs, costs, deadline):
+    instance = neighborhood.instance
     for left, right in pairs:
+        student_weight = instance.weights[3] * local_soft.student_neighbors.get(left, {}).get(right, 0)
         table = []
         for a, option_a in enumerate(domains[left]):
             if time.perf_counter() >= deadline:
@@ -528,13 +531,14 @@ def _add_soft_distribution_costs(model, variables, domains, originals, active, n
             for b, option_b in enumerate(domains[right]):
                 tb, rb = neighborhood.placement(right, option_b)
                 amount = local_soft.pair_cost(left, ta, ra, right, tb, rb)
+                if student_weight and attendee_conflict(instance, ta, ra, tb, rb):
+                    amount += student_weight
                 table.append((a, b, amount))
         maximum = max(row[2] for row in table)
         if maximum:
             cost = model.new_int_var(0, maximum, f"soft_pair_{left}_{right}")
             model.add_allowed_assignments([variables[left], variables[right], cost], table)
             costs.append(cost)
-    instance = neighborhood.instance
     for number, distribution in enumerate(local_soft.globals, len(neighborhood.globals)):
         terms = []
         local_before, _ = _global_costs(

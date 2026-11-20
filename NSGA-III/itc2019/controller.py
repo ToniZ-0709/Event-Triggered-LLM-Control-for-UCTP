@@ -700,12 +700,13 @@ class ControllerCallback(BaselineMonitor):
             "validation": row["validation"],
         }
         for key in ("region_id", "boundary_id", "outcome",
-                    "source_hard", "source_total", "best_trial_hard", "best_trial_total"):
+                    "source_hard", "source_total", "best_trial_hard", "best_trial_total",
+                    "best_hard_change"):
             if row[key] is not None:
                 result[key] = row[key]
         if row["class_ids"]:
             result["class_ids"] = row["class_ids"]
-        for key in ("attempts", "evaluations", "best_hard_change", "best_internal_total_change"):
+        for key in ("attempts", "evaluations", "best_internal_total_change"):
             if row[key]:
                 result[key] = row[key]
         return result
@@ -879,6 +880,8 @@ class ControllerCallback(BaselineMonitor):
                                 f"best={_format_quality(self.best_observed)}")
             self._emit_progress(decision_line, *( (outcome_line,) if outcome_line else () ))
             self._last_logged_review_gen = metrics["generation"]
+            hard_change = self.best_observed[0] - metrics["incumbent_hard"]
+            report_hard_change = hard_change != 0 or (outcome is not None and metrics["incumbent_hard"] > 0)
             self.outcomes.append({"generation": metrics["generation"],
                                   "region_id": plan.region_id,
                                   "boundary_id": region.boundary_id if region is not None else None,
@@ -895,7 +898,7 @@ class ControllerCallback(BaselineMonitor):
                                   "source_total": None if outcome is None else outcome.source_total,
                                   "best_trial_hard": None if outcome is None else outcome.best_trial_hard,
                                   "best_trial_total": None if outcome is None else outcome.best_trial_total,
-                                  "best_hard_change": self.best_observed[0] - metrics["incumbent_hard"],
+                                  "best_hard_change": hard_change if report_hard_change else None,
                                   "best_internal_total_change": (
                                       self.best_observed[1] - metrics["incumbent_internal_total"])})
             self.last_review = metrics["generation"]

@@ -576,6 +576,9 @@ def test_state_packet_omits_redundant_fields_and_multi_agent_uses_constraint_det
                         "attempts", "source_hard", "source_total", "best_trial_hard",
                         "best_trial_total", "best_hard_change", "best_internal_total_change"):
         assert omitted_key not in no_op_outcome
+    hard_neutral = recorder._public_outcome({**recorder.outcomes[0], "outcome": "selected",
+                                             "source_hard": 3, "best_hard_change": 0})
+    assert hard_neutral["best_hard_change"] == 0
     region = packet["candidate_regions"][0]
     for removed in ("constraint_ids", "class_summaries", "solution_hard", "solution_total",
                     "is_incumbent", "unlocalized_penalties", "movable_class_count",
@@ -634,10 +637,13 @@ def test_prompts_give_balanced_operator_and_repeat_avoidance_guidance():
     for key in ("single_agent", "planner", "inspector"):
         assert "Prefer the smallest change" not in PROMPTS[key]
         assert "depend mainly on outside_region classes" not in PROMPTS[key]
+        assert "search window" in PROMPTS[key]
+        assert "best_hard_change" in PROMPTS[key]
     for key in ("single_agent", "planner"):
         prompt = PROMPTS[key]
         assert "randomly resamples" not in prompt
         assert "eviction" in prompt
+        assert "3 to 5 in-region classes" not in prompt
         for token in ("move", "swap", "destroy_repair", "no_op", "recent_outcomes"):
             assert token in prompt
     assert "recent_outcomes" in PROMPTS["inspector"]

@@ -150,6 +150,26 @@ def test_greedy_uses_one_budget_and_injects_at_most_once(
     assert controller.report()["probe_evaluations"] == used
 
 
+@pytest.mark.parametrize("worse", [[0, 0, 0, 1], [0, 0, 0, 0]])
+def test_greedy_prioritizes_the_better_source_over_a_more_expensive_region(dataset, worse):
+    instance = load_instance(dataset)
+    pop = Population.new("X", np.array([[1, 0, 0, 0], worse]))
+    problem = PlacementProblem(instance)
+    evaluator = Evaluator()
+    evaluator.eval(problem, pop)
+    algorithm = SimpleNamespace(problem=problem, pop=pop, evaluator=evaluator)
+    controller = GreedyController(instance, SETTINGS, None, 17, time.perf_counter(), None)
+    controller.current_operator_limit = 4
+    best = replace(region(("move",)), hard_contribution=0, soft_contribution=5)
+    other = replace(best, solution_id="1", region_id="r-worse", soft_contribution=10,
+                    hard_contribution=int(pop[1].G[0]))
+
+    decision = controller._review(algorithm, {}, [other, best])
+
+    assert decision.plan.solution_id == "0"
+    assert decision.probe.candidate_quality == (0, 1)
+
+
 def test_greedy_proposes_a_feasible_pareto_tradeoff(dataset):
     instance = load_instance(dataset)
     first, second = instance.classes

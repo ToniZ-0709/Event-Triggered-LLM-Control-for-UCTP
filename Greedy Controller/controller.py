@@ -36,22 +36,19 @@ class GreedyController(ControllerCallback):
         eligible = [r for r in regions if r.available_operators]
         if not eligible or budget < 1:
             return finish("no_legal_action")
-        if all(r.hard_contribution == r.soft_contribution == 0 and not r.unlocalized_penalties
-               for r in eligible):
+        penalized = [r for r in eligible if r.hard_contribution or r.soft_contribution
+                     or r.unlocalized_penalties]
+        if not penalized:
             return finish("no_region_penalty")
-
-        prioritize_hard = any(r.hard_contribution > 0 for r in eligible)
 
         def rank(region):
             individual = algorithm.pop[int(region.solution_id)]
+            hard = int(np.asarray(individual.G).reshape(-1)[0])
             total = int(np.asarray(individual.F).sum())
-            if prioritize_hard:
-                hard = int(np.asarray(individual.G).reshape(-1)[0])
-                return (-region.hard_contribution, -region.soft_contribution,
-                        hard, total, region.region_id)
-            return (-region.soft_contribution, total, region.region_id)
+            return (hard, total, -region.hard_contribution, -region.soft_contribution,
+                    region.region_id)
 
-        region = min(eligible, key=rank)
+        region = min(penalized, key=rank)
         role.update(solution_id=region.solution_id, region_id=region.region_id,
                     boundary_id=region.boundary_id, probe_budget=budget)
         ops = [op for op in OPERATORS if op in region.available_operators]

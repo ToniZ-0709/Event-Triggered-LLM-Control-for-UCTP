@@ -385,7 +385,8 @@ def test_low_diversity_event_fires_once_per_episode() -> None:
     assert callback._trigger(metrics) == ["low_diversity"]
 
 
-def test_student_pair_cache_preserves_conflict_and_non_conflict_scores() -> None:
+@pytest.mark.parametrize("active", [(1,), (0, 1)])
+def test_destroy_repair_cp_sat_models_student_conflicts_when_feasible(active) -> None:
     first, second = Time("1", "1", 0, 1), Time("1", "1", 1, 1)
     classes = (
         Class("A", "CA", "1", "1", None, None, (first,), (("1", 0),), False),
@@ -404,8 +405,8 @@ def test_student_pair_cache_preserves_conflict_and_non_conflict_scores() -> None
     assert clashing.student == 2 and separated.student == 0
     assert assignments == {0: ["S1", "S2"], 1: ["S1", "S2"]}
 
-    # A cheap non-improving alternative ties the original placement. With only
-    # one fallback evaluation, student-aware ranking must try the costly time.
+    # One full score suffices only if CP-SAT favors resolving the conflict
+    # over the penalty-free option that leaves both classes at the same time.
     options = (first, first, replace(second, penalty=1))
     instance = replace(instance, classes=(classes[0], replace(classes[1], times=options)),
                        weights=(1, 1, 1, 10))
@@ -414,13 +415,15 @@ def test_student_pair_cache_preserves_conflict_and_non_conflict_scores() -> None
     evaluator = Evaluator()
     evaluator.eval(problem, source)
     details = ({"violation_groups": ({"in_region_class_ids": ("B",), "violation_units": 2},)},)
-    region = RegionCandidate("0", "r", "b", (1,), ("B",), ("A",), ("student_conflict",),
+    class_ids = tuple(classes[i].id for i in active)
+    boundary = ("A",) if len(active) == 1 else ()
+    region = RegionCandidate("0", "r", "b", active, class_ids, boundary, ("student_conflict",),
                              0, 20, (), (), 1, 0, ("destroy_repair",), constraint_details=details)
     probe = probe_operator(SimpleNamespace(pop=source, evaluator=evaluator, problem=problem),
-                           instance, region, "destroy_repair", 2, np.random.default_rng(17), None)
+                           instance, region, "destroy_repair", 1, np.random.default_rng(17), None)
     assert probe.candidate_quality == (0, 1)
-    assert probe.candidate_origin == "sequential_rebuild"
-    assert probe.evaluations == 2 and evaluator.n_eval == problem.engine.requests == 3
+    assert probe.candidate_origin == "cp_sat"
+    assert probe.evaluations == 1 and evaluator.n_eval == problem.engine.requests == 2
 
 
 def test_controller_acceptance_preserves_hard_priority() -> None:

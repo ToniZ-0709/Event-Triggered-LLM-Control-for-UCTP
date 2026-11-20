@@ -22,11 +22,7 @@ Early `no_op` exits occur before any operator probing when:
 - `eligible` is empty or `budget < 1` (`decision_status = "no_legal_action"`)
 - Every eligible region has `hard_contribution == 0`, `soft_contribution == 0`, and empty `unlocalized_penalties` (`decision_status = "no_region_penalty"`)
 
-Otherwise, eligible regions are ranked relative to their source individual `algorithm.pop[int(region.solution_id)]` (`hard` from `G[0]` and weighted objective sum `total = sum(F)`):
-- If any eligible region has `hard_contribution > 0`, regions are ordered by minimizing `(-region.hard_contribution, -region.soft_contribution, hard, total, region.region_id)`.
-- If all eligible regions have `hard_contribution == 0`, regions are ordered by minimizing `(-region.soft_contribution, total, region.region_id)`.
-
-The single top-ranked candidate region is selected for probing.
+Greedy probes one region with a recorded penalty. It ranks by the source solution's hard violations and weighted total, then by the region's hard and soft contributions in descending order. Equal scores and contributions are resolved by `region_id`.
 
 ### Sequential Operator Probing (`HOW`)
 
@@ -39,9 +35,10 @@ Legal operators on the chosen region are ordered canonically according to `OPERA
 
 ### Improvement Criterion and `no_op` Fallback
 
-Inside `probe_operator`, candidate admissibility (`_admissible_candidate`) is judged lexicographically as `(hard, total)` against the chosen region's source/base solution `(source_hard, source_total)`:
-- When `source_hard > 0`, a trial is admissible only if `trial_hard < source_hard` (strict hard-violation reduction).
-- When `source_hard == 0`, a trial is admissible only if `trial_hard == 0` and `trial_total < source_total` (preserves feasibility and strictly lowers total weighted soft penalty).
+`probe_operator` checks each candidate against the region's source solution.
+
+- When `source_hard > 0`, a trial can reduce hard violations or keep them unchanged and lower the weighted total.
+- When `source_hard == 0`, a trial must remain feasible and improve at least one weighted objective.
 
 Across all probed operators on the selected region, `GreedyController` picks the operator whose best admissible candidate has the lexicographically smallest `probe.candidate_quality = (hard, total)` (maximizing immediate improvement over the shared source solution). Exact ties in `(hard, total)` retain the earlier operator in `OPERATORS`. Meanwhile, the solver tracks the global run incumbent separately via `best_observed_lexicographic_hard_then_total`.
 
