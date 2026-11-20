@@ -363,9 +363,8 @@ class BaselineMonitor(Callback):
         if (source_score.room_conflicts + source_score.room_unavailable < 4 or
                 source_score.hard <= self.repair_settings.near_feasible_hard):
             return
-        repair_deadline = started + 5.0
-        if self.deadline is not None:
-            repair_deadline = min(repair_deadline, self.deadline - 3.0)
+        repair_deadline = (None if self.deadline is None else
+                           min(started + 5.0, self.deadline - 3.0))
         candidate, stats = room_plateau_repair(
             self.instance, source, self._room_plateau_rng,
             deadline=repair_deadline, source_score=source_score,

@@ -224,16 +224,17 @@ class PlacementNeighborhood:
                     seeds[right] += 1
         return sorted(seeds, key=lambda i: (-seeds[i], i))
 
-    def expand(self, max_classes: int, deadline: float, seeds=None) -> list[int]:
+    def expand(self, max_classes: int, deadline: float | None = None, seeds=None) -> list[int]:
         active = set((self.seeds() if seeds is None else list(dict.fromkeys(seeds)))[:max_classes])
         expanded = set()
-        while len(active) < max_classes and active - expanded and time.perf_counter() < deadline:
+        while len(active) < max_classes and active - expanded and (
+                deadline is None or time.perf_counter() < deadline):
             additions = Counter()
             for index in sorted(active - expanded):
                 expanded.add(index)
                 ranked = []
                 for option in self.options(index):
-                    if time.perf_counter() >= deadline:
+                    if deadline is not None and time.perf_counter() >= deadline:
                         break
                     if option == self.current(index):
                         continue
@@ -261,7 +262,7 @@ class PlacementNeighborhood:
 
 
 def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
-                             deadline: float, seed: int = 42, max_classes: int = 32,
+                             deadline: float | None = None, seed: int = 42, max_classes: int = 32,
                              max_options: int = 32, deterministic_limit: float = 0.5,
                              max_table_cells: int = 200000,
                              source_score: Score | None = None,
@@ -288,7 +289,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
     if max_full_scoring_calls <= 0:
         stats["status"] = "evaluation_budget_exhausted"
         return None, stats
-    if time.perf_counter() >= deadline:
+    if deadline is not None and time.perf_counter() >= deadline:
         stats["status"] = "time_budget_exhausted"
         return None, stats
     if source_score is None:
@@ -313,7 +314,7 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         current = neighborhood.current(index)
         global_by_time: dict[int, int] = {}
         for option in neighborhood.options(index):
-            if time.perf_counter() >= deadline:
+            if deadline is not None and time.perf_counter() >= deadline:
                 stats["status"] = "time_budget_exhausted"
                 return None, stats
             cost, _ = neighborhood.external_cost(index, option, active_set)
@@ -380,12 +381,12 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         changed.append(moved)
         model.add_hint(variables[index], originals[index])
     for left, right in pairs:
-        if time.perf_counter() >= deadline:
+        if deadline is not None and time.perf_counter() >= deadline:
             stats["status"] = "time_budget_exhausted"
             return None, stats
         table = []
         for a, option_a in enumerate(domains[left]):
-            if time.perf_counter() >= deadline:
+            if deadline is not None and time.perf_counter() >= deadline:
                 stats["status"] = "time_budget_exhausted"
                 return None, stats
             table.extend((a, b, neighborhood.pair_cost(left, option_a, right, option_b))
@@ -448,14 +449,12 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
         if stats["full_scoring_calls"] >= max_full_scoring_calls:
             stats["status"] = "evaluation_budget_exhausted"
             break
-        remaining = deadline - time.perf_counter()
-        if remaining <= 0:
+        if deadline is not None and time.perf_counter() >= deadline:
             stats["status"] = "time_budget_exhausted"
             break
         solver = cp_model.CpSolver()
         solver.parameters.num_search_workers = 1
         solver.parameters.random_seed = seed % 2147483647
-        solver.parameters.max_time_in_seconds = remaining
         solver.parameters.max_deterministic_time = deterministic_limit
         solver.parameters.max_memory_in_mb = 512
         solver.parameters.stop_after_first_solution = not optimize_soft
@@ -493,14 +492,14 @@ def room_neighborhood_repair(instance: Instance, choices: np.ndarray, *,
     return None, stats
 
 
-def distribution_neighborhood_repair(instance, choices, *, deadline, seed=42,
+def distribution_neighborhood_repair(instance, choices, *, deadline: float | None = None, seed=42,
                                       max_classes=32, max_options=32, source_score=None,
                                       max_full_scoring_calls=5, score_fn=None):
     """Seed a joint neighborhood from the most violated required constraint."""
     state = PlacementNeighborhood(instance, choices)
     ranked = []
     for number, distribution in enumerate(instance.distributions):
-        if time.perf_counter() >= deadline:
+        if deadline is not None and time.perf_counter() >= deadline:
             break
         if distribution.required:
             amount = distribution_violations(instance, distribution, state.times, state.rooms)
@@ -519,13 +518,13 @@ def distribution_neighborhood_repair(instance, choices, *, deadline, seed=42,
 
 
 def _add_soft_costs(model, variables, domains, originals, active, neighborhood,
-                    local_soft, pairs, costs, deadline):
+                    local_soft, pairs, costs, deadline: float | None):
     instance = neighborhood.instance
     for left, right in pairs:
         student_weight = instance.weights[3] * local_soft.student_neighbors.get(left, {}).get(right, 0)
         table = []
         for a, option_a in enumerate(domains[left]):
-            if time.perf_counter() >= deadline:
+            if deadline is not None and time.perf_counter() >= deadline:
                 raise _BuildDeadline()
             ta, ra = neighborhood.placement(left, option_a)
             for b, option_b in enumerate(domains[right]):
@@ -565,8 +564,8 @@ def _add_soft_costs(model, variables, domains, originals, active, neighborhood,
         costs.append(amount * instance.weights[2])
 
 
-def _global_costs(model, variables, domains, originals, active, neighborhood, costs, deadline,
-                  *, distributions=None, first_number=0):
+def _global_costs(model, variables, domains, originals, active, neighborhood, costs,
+                  deadline: float | None, *, distributions=None, first_number=0):
     """Encode raw global violation units with the outside timetable fixed."""
     before = count = 0
     load_cache = {}
@@ -583,7 +582,7 @@ def _global_costs(model, variables, domains, originals, active, neighborhood, co
 
     for number, distribution in enumerate(neighborhood.globals if distributions is None else distributions,
                                           first_number):
-        if time.perf_counter() >= deadline:
+        if deadline is not None and time.perf_counter() >= deadline:
             raise _BuildDeadline()
         indices = sorted(active.intersection(distribution.classes))
         if not indices:
@@ -642,12 +641,12 @@ def _global_costs(model, variables, domains, originals, active, neighborhood, co
 
 
 def _interval_costs(model, variables, domains, originals, indices, outside, state,
-                    distribution, costs, deadline, number):
+                    distribution, costs, deadline: float | None, number):
     """Exact optional-interval block scan; duplicate week/day patterns share a model."""
     patterns = Counter()
     for week in range(state.instance.nr_weeks):
         for day in range(state.instance.nr_days):
-            if time.perf_counter() >= deadline:
+            if deadline is not None and time.perf_counter() >= deadline:
                 raise _BuildDeadline()
             fixed = Counter((state.times[i].start, state.times[i].end) for i in outside
                             if state.times[i].week_mask & (1 << week) and
@@ -684,7 +683,7 @@ def _interval_costs(model, variables, domains, originals, indices, outside, stat
         opens, closed_bad = [], []
         current_intervals = []
         for k, (start, end) in enumerate(intervals):
-            if time.perf_counter() >= deadline:
+            if deadline is not None and time.perf_counter() >= deadline:
                 raise _BuildDeadline()
             terms = [fixed.get((start, end), 0)]
             current_count = terms[0]
@@ -750,12 +749,12 @@ def _interval_costs(model, variables, domains, originals, indices, outside, stat
     return before
 
 
-def adaptive_room_repair(instance, choices, *, deadline, seed=42, max_classes=32,
+def adaptive_room_repair(instance, choices, *, deadline: float | None = None, seed=42, max_classes=32,
                           max_options=32, deterministic_limit=0.5, source_score=None,
                           max_full_scoring_calls=5, score_fn=None):
     """Widen an unsuccessful neighborhood within one shared deadline/check budget."""
     calls = 0
-    if max_full_scoring_calls <= 0 or time.perf_counter() >= deadline:
+    if max_full_scoring_calls <= 0 or (deadline is not None and time.perf_counter() >= deadline):
         return None, {"status": "budget_exhausted", "full_scoring_calls": 0, "attempts": []}
     if source_score is None:
         n = len(instance.classes)
@@ -766,10 +765,15 @@ def adaptive_room_repair(instance, choices, *, deadline, seed=42, max_classes=32
                                 (max_classes, max_options),
                                 (min(64, max_classes*2), min(64, max_options*2))]))
     for position, (classes, options) in enumerate(sizes):
-        remaining = deadline-time.perf_counter()
-        if remaining <= 0 or calls >= max_full_scoring_calls:
+        if calls >= max_full_scoring_calls:
             break
-        attempt_deadline = deadline if position == len(sizes)-1 else time.perf_counter()+remaining*0.45
+        if deadline is None:
+            attempt_deadline = None
+        else:
+            remaining = deadline - time.perf_counter()
+            if remaining <= 0:
+                break
+            attempt_deadline = deadline if position == len(sizes)-1 else time.perf_counter()+remaining*0.45
         candidate, stats = room_neighborhood_repair(
             instance, choices, deadline=attempt_deadline, seed=seed, max_classes=classes,
             max_options=options, deterministic_limit=deterministic_limit, source_score=source_score,

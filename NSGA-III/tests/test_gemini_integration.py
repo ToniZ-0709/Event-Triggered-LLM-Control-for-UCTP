@@ -639,11 +639,16 @@ def test_prompts_give_balanced_operator_and_repeat_avoidance_guidance():
         assert "depend mainly on outside_region classes" not in PROMPTS[key]
         assert "search window" in PROMPTS[key]
         assert "best_hard_change" in PROMPTS[key]
+        assert "student_conflict" in PROMPTS[key]
+        assert "interact across groups" in PROMPTS[key]
     for key in ("single_agent", "planner"):
         prompt = PROMPTS[key]
         assert "randomly resamples" not in prompt
         assert "eviction" in prompt
         assert "3 to 5 in-region classes" not in prompt
+        assert "across hard, soft, or student conflicts" in prompt
+        assert "student-conflict costs when hard = 0" in prompt
+        assert "small repeated 1-class gains" in prompt
         for token in ("move", "swap", "destroy_repair", "no_op", "recent_outcomes"):
             assert token in prompt
     assert "recent_outcomes" in PROMPTS["inspector"]

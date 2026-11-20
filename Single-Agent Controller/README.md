@@ -74,7 +74,7 @@ Valid interventions run through `apply_operator` in [../NSGA-III/itc2019/operato
 
 - `move`: Tries ranked time and room combinations for one class at a time inside the region.
 - `swap`: Coordinates two classes inside the region across direct room/time exchanges, two-class eviction hand-offs (one class takes the partner's room or overlapping slot while the partner moves to its best free option), and coupled conflict-pair moves.
-- `destroy_repair`: First runs OR-Tools CP-SAT `room_neighborhood_repair` over `region.class_indices` with the outside timetable fixed (up to `3.0s` or remaining deadline, allowing soft-cost improvement when already feasible), then sequentially rebuilds up to 3 mutable region classes under the remaining `execution_budget`.
+- `destroy_repair`: First runs OR-Tools CP-SAT `room_neighborhood_repair` over `region.class_indices` with the outside timetable fixed (bounded by deterministic CP-SAT time and any active run deadline, allowing soft-cost improvement when already feasible), then sequentially rebuilds up to 3 mutable region classes under the remaining `execution_budget`.
 - **Admissibility and survival**: When `source_hard > 0`, a trial candidate is admissible if `trial_hard < source_hard` or `(trial_hard == source_hard and trial_total < source_total)`. Once feasible (`source_hard == 0`), it must preserve `trial_hard == 0` and improve at least one weighted objective. At most one best admissible candidate is rechecked with `score_state` (`+1` `operator_scoring_rechecks`) and passed to `TimetableSurvival` (ranking unique chromosomes first and breaking infeasible `CV` ties by lower total soft cost), updating `Incumbent` if improved.
 
 ---

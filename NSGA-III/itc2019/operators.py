@@ -17,7 +17,6 @@ from .neighborhood import LocalSoftCosts, PlacementNeighborhood, room_neighborho
 
 
 OPERATORS = ("move", "swap", "destroy_repair")
-_GUIDED_RANKING_SECONDS = 1.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,7 +104,7 @@ def _rank_move_options(instance, _source, region, hard, soft, rng, deadline):
              if len(instance.classes[i].times) > 1 or len(instance.classes[i].room_options) > 1]
     ranked = []
     for index in order:
-        if time.perf_counter() >= deadline:
+        if deadline is not None and time.perf_counter() >= deadline:
             break
         ranked.extend((delta, (index, ti, ri)) for delta, (ti, ri) in
                       _placement_options(instance, index, hard, soft, deadline, by_delta=True))
@@ -143,9 +142,8 @@ def _top_single_options(instance: Instance, region: RegionCandidate,
     for index in order:
         if deadline is not None and time.perf_counter() >= deadline:
             break
-        cls_deadline = time.perf_counter() + per_class_seconds
-        if deadline is not None:
-            cls_deadline = min(cls_deadline, deadline)
+        cls_deadline = (None if deadline is None else
+                        min(time.perf_counter() + per_class_seconds, deadline))
         opts = list(_placement_options(instance, index, hard, soft, cls_deadline, by_delta=True))
         if opts:
             rng.shuffle(opts)
@@ -355,12 +353,9 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
             evaluations += 1
             algorithm.evaluator.n_eval += 1
         assignments = engine.cache[engine.key(source)][1]
-        local_deadline = time.perf_counter()+3.0
-        if deadline is not None:
-            local_deadline = min(local_deadline, deadline)
         remaining = max(0, budget - evaluations)
         candidate, stats = room_neighborhood_repair(
-            instance, source, deadline=local_deadline, seed=int(rng.integers(2147483647)),
+            instance, source, deadline=deadline, seed=int(rng.integers(2147483647)),
             max_classes=len(region.class_indices), max_options=32, max_table_cells=50000,
             deterministic_limit=0.25, allowed_classes=region.class_indices,
             require_room_improvement=False, source_score=source_score, assignments=assignments,
@@ -411,9 +406,6 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
             new_ti, new_ri = int(working[index]), int(working[n + index])
             hard_neighborhood.move(index, new_ti, new_ri)
     else:
-        ranking_deadline = started + _GUIDED_RANKING_SECONDS
-        if deadline is not None:
-            ranking_deadline = min(ranking_deadline, deadline)
         engine = algorithm.problem.engine
         cached = engine.cache.get(engine.key(source))
         # Region scoring normally has this sectioning cached. Ranking itself never
@@ -422,7 +414,7 @@ def probe_operator(algorithm, instance: Instance, region: RegionCandidate,
         hard = PlacementNeighborhood(instance, source)
         soft = LocalSoftCosts(instance, set(region.class_indices), assignments)
         rank_options = _rank_move_options if operator_id == "move" else _rank_swap_options
-        options = rank_options(instance, source, region, hard, soft, rng, ranking_deadline)
+        options = rank_options(instance, source, region, hard, soft, rng, deadline)
         n = len(instance.classes)
         for changes in options:
             if evaluations >= budget or (deadline is not None and time.perf_counter() >= deadline):

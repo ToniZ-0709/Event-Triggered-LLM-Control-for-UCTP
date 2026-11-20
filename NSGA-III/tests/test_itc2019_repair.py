@@ -815,3 +815,42 @@ def test_timetable_survival_keeps_same_hard_soft_improvement_and_unique_clones()
                             random_state=np.random.default_rng(17))
     unique_chroms = {tuple(map(int, ind.X)) for ind in kept_feas}
     assert len(unique_chroms) == 3
+
+
+def test_deterministic_repair_runs_without_deadline_and_caps_option_checks() -> None:
+    instance = _chain_instance()
+    source = np.zeros(2 * len(instance.classes), dtype=np.int32)
+    source_score, _ = evaluate(instance, source[:3], source[3:])
+
+    cand_a, stats_a = room_neighborhood_repair(
+        instance, source, deadline=None, seed=17, max_classes=3, max_options=8,
+        source_score=source_score,
+    )
+    cand_b, stats_b = room_neighborhood_repair(
+        instance, source, deadline=None, seed=17, max_classes=3, max_options=8,
+        source_score=source_score,
+    )
+    assert cand_a is not None and cand_b is not None
+    np.testing.assert_array_equal(cand_a, cand_b)
+    assert stats_a["status"] == stats_b["status"] == "improved"
+
+    plateau_a, pstats_a = room_plateau_repair(
+        instance, source, np.random.default_rng(17),
+        deadline=None, max_steps=500, max_changes=2, hard_slack=1,
+        source_score=source_score,
+    )
+    plateau_b, pstats_b = room_plateau_repair(
+        instance, source, np.random.default_rng(17),
+        deadline=None, max_steps=500, max_changes=2, hard_slack=1,
+        source_score=source_score,
+    )
+    assert plateau_a is not None and plateau_b is not None
+    np.testing.assert_array_equal(plateau_a, plateau_b)
+    assert pstats_a["option_checks"] == pstats_b["option_checks"] > 0
+
+    capped, capped_stats = room_plateau_repair(
+        instance, source, np.random.default_rng(17),
+        deadline=None, max_option_checks=1, source_score=source_score,
+    )
+    assert capped is None
+    assert capped_stats["option_checks"] == 1
