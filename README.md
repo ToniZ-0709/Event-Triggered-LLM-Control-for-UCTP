@@ -13,8 +13,8 @@ All five pipelines share the same chromosome encoding, constraint evaluation eng
 | **Baseline** | `baseline` | NSGA-III with built-in CP-SAT and neighborhood repairs (`0` controller reviews) | [NSGA-III Baseline](NSGA-III/README.md) |
 | **Random** | `random` | Offline uniform sampling over legal `(region, operator)` pairs plus `no_op` (`0` API calls) | [Random Controller](Random%20Controller/README.md) |
 | **Greedy** | `greedy` | Offline penalty-ranked region selection and budgeted operator probing (`0` API calls) | [Greedy Controller](Greedy%20Controller/README.md) |
-| **Single-agent** | `single` | One Gemini call per review selects WHERE, HOW, and WHEN from `StatePacket` | [Single-Agent Controller](Single-Agent%20Controller/README.md) |
-| **Multi-agent** | `multi` | Sequential Gemini Inspector (WHERE) and Planner (HOW, WHEN) calls per review | [Multi-Agent Controller](Multi-Agent%20Controller/README.md) |
+| **Single-agent** | `single` | One LLM call per review selects WHERE, HOW, and WHEN from `StatePacket` | [Single-Agent Controller](Single-Agent%20Controller/README.md) |
+| **Multi-agent** | `multi` | Sequential LLM Inspector (WHERE) and Planner (HOW, WHEN) calls per review | [Multi-Agent Controller](Multi-Agent%20Controller/README.md) |
 
 ### Shared Controller Contract
 
@@ -32,7 +32,7 @@ The four controller pipelines (`random`, `greedy`, `single`, `multi`) inherit `C
 ### Requirements
 
 - Python `3.10` or later
-- Google Gemini API key (`GEMINI_API_KEY`) for the `single` and `multi` pipelines only
+- Free Tier API credentials in `.env` (Gemini and/or Cloudflare Workers AI) for the `single` and `multi` pipelines only
 
 Install the shared solver dependencies for `baseline`, `random`, and `greedy`:
 
@@ -40,52 +40,56 @@ Install the shared solver dependencies for `baseline`, `random`, and `greedy`:
 python -m pip install -r NSGA-III/requirements.txt
 ```
 
-Install the Gemini controller dependencies (`httpx` plus solver dependencies) for `single` and `multi`:
+Install the LLM controller dependencies (`httpx` plus solver dependencies) for `single` and `multi`:
 
 ```powershell
 python -m pip install -r "Single-Agent Controller/requirements.txt"
 python -m pip install -r "Multi-Agent Controller/requirements.txt"
 ```
 
-### Centralized Settings and Gemini Profiles
+### Centralized Settings and Model Profiles
 
 All solver, repair, controller, and model settings are centralized under [`settings/`](settings/):
 
 - [`settings/experiment.json`](settings/experiment.json): Shared defaults for `population`, `generations`, `evaluations`, `mutation_rate`, `repair`, `controller`, LLM transport caps, and the 12 benchmark instances. Direct CLI runs (`NSGA-III/main.py`) and batch runs (`run_experiment.py`) both load defaults from this file.
-- [`settings/models/gemini_hydrogen.json`](settings/models/gemini_hydrogen.json): `gemini-4-hydrogen` (default, `thinking_level: "low"`), daily/minute Free Tier quota policy.
-- [`settings/models/gemini_flash_lite.json`](settings/models/gemini_flash_lite.json): `gemini-3.5-flash-lite` (`thinking_level: "low"`), daily/minute Free Tier quota policy.
+- [`settings/models/gemini_hydrogen.json`](settings/models/gemini_hydrogen.json): `gemini-4-hydrogen` (default, `provider: "gemini"`, `thinking_level: "low"`), `20` daily requests / `5` RPM per project quota policy.
+- [`settings/models/gemini_flash_lite.json`](settings/models/gemini_flash_lite.json): `gemini-3.5-flash-lite` (`provider: "gemini"`, `thinking_level: "low"`), `500` daily requests / `15` RPM / `250,000` input TPM per project quota policy.
+- [`settings/models/cloudflare_llama.json`](settings/models/cloudflare_llama.json): `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (`provider: "cloudflare"`, `json_schema` mode).
+- [`settings/models/cloudflare_mistral.json`](settings/models/cloudflare_mistral.json): `@cf/mistralai/mistral-small-3.1-24b-instruct` (`provider: "cloudflare"`, `prompt_json` mode).
 
-Pass `--model <profile_or_id>` (for example `--model gemini_flash_lite` or `--model gemini-3.5-flash-lite`) to `NSGA-III/main.py` / `run_experiment.py` / `tools/gemini_preflight.py`, or override via `LLM_MODEL` / `GEMINI_MODEL`.
+Pass `--model <profile_or_id>` (for example `--model gemini_flash_lite`, `--model cloudflare_llama`, or `--model cloudflare_mistral`) to `NSGA-III/main.py` / `run_experiment.py` / `tools/gemini_preflight.py`, or override via `LLM_MODEL` (or `GEMINI_MODEL`).
 
-### Gemini Free Tier Credentials and Preflight
+### Free Tier Credentials and Preflight
 
-Only published Gemini Free Tier text models configured under `settings/models/` are permitted by default (`gemini-4-hydrogen`, `gemini-3.5-flash-lite`).
+Only the four Free Tier text model profiles configured under `settings/models/` are permitted (`gemini_hydrogen`, `gemini_flash_lite`, `cloudflare_llama`, `cloudflare_mistral`).
 
-Configure credentials locally using **either**:
-- Numbered entries in a repository-root `.env` file (`GEMINI_API_KEY_001=...`, `GEMINI_API_KEY_002=...`, using [`.env.example`](.env.example)), using one key per Free Tier project so `providers/gemini_pool.py` tracks per-model daily/minute quotas under `tmp/gemini/` and rotates/waits safely across slots; or
-- A single `GEMINI_API_KEY` environment variable when `.env` is absent (never pass a key on the command line or commit it, and avoid conflicting `GOOGLE_API_KEY`).
+Configure credentials locally in a repository-root `.env` file (never pass keys on the command line or commit `.env`):
+- **Gemini (`gemini`):** Numbered keys `GEMINI_API_KEY_001=...`, `GEMINI_API_KEY_002=...` (one key per Free Tier project; `providers/gemini_pool.py` tracks separate per-model daily/minute quotas under `tmp/gemini/` resetting at `00:00 America/Los_Angeles`), or a single `GEMINI_API_KEY` environment variable when `.env` is absent (avoid conflicting `GOOGLE_API_KEY`).
+- **Cloudflare Workers AI (`cloudflare`):** Numbered credential pairs `CLOUDFLARE_ACCOUNT_ID_001=...` and `CLOUDFLARE_API_TOKEN_001=...` (`_002`, ...) in `.env`. `providers/cloudflare_pool.py` shares one UTC daily quota cursor across both Cloudflare models under `tmp/cloudflare/` and rotates accounts automatically on quota error code `3036`.
 
-Confirm in Google AI Studio that the projects are on the Free Tier and either pass `--confirm-free-tier` or set `GEMINI_FREE_TIER_CONFIRMED=1`.
+Confirm in the provider console that credentials are on the Free Tier and either pass `--confirm-free-tier` or set `GEMINI_FREE_TIER_CONFIRMED=1` / `CLOUDFLARE_FREE_TIER_CONFIRMED=1`.
 
 Run the offline preflight check (zero network calls) from the repository root (`Experiment/`):
 
 ```powershell
 python tools/gemini_preflight.py
+python tools/gemini_preflight.py --model cloudflare_llama
 ```
 
-Run one bounded synthetic `no_op` live check after confirming the Free Tier project:
+Run one bounded synthetic `no_op` live check after confirming Free Tier credentials:
 
 ```powershell
 python tools/gemini_preflight.py --live --confirm-free-tier --model gemini_hydrogen --thinking-level low --timeout-seconds 60
+python tools/gemini_preflight.py --live --confirm-free-tier --model cloudflare_llama --timeout-seconds 60
 ```
 
-`--thinking-level` accepts `low` (default), `medium`, or `high`, and can also be set via `LLM_THINKING_LEVEL` or `GEMINI_THINKING_LEVEL`.
+`--thinking-level` accepts `low` (default), `medium`, or `high` for Gemini models (or via `LLM_THINKING_LEVEL` / `GEMINI_THINKING_LEVEL`). Cloudflare profiles do not accept `--thinking-level` and reject it cleanly if passed explicitly.
 
 ### API Timeout, Retries, and Fail-Closed Policy
 
-- **Request timeout and pacing:** Each Gemini call uses `httpx` against `https://generativelanguage.googleapis.com` (`v1beta`) with a `60s` default timeout (`--api-timeout-seconds`), a `10.0s` minimum interval between request starts (`--api-min-interval-seconds`), per-model quota tracking (`tmp/gemini/`), and a `60,000`-character input cap (`--api-max-input-characters`).
-- **Transient retries and slot cooldown:** `CredentialPool` retries transient HTTP errors (`408`, transient `429`, `5xx`) and transport timeouts, cools down a slot for `60s` after `3` consecutive transient errors, and advances cleanly when a slot hits daily quota.
-- **Fail-closed exit code `3`:** Non-retryable billing (`402`) or configuration/auth errors (`400`, `401`, `403`, `404`) do not fall back to another model or paid tier. The controller disables further API calls, stops the run, saves partial results marked `completion_status: "incomplete_api_failure"`, and exits with code `3`.
+- **Request timeout and pacing:** `providers/` dispatches HTTP calls via `httpx` to either Google Gemini Developer API (`https://generativelanguage.googleapis.com/v1beta`) or Cloudflare Workers AI (`https://api.cloudflare.com/client/v4/accounts`) with a `60s` default timeout (`--api-timeout-seconds`), a `10.0s` minimum interval between request starts (`--api-min-interval-seconds`), per-provider quota ledgers (`tmp/gemini/` or `tmp/cloudflare/`), and a `60,000`-character input cap (`--api-max-input-characters`).
+- **Transient retries and slot cooldown:** `CredentialPool` retries transient HTTP errors (`408`, transient `429`, `5xx`) and transport timeouts, cools down a slot for `60s` after `3` consecutive transient errors, and rotates cleanly when a slot hits daily quota (Gemini daily `QuotaFailure` or Cloudflare error code `3036`).
+- **Fail-closed exit code `3`:** Non-retryable billing (`402` or Cloudflare error `5035`) or configuration/auth errors (`400`, `401`, `403`, `404` — except Llama schema-mode single-review mismatch handled per review) do not fall back to another model or paid tier. The controller disables further API calls, stops the run, saves partial results marked `completion_status: "incomplete_api_failure"`, and exits with code `3`.
 
 ---
 
@@ -98,7 +102,7 @@ Run all commands from the repository root (`Experiment/`). Add `--dry-run` with 
 The benchmark matrix covers **12 balanced ITC 2019 instances** across size tiers and bottleneck regimes (`2` Small: `wbg-fal10`, `pu-cs-fal07`; `4` Medium: `yach-fal17`, `agh-h-spr17`, `lums-fal17`, `muni-fsps-spr17`; `4` Large: `nbi-spr18`, `mary-spr17`, `pu-d5-spr17`, `bet-spr18`; `2` XL: `muni-pdf-spr16`, `iku-spr18`):
 
 - **Solver defaults:** `population = 20`, `partitions = 3`, `generations = 200`, `evaluations = 1,800`, `time_limit_seconds = null`, default CP-SAT and plateau repairs.
-- **LLM defaults:** `gemini-4-hydrogen`, `thinking_level = low`, `max_output_tokens = 4096`, `max_reviews = 12`, `60s` timeout, `10s` pacing, `60,000` char payload cap.
+- **LLM defaults:** `gemini_hydrogen` (`gemini-4-hydrogen`, `thinking_level = low`) by default; selectable across all 4 profiles (`gemini_hydrogen`, `gemini_flash_lite`, `cloudflare_llama`, `cloudflare_mistral`), `max_output_tokens = 4096`, `max_reviews = 12`, `60s` timeout, `10s` pacing, `60,000` char payload cap.
 - **Matrix scope:** `12` instances × `3` seeds (`17`, `42`, `73`) × `5` pipelines = `180` runs.
 
 ### Previewing Commands (`--dry-run`)
@@ -115,7 +119,7 @@ Preview the full 60-job matrix for one seed:
 python run_experiment.py --profile settings/experiment.json --pipeline baseline --pipeline random --pipeline greedy --pipeline single --pipeline multi --seed 17 --model gemini_hydrogen --thinking-level low --output ExperimentResult --dry-run
 ```
 
-### Running Offline and Gemini Pipelines via `run_experiment.py`
+### Running Offline and LLM Pipelines via `run_experiment.py`
 
 Run offline pipelines (`baseline`, `random`, `greedy`) with an explicit output directory:
 
@@ -125,11 +129,11 @@ python run_experiment.py --pipeline random --instance muni-fsps-spr17 --seed 17 
 python run_experiment.py --pipeline greedy --instance muni-fsps-spr17 --seed 17 --output ExperimentResult
 ```
 
-Run Gemini pipelines (`single`, `multi`) with `--confirm-free-tier` (optionally overriding `--model` and `--thinking-level`):
+Run LLM pipelines (`single`, `multi`) with `--confirm-free-tier` on Gemini or Cloudflare profiles:
 
 ```powershell
-python run_experiment.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier --model gemini-4-hydrogen --thinking-level low --output ExperimentResult
-python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier --model gemini-4-hydrogen --thinking-level low --output ExperimentResult
+python run_experiment.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier --model gemini_hydrogen --thinking-level low --output ExperimentResult
+python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier --model cloudflare_llama --output ExperimentResult
 ```
 
 Omit `--instance` to run every instance configured in `--profile`. When `--output` is omitted, each pipeline writes directly to its own `results_itc2019/` folder rather than `<output>/<pipeline>/`. `run_experiment.py` sets `max_api_calls` to `max_reviews` (`12`) for `single` and `2 * max_reviews` (`24`) for `multi`.
@@ -142,7 +146,7 @@ Omit `--instance` to run every instance configured in `--profile`. When `--outpu
 python run_experiment.py --workers 3 --live --pipeline baseline --pipeline random --pipeline greedy --instance muni-fsps-spr17 --seed 17 --output ExperimentResult
 ```
 
-At most one Gemini job (`single` or `multi`) runs at a time per batch while offline jobs fill remaining worker slots. If any job returns a non-zero exit code, no new jobs are started, active jobs are waited on, and `run_experiment.py` exits with that failed job's code.
+At most one LLM job (`single` or `multi`) runs at a time per batch while offline jobs fill remaining worker slots. If any job returns a non-zero exit code, no new jobs are started, active jobs are waited on, and `run_experiment.py` exits with that failed job's code.
 
 When `--workers 2` or higher is used:
 
@@ -189,7 +193,7 @@ Per-instance files under `<run_id>/<instance>/`:
 - `result.json`: Per-instance scores, feasibility, runtime, evaluation breakdown, score-engine and stage timing, monitor counters, and `controller` metrics.
 - `choices.npz`: Compressed NumPy archive (`time_indices`, `room_indices`) storing the best observed solution.
 - `anytime_trace.jsonl`: Generation-by-generation incumbent quality and diversity trace.
-- `controller_trace.jsonl`: Controller runs only (`random`, `greedy`, `single`, `multi`). Records review triggers, `StatePacket` inputs, role records (`probes` for `greedy`, Gemini request and token records for `single`/`multi`), validation status, actions, and outcomes.
+- `controller_trace.jsonl`: Controller runs only (`random`, `greedy`, `single`, `multi`). Records review triggers, `StatePacket` inputs, role records (`probes` for `greedy`, LLM request and token records for `single`/`multi`), validation status, actions, and outcomes.
 - `run.log`: Human-readable progress and completion status log.
 - `solution.xml` and `expected.json`: Exported only when the final solution has zero hard violations (`score.hard == 0`) and passes student sectioning validation.
 

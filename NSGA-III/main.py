@@ -309,7 +309,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                 chosen_thinking = (
                     args.thinking_level
                     or os.environ.get("LLM_THINKING_LEVEL")
-                    or os.environ.get("GEMINI_THINKING_LEVEL")
+                    or (os.environ.get("GEMINI_THINKING_LEVEL") if model_profile["provider"] == "gemini" else None)
                     or None
                 )
                 client = create_decision_client(

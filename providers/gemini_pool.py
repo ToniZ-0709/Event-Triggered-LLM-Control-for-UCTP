@@ -17,7 +17,7 @@ FLASH_LITE = "gemini-3.5-flash-lite"
 GEMINI_MODELS = (HYDROGEN, FLASH_LITE)
 PACIFIC = ZoneInfo("America/Los_Angeles")
 KEY_NAME = "GEMINI_API_KEY"
-HYDROGEN_LEGACY_USAGE = ROOT / "ExpRun" / "gemini_daily_usage.json"
+HYDROGEN_LEGACY_USAGE = ROOT / "tmp" / "gemini" / "hydrogen_legacy_usage.json"
 
 
 def read_gemini_keys(path: Path) -> list[Credential]:

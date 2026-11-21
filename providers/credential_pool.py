@@ -260,7 +260,7 @@ class CredentialPool:
         recent_by_account[account_slot].append(event)
         _save(self.usage_path, state)
 
-        record["api_requests"] = 1  # One logical controller request, like Gemini.
+        record["api_requests"] = 1  # One logical controller request.
         per_slot = record["http_requests_by_key_slot"]
         per_slot[str(slot)] = per_slot.get(str(slot), 0) + 1
         try:

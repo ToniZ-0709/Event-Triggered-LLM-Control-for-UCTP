@@ -1,4 +1,4 @@
-"""Check local LLM setup via centralized settings; only --live sends one bounded API call."""
+"""Check local LLM setup (Gemini and Cloudflare); only --live sends one bounded API call."""
 
 from __future__ import annotations
 
@@ -41,31 +41,34 @@ def main() -> None:
         http_client_version = None
 
     provider = profile["provider"]
-    chosen_thinking = (
+    explicit_thinking = (
         args.thinking_level
         or os.environ.get("LLM_THINKING_LEVEL")
-        or os.environ.get("GEMINI_THINKING_LEVEL")
-        or profile.get("thinking_level")
+        or (os.environ.get("GEMINI_THINKING_LEVEL") if provider == "gemini" else None)
     )
+    chosen_thinking = explicit_thinking or profile.get("thinking_level")
     timeout = float(args.timeout_seconds if args.timeout_seconds is not None
                     else profile.get("api_timeout_seconds", 60.0))
     free_tier_confirmed = (
         args.confirm_free_tier
         or os.environ.get(f"{provider.upper()}_FREE_TIER_CONFIRMED") == "1"
     )
-    env_file = ROOT / ".env"
-    has_env_creds = False
-    if env_file.is_file():
-        prefix = "GEMINI_API_KEY_" if provider == "gemini" else f"{provider.upper()}_API_"
-        has_env_creds = any(
-            line.strip().startswith(prefix) and "=" in line and not line.strip().startswith("#")
-            for line in env_file.read_text(encoding="utf-8-sig").splitlines()
-        )
-    has_var_creds = (
-        bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
-        if provider == "gemini"
-        else False
-    )
+    credentials_configured = False
+    credential_slots = 0
+    credential_error = None
+    try:
+        if provider == "gemini":
+            from providers import gemini_pool
+            creds = gemini_pool.read_gemini_keys(gemini_pool.ENV_PATH)
+        elif provider == "cloudflare":
+            from providers import cloudflare_pool
+            creds = cloudflare_pool.read_accounts(cloudflare_pool.ENV_PATH)
+        else:
+            creds = []
+        credentials_configured = bool(creds)
+        credential_slots = len(creds)
+    except (OSError, ValueError, RuntimeError) as exc:
+        credential_error = type(exc).__name__
 
     report = {
         "model_profile": profile["profile_name"],
@@ -75,7 +78,9 @@ def main() -> None:
         "timeout_seconds": timeout,
         "max_output_tokens": profile.get("max_output_tokens", 4096),
         "httpx": http_client_version,
-        "credentials_configured": has_env_creds or has_var_creds,
+        "credentials_configured": credentials_configured,
+        "credential_slots": credential_slots,
+        **({"credential_error": credential_error} if credential_error else {}),
         "free_tier_confirmation": free_tier_confirmed,
         "billing_checked_programmatically": False,
         "network_requests": 0,
@@ -88,7 +93,7 @@ def main() -> None:
     try:
         client = create_decision_client(
             profile,
-            thinking_level=args.thinking_level or os.environ.get("LLM_THINKING_LEVEL") or os.environ.get("GEMINI_THINKING_LEVEL") or None,
+            thinking_level=explicit_thinking or None,
             free_tier_confirmed=args.confirm_free_tier,
             timeout_seconds=timeout,
             max_output_tokens=profile.get("max_output_tokens", 4096),

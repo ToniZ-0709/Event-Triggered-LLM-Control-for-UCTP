@@ -91,7 +91,11 @@ def commands(profile: dict, *, pipeline: str, seed: int,
                 model_arg = model
                 default_thinking = llm.get("thinking_level")
             command.extend(("--provider", provider, "--model", model_arg))
-            chosen_thinking = thinking_level or (None if model and provider != "gemini" else default_thinking) or controller.get("thinking_level")
+            chosen_thinking = thinking_level or (
+                (default_thinking or controller.get("thinking_level"))
+                if provider == "gemini"
+                else default_thinking
+            )
             if chosen_thinking:
                 command.extend(("--thinking-level", chosen_thinking))
             command.extend(("--api-min-interval-seconds",
@@ -210,15 +214,24 @@ def main() -> int:
     try:
         profile = load_experiment_settings(args.profile)
         requested_model = args.model or os.environ.get("LLM_MODEL") or os.environ.get("GEMINI_MODEL")
-        requested_thinking = (args.thinking_level
-                              or os.environ.get("LLM_THINKING_LEVEL")
-                              or os.environ.get("GEMINI_THINKING_LEVEL")
-                              or None)
         pipelines = list(dict.fromkeys(args.pipeline or ["baseline"]))
-        if any(method in LLM_PIPELINES for method in pipelines):
-            resolved_model = resolve_model_profile(requested_model, experiment_settings=profile)
-            if requested_thinking is not None and resolved_model.get("provider") != "gemini":
-                raise ValueError(f"Model profile {resolved_model['profile_name']!r} does not accept --thinking-level")
+        resolved_model = (
+            resolve_model_profile(requested_model, experiment_settings=profile)
+            if any(method in LLM_PIPELINES for method in pipelines)
+            else None
+        )
+        requested_thinking = (
+            args.thinking_level
+            or os.environ.get("LLM_THINKING_LEVEL")
+            or (
+                os.environ.get("GEMINI_THINKING_LEVEL")
+                if resolved_model is not None and resolved_model.get("provider") == "gemini"
+                else None
+            )
+            or None
+        )
+        if resolved_model is not None and requested_thinking is not None and resolved_model.get("provider") != "gemini":
+            raise ValueError(f"Model profile {resolved_model['profile_name']!r} does not accept --thinking-level")
         work = [
             (method, command)
             for method in pipelines

@@ -6,7 +6,7 @@ The Greedy Controller is an offline, deterministic-policy local search baseline 
 
 ## 1. Control Policy
 
-Implemented by `GreedyController` in `Greedy Controller/controller.py` (overriding `ControllerCallback._review`), the controller makes all decisions locally and deterministically from the current population and candidate regions, requiring no Gemini SDK, no `GEMINI_API_KEY`, and no Free Tier confirmation.
+Implemented by `GreedyController` in `Greedy Controller/controller.py` (overriding `ControllerCallback._review`), the controller makes all decisions locally and deterministically from the current population and candidate regions, requiring no LLM client, no API credentials, and no Free Tier confirmation.
 
 ### Candidate Region Ranking (`WHERE`)
 

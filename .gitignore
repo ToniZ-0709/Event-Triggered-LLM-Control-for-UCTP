@@ -8,21 +8,8 @@ Single-Agent Controller/results_itc2019/
 Multi-Agent Controller/results_itc2019/
 **/.env
 **/.env.*
-!**/.env.example
 **/*api-key*.txt
 tmp/
 Documents/
-/ExpRun/
 ExperimentResult/
 api.txt
-providers/*.py
-!providers/__init__.py
-!providers/credential_pool.py
-!providers/decision_client.py
-!providers/gemini.py
-!providers/gemini_pool.py
-!providers/settings.py
-settings/models/*.json
-!settings/models/gemini_*.json
-tests/*.py
-!tests/test_gemini_*.py

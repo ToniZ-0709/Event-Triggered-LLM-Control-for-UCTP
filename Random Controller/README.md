@@ -19,7 +19,7 @@ At each triggered review, `RandomController.decide(packet)` applies the followin
 - **Fixed execution budget:** Sets `execution_budget = min(FIXED_EXECUTION_BUDGET, self.current_operator_limit)`, where `FIXED_EXECUTION_BUDGET = 10`. Before `decide`, the review gate initializes `self.current_operator_limit` to `max_operator_evaluations` (default `24`) and, when `--evaluations` is configured, caps it to `min(max_operator_evaluations, remaining_evaluations - 1)` after subtracting `RegionBuilder` scoring calls (reserving one evaluation for a candidate injection recheck). When an action other than `no_op` is chosen, `apply_operator` charges all probe evaluations to the solver evaluator and performs one additional `scoring_rechecks` call whenever an admissible candidate is found and rechecked before NSGA-III survival.
 - **Locked review interval:** Always sets `next_review_interval` to `settings.review_interval` (default `10` generations, configurable via `--review-interval` within `[min_review_interval, max_review_interval]`).
 - **RNG isolation:** `RandomController` draws policy choices from a dedicated `policy_rng` (`numpy.random.default_rng` seeded from the SHA-256 digest of `"{instance.name}:{seed}:controller-policy"`). This leaves the pymoo solver RNG (`--seed`), the shared operator RNG (`"{instance.name}:{seed}:operators"`), and the built-in repair RNGs undisturbed across pipelines.
-- **Zero LLM or API calls:** Records `api_requests: 0` and `latency_seconds: 0.0` in each role entry, never imports or initializes Gemini clients, and never triggers API failure exits.
+- **Zero LLM or API calls:** Records `api_requests: 0` and `latency_seconds: 0.0` in each role entry, never imports or initializes LLM provider clients, and never triggers API failure exits.
 
 ---
 
@@ -59,7 +59,7 @@ Commands below run from the `Experiment/` directory (Python 3.10 or later).
 
 ### Installation
 
-Install only the baseline solver dependencies (no Gemini SDK or API key is required):
+Install only the baseline solver dependencies (no LLM provider client or API key is required):
 
 ```cmd
 python -m pip install -r NSGA-III/requirements.txt

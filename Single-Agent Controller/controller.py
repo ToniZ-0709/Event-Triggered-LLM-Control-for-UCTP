@@ -1,4 +1,4 @@
-"""One Gemini decision chooses WHERE, HOW and WHEN at each review."""
+"""One LLM decision chooses WHERE, HOW and WHEN at each review."""
 
 from __future__ import annotations
 

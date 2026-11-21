@@ -1,6 +1,6 @@
 # Inspector-Planner Controller (Multi-Agent)
 
-The Multi-Agent Controller decomposes each event-triggered review into a sequential two-stage **Inspector -> Planner** Gemini pipeline integrated with the shared [NSGA-III baseline](../NSGA-III/README.md) solver. **Inspector** selects **WHERE** to intervene (`candidate_regions` target and relevant constraints), and only after target validation and resource checks does **Planner** decide **HOW** (operator and evaluation budget) and **WHEN** (next review interval).
+The Multi-Agent Controller decomposes each event-triggered review into a sequential two-stage **Inspector -> Planner** LLM pipeline integrated with the shared [NSGA-III baseline](../NSGA-III/README.md) solver across Google Gemini Developer API and Cloudflare Workers AI. **Inspector** selects **WHERE** to intervene (`candidate_regions` target and relevant constraints), and only after target validation and resource checks does **Planner** decide **HOW** (operator and evaluation budget) and **WHEN** (next review interval).
 
 See the [repository README](../README.md) for cross-pipeline setup, profile comparisons, and multi-worker execution.
 
@@ -15,12 +15,12 @@ Generation end -> BaselineMonitor repairs & incumbent sync
   -> Evaluate review triggers (deadline | stagnation | low_diversity)
   -> Check gates (budget >= 4, API active, time > 0.1s, reviews < max_reviews)
   -> RegionBuilder builds candidate regions + StatePacket
-  -> Stage 1: Gemini Inspector (role="inspector", input=StatePacket)
+  -> Stage 1: LLM Inspector (role="inspector", input=StatePacket)
      |-- api_* error -> api_disabled, force termination, exit 3
      |-- null IDs -> early stop ("inspector_no_target"), fallback no_op (0 Planner calls)
      |-- invalid target/constraints -> early stop, fallback no_op (0 Planner calls)
      |-- deadline <= 0.1s or call budget reached -> early stop, fallback no_op (0 Planner calls)
-     '-- Stage 2: Gemini Planner (role="planner", input={"state": StatePacket, "diagnosis": Inspector JSON})
+     '-- Stage 2: LLM Planner (role="planner", input={"state": StatePacket, "diagnosis": Inspector JSON})
          |-- api_* error -> api_disabled, force termination, exit 3
          '-- bind Inspector target + Planner operator/budget/interval -> _validate & apply_operator
 ```
@@ -75,26 +75,26 @@ If Inspector validation and pre-Planner guards pass, Planner receives `{"state":
 
 ---
 
-## 2. Gemini Free Tier Settings and Fail-Closed Policy
+## 2. Provider Settings and Fail-Closed Policy
 
-Both Inspector and Planner share one client created from [../settings/](../settings/) (`experiment.json` + `models/gemini_*.json`) via [../providers/gemini.py](../providers/gemini.py) using `httpx` and multi-slot `.env` quota tracking against `https://generativelanguage.googleapis.com` (`v1beta`):
+Both Inspector and Planner share one client created from [../settings/](../settings/) (`experiment.json` + `models/*.json`) via [../providers/gemini.py](../providers/gemini.py) (`https://generativelanguage.googleapis.com/v1beta`, Pacific daily reset) or [../providers/cloudflare.py](../providers/cloudflare.py) (`https://api.cloudflare.com/client/v4/accounts`, UTC daily reset on error `3036`), using `httpx` and `.env` quota tracking (`json_schema` on Gemini and `cloudflare_llama`; `prompt_json` on `cloudflare_mistral`):
 
 | Setting | CLI flag / environment variable | Default / allowed values |
 | :--- | :--- | :--- |
-| **Model profiles (`settings/models/`)** | `--model` / `LLM_MODEL` / `GEMINI_MODEL` | `gemini_hydrogen` / `gemini-4-hydrogen` (default), `gemini_flash_lite` / `gemini-3.5-flash-lite` |
-| **Free Tier confirmation** | `--confirm-free-tier` / `GEMINI_FREE_TIER_CONFIRMED=1` | Required before instantiating the API client |
-| **API key** | `.env` `GEMINI_API_KEY_001...` or env `GEMINI_API_KEY` | Read locally (never CLI args, redacted in errors) |
-| **Thinking level** | `--thinking-level` / `LLM_THINKING_LEVEL` / `GEMINI_THINKING_LEVEL` | `low` (default), `medium`, `high` |
+| **Model profiles (`settings/models/`)** | `--model` / `LLM_MODEL` / `GEMINI_MODEL` | `gemini_hydrogen` / `gemini-4-hydrogen` (default), `gemini_flash_lite` / `gemini-3.5-flash-lite`, `cloudflare_llama` / `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, `cloudflare_mistral` / `@cf/mistralai/mistral-small-3.1-24b-instruct` |
+| **Free Tier confirmation** | `--confirm-free-tier` / `GEMINI_FREE_TIER_CONFIRMED=1` / `CLOUDFLARE_FREE_TIER_CONFIRMED=1` | Required before instantiating the API client |
+| **Credentials** | `.env` `GEMINI_API_KEY_001...` (or `GEMINI_API_KEY` env var); `.env` `CLOUDFLARE_ACCOUNT_ID_001...` + `CLOUDFLARE_API_TOKEN_001...` | Read locally (never CLI args, redacted in errors) |
+| **Thinking level** | `--thinking-level` / `LLM_THINKING_LEVEL` / `GEMINI_THINKING_LEVEL` | Gemini only: `low` (default), `medium`, `high` (`GEMINI_THINKING_LEVEL` applies only to Gemini; Cloudflare profiles reject explicit `--thinking-level`) |
 | **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (from `settings/experiment.json`) |
-| **Retry & cooldown policy** | `providers/credential_pool.py` | Transient retry + `60s` slot cooldown after `3` consecutive transient errors; daily quota rotation across `.env` slots |
+| **Retry & cooldown policy** | `providers/credential_pool.py` | Transient retry + `60s` slot cooldown after `3` consecutive transient errors; daily quota rotation across `.env` slots (`tmp/gemini/` vs `tmp/cloudflare/`) |
 | **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`24` via `run_experiment.py` for `max_reviews=12`) |
 
 Note on pacing and centralized settings: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_experiment.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). [settings/experiment.json](../settings/experiment.json) configures `gemini_hydrogen` with `thinking_level: "low"` by default.
 
 **Fail-closed API and quota policy**:
 
-- HTTP `429` (`api_quota_exhausted`), `402` (`api_billing_required`), and `400`/`401`/`403`/`404` (`api_configuration_error`) are **never retried**, immediately set `client.blocked_reason`, and have **no silent model or provider fallback**.
-- Any `api_*` failure on either Inspector or Planner (except `api_deadline_skipped`) sets `api_disabled = True`, forces solver termination (`force_termination = True`), halts remaining instances, saves partial artifacts with `completion_status: "incomplete_api_failure"` and `comparison_eligible: false`, and exits with **exit code `3`**.
+- Non-retryable billing (`402` or Cloudflare error `5035`) and configuration/auth errors (`400`/`401`/`403`/`404` except Llama per-review schema mismatch `invalid_schema`) are **never retried**, immediately set `client.blocked_reason`, and have **no silent model or provider fallback**.
+- When all slots hit daily quota and wall-clock deadline expires without waiting out reset, `request` returns `api_deadline_skipped`. Any fatal `api_*` failure on either Inspector or Planner sets `api_disabled = True`, forces solver termination (`force_termination = True`), halts remaining instances, saves partial artifacts with `completion_status: "incomplete_api_failure"` and `comparison_eligible: false`, and exits with **exit code `3`**.
 
 ---
 
@@ -105,12 +105,14 @@ Run all commands from the `Experiment/` repository root:
 ```cmd
 python -m pip install -r "Multi-Agent Controller/requirements.txt"
 python tools/gemini_preflight.py
+python tools/gemini_preflight.py --model cloudflare_llama
 ```
 
 Verify Free Tier readiness with one live synthetic `no_op` check before running optimization:
 
 ```cmd
 python tools/gemini_preflight.py --live --confirm-free-tier
+python tools/gemini_preflight.py --live --confirm-free-tier --model cloudflare_llama
 ```
 
 Preview or run the experiment profile via `run_experiment.py`:
@@ -120,15 +122,16 @@ python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 -
 python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
 ```
 
-Run with an alternative model or thinking level:
+Run with an alternative model (or thinking level on Gemini profiles):
 
 ```powershell
-python run_experiment.py --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini-3.5-flash-lite --thinking-level medium --confirm-free-tier
+python run_experiment.py --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini_flash_lite --thinking-level medium --confirm-free-tier
+python run_experiment.py --pipeline multi --instance pu-cs-fal07 --seed 17 --model cloudflare_mistral --confirm-free-tier
 ```
 
 ### Direct CLI and Live Logging Options
 
-Run `python "Multi-Agent Controller/main.py" --help` to list all inherited baseline, controller, and Gemini options (`--review-interval`, `--warmup-generations`, `--stagnation-window`, `--min-review-interval`, `--max-review-interval`, `--diversity-threshold`, `--diversity-recovery-threshold`, `--max-regions`, `--region-size`, `--max-operator-evaluations`, `--max-reviews`, `--model`, `--thinking-level`, `--confirm-free-tier`, `--api-min-interval-seconds`, `--api-max-input-characters`, `--api-timeout-seconds`, `--max-output-tokens`, `--max-api-calls`).
+Run `python "Multi-Agent Controller/main.py" --help` to list all inherited baseline, controller, and LLM options (`--review-interval`, `--warmup-generations`, `--stagnation-window`, `--min-review-interval`, `--max-review-interval`, `--diversity-threshold`, `--diversity-recovery-threshold`, `--max-regions`, `--region-size`, `--max-operator-evaluations`, `--max-reviews`, `--provider`, `--model`, `--thinking-level`, `--confirm-free-tier`, `--api-min-interval-seconds`, `--api-max-input-characters`, `--api-timeout-seconds`, `--max-output-tokens`, `--max-api-calls`).
 
 Live progress and logging flags:
 

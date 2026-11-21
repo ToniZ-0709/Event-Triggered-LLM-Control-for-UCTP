@@ -131,10 +131,10 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
         matches = [value for key, value in sources.items()
                    if key.replace("\\", "/").endswith("NSGA-III/itc2019/llm.py")]
         if len(matches) != 1:
-            raise ValueError(f"Missing shared Gemini adapter hash in {method} run")
+            raise ValueError(f"Missing shared LLM adapter hash in {method} run")
         return matches[0]
     if llm_source_hash("single") != llm_source_hash("multi"):
-        raise ValueError("Gemini adapter and prompts differ between single and multi runs")
+        raise ValueError("LLM adapter and prompts differ between single and multi runs")
     expected_names = {"single": "NSGA-III + Single-Agent",
                       "multi": "NSGA-III + Inspector-Planner",
                       "random": "NSGA-III + Random", "greedy": "NSGA-III + Greedy"}

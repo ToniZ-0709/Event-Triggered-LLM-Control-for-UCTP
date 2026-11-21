@@ -34,7 +34,9 @@ def main() -> None:
                             PROVIDERS / "decision_client.py",
                             PROVIDERS / "credential_pool.py",
                             PROVIDERS / "gemini.py",
-                            PROVIDERS / "gemini_pool.py"),
+                            PROVIDERS / "gemini_pool.py",
+                            PROVIDERS / "cloudflare.py",
+                            PROVIDERS / "cloudflare_pool.py"),
     )
 
 

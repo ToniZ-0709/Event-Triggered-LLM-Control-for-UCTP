@@ -1,0 +1,5 @@
+{
+  "provider": "cloudflare",
+  "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  "free_tier_only": true
+}
