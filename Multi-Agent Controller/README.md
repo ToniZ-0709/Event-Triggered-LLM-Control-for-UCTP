@@ -77,19 +77,19 @@ If Inspector validation and pre-Planner guards pass, Planner receives `{"state":
 
 ## 2. Gemini Free Tier Settings and Fail-Closed Policy
 
-Both Inspector and Planner share the same `GeminiDecisionClient` instance in [../NSGA-III/itc2019/llm.py](../NSGA-III/itc2019/llm.py) (`https://generativelanguage.googleapis.com`, `v1beta`, `vertexai=False`, `candidate_count=1`, `automatic_continuation=False`, `automatic_function_calling` disabled, `include_thoughts=False`):
+Both Inspector and Planner share one client created from [../settings/](../settings/) (`experiment.json` + `models/gemini_*.json`) via [../providers/gemini.py](../providers/gemini.py) using `httpx` and multi-slot `.env` quota tracking against `https://generativelanguage.googleapis.com` (`v1beta`):
 
 | Setting | CLI flag / environment variable | Default / allowed values |
 | :--- | :--- | :--- |
-| **Allowed models (`FREE_TIER_MODELS`)** | `--model` / `GEMINI_MODEL` | `gemini-4-hydrogen` (default), `gemini-3.5-flash-lite` |
+| **Model profiles (`settings/models/`)** | `--model` / `LLM_MODEL` / `GEMINI_MODEL` | `gemini_hydrogen` / `gemini-4-hydrogen` (default), `gemini_flash_lite` / `gemini-3.5-flash-lite` |
 | **Free Tier confirmation** | `--confirm-free-tier` / `GEMINI_FREE_TIER_CONFIRMED=1` | Required before instantiating the API client |
-| **API key** | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Environment only (never CLI args, redacted in errors, mismatched dual keys rejected) |
-| **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
-| **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (`DEFAULT_TIMEOUT_SECONDS = 60.0`) |
-| **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
+| **API key** | `.env` `GEMINI_API_KEY_001...` or env `GEMINI_API_KEY` | Read locally (never CLI args, redacted in errors) |
+| **Thinking level** | `--thinking-level` / `LLM_THINKING_LEVEL` / `GEMINI_THINKING_LEVEL` | `low` (default), `medium`, `high` |
+| **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (from `settings/experiment.json`) |
+| **Retry & cooldown policy** | `providers/credential_pool.py` | Transient retry + `60s` slot cooldown after `3` consecutive transient errors; daily quota rotation across `.env` slots |
 | **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`24` via `run_experiment.py` for `max_reviews=12`) |
 
-Note on pacing and call budgets: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_experiment.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). [profiles/experiment.json](../profiles/experiment.json) configures `gemini-4-hydrogen` with `thinking_level: "low"`.
+Note on pacing and centralized settings: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_experiment.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). [settings/experiment.json](../settings/experiment.json) configures `gemini_hydrogen` with `thinking_level: "low"` by default.
 
 **Fail-closed API and quota policy**:
 

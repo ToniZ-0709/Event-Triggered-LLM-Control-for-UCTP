@@ -1,4 +1,4 @@
-"""Run ITC 2019 NSGA-III with Gemini Inspector and Planner roles."""
+"""Run ITC 2019 NSGA-III with Inspector and Planner LLM roles."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parent
+PROVIDERS = ROOT.parent / "providers"
 BASELINE = ROOT.parent / "NSGA-III"
 sys.path.insert(0, str(BASELINE))
 
@@ -28,7 +29,12 @@ def main() -> None:
                             BASELINE / "itc2019" / "controller.py",
                             BASELINE / "itc2019" / "regions.py",
                             BASELINE / "itc2019" / "operators.py",
-                            BASELINE / "itc2019" / "llm.py"),
+                            BASELINE / "itc2019" / "llm.py",
+                            PROVIDERS / "settings.py",
+                            PROVIDERS / "decision_client.py",
+                            PROVIDERS / "credential_pool.py",
+                            PROVIDERS / "gemini.py",
+                            PROVIDERS / "gemini_pool.py"),
     )
 
 

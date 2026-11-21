@@ -1,0 +1,10 @@
+{
+  "provider": "gemini",
+  "model": "gemini-4-hydrogen",
+  "thinking_level": "low",
+  "free_tier_only": true,
+  "quota": {
+    "daily_requests": 20,
+    "minute_requests": 5
+  }
+}

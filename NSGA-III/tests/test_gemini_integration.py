@@ -1,21 +1,20 @@
-"""Gemini integration tests; no real API requests or credentials."""
+"""Gemini integration tests via the unified httpx pool client; no real network requests."""
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
-from types import SimpleNamespace as NS
 
+import httpx
 import pytest
 
-genai=pytest.importorskip("google.genai",reason="Install controller requirements for Gemini SDK tests")
-httpx=pytest.importorskip("httpx")
-from google.genai import types
-
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT))
-sys.path.insert(0,str(ROOT/"NSGA-III"))
+for entry in (ROOT,ROOT/"NSGA-III"):
+    if str(entry) not in sys.path:
+        sys.path.insert(0,str(entry))
 from itc2019 import llm
 from itc2019.controller import ControllerCallback,ControllerSettings
+from providers.gemini_pool import GeminiPool
 from run_experiment import commands
 from compare_pipelines import compare
 
@@ -23,84 +22,116 @@ NO_OP={"solution_id":None,"region_id":None,"boundary_id":None,"operator_id":"no_
        "execution_budget":0,"next_review_interval":10}
 
 
+class FakeClock:
+    def __init__(self):
+        self.now=datetime(2026,11,21,12,tzinfo=timezone.utc).timestamp()
+
+    def time(self):
+        return self.now
+
+    def sleep(self,seconds):
+        self.now+=seconds
+
+
+def _ok_response(*,finish_reason="STOP",text=None,tokens=20):
+    payload=json.dumps(NO_OP) if text is None else text
+    return httpx.Response(200,json={
+        "responseId":"fake-id",
+        "modelVersion":"gemini-4-hydrogen-v1",
+        "candidates":[{"content":{"role":"model","parts":[{"text":payload}]},
+                       "finishReason":finish_reason}],
+        "usageMetadata":{"promptTokenCount":tokens,"candidatesTokenCount":30,
+                         "thoughtsTokenCount":12,"totalTokenCount":62,"cachedContentTokenCount":0},
+    })
+
+
+def _make_pool(tmp_path,model=llm.DEFAULT_MODEL,clock=None):
+    tmp_path.mkdir(parents=True,exist_ok=True)
+    env=tmp_path/".env"
+    if not env.exists():
+        env.write_text("GEMINI_API_KEY_001=offline-test-key-never-send\n",encoding="utf-8")
+    clock=clock or FakeClock()
+    profile=llm.resolve_model_profile(model)
+    return GeminiPool(model,profile["quota"],env_path=env,usage_path=tmp_path/"usage.json",
+                      legacy_path=tmp_path/"missing_legacy.json",
+                      clock=clock.time,monotonic=clock.time,sleep=clock.sleep),clock
+
+
 @pytest.fixture
-def adapter(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY","offline-test-key-never-send")
-    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
+def adapter(tmp_path):
+    state={"responder":lambda request:_ok_response()}
     calls=[]
-    response=NS(response_id="fake-id",model_version="gemini-4-hydrogen-v1",
-                text=json.dumps(NO_OP),candidates=[NS(finish_reason="STOP")],prompt_feedback=None,
-                usage_metadata=NS(prompt_token_count=20,candidates_token_count=30,
-                                  thoughts_token_count=12,total_token_count=62,cached_content_token_count=0))
-    def generate(**kwargs):
-        calls.append(kwargs)
-        return response
-    fake=NS(models=NS(generate_content=generate),close=lambda:None)
-    monkeypatch.setattr(genai,"Client",lambda **kw:fake)
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True,
-                                  min_request_interval_seconds=0)
-    return client,response,calls
+    def handler(request):
+        calls.append(request)
+        return state["responder"](request)
+    pool,_= _make_pool(tmp_path)
+    client=llm.create_decision_client(
+        {**llm.resolve_model_profile(llm.DEFAULT_MODEL),"min_request_interval_seconds":0},
+        thinking_level="low",free_tier_confirmed=True,timeout_seconds=15,
+        pool=pool,transport=httpx.MockTransport(handler))
+    yield client,state,calls
+    client.close()
 
 
-def test_key_and_billing_confirmation_are_required_before_any_sdk_call(monkeypatch):
+def test_key_and_billing_confirmation_are_required_before_any_http_call(monkeypatch,tmp_path):
     monkeypatch.delenv("GEMINI_FREE_TIER_CONFIRMED",raising=False)
     monkeypatch.delenv("GEMINI_API_KEY",raising=False)
     monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
+    monkeypatch.setattr("providers.gemini_pool.ENV_PATH",tmp_path/"missing.env")
+    profile=llm.resolve_model_profile(llm.DEFAULT_MODEL)
     with pytest.raises(RuntimeError,match="Free Tier"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15)
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,thinking_level="low",quota=profile["quota"])
     with pytest.raises(RuntimeError,match="GEMINI_API_KEY"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True)
-    with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-4-argon",60,free_tier_confirmed=True)
-    with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-3.6-flash",60,free_tier_confirmed=True)
-    with pytest.raises(ValueError,match="permits"):
-        llm.GeminiDecisionClient("gemini-3.8-flash",60,free_tier_confirmed=True)
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,thinking_level="low",quota=profile["quota"],
+                                 free_tier_confirmed=True)
+    with pytest.raises(ValueError,match="one of"):
+        llm.GeminiDecisionClient("gemini-4-argon",60,thinking_level="low",quota=profile["quota"],
+                                 free_tier_confirmed=True)
+    with pytest.raises(ValueError,match="one of"):
+        llm.GeminiDecisionClient("gemini-3.6-flash",60,thinking_level="low",quota=profile["quota"],
+                                 free_tier_confirmed=True)
     with pytest.raises(ValueError,match="thinking_level"):
-        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,free_tier_confirmed=True,
-                                 thinking_level="turbo")
+        llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,thinking_level="turbo",quota=profile["quota"],
+                                 free_tier_confirmed=True)
 
 
-def test_allowlist_defaults_and_configurable_thinking_level(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY","offline-test-key-never-send")
-    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
-    calls=[]
-    response=NS(response_id="fake-id",model_version="gemini-4-hydrogen-v1",
-                text=json.dumps(NO_OP),candidates=[NS(finish_reason="STOP")],prompt_feedback=None,
-                usage_metadata=NS(prompt_token_count=10,candidates_token_count=10,
-                                  thoughts_token_count=0,total_token_count=20,cached_content_token_count=0))
-    fake=NS(models=NS(generate_content=lambda **kw:(calls.append(kw),response)[1]),close=lambda:None)
-    monkeypatch.setattr(genai,"Client",lambda **kw:fake)
+def test_allowlist_defaults_and_configurable_thinking_level(tmp_path):
     assert llm.DEFAULT_MODEL=="gemini-4-hydrogen"
     assert llm.FREE_TIER_MODELS==("gemini-4-hydrogen","gemini-3.5-flash-lite")
     assert llm.DEFAULT_TIMEOUT_SECONDS==60.0
     for model_name in llm.FREE_TIER_MODELS:
-        client=llm.GeminiDecisionClient(model_name,free_tier_confirmed=True,
-                                        min_request_interval_seconds=0,thinking_level="medium")
-        assert client.timeout_seconds==60.0
-        assert client.metadata()["thinking_level"]=="medium"
-        assert client.metadata()["sdk_attempts_per_call"]==3
-        decision,record=client.request("single_agent",{"candidate_regions":[]})
-        assert decision==NO_OP and record["status"]=="ok"
-        assert calls[-1]["config"].thinking_config.thinking_level==types.ThinkingLevel.MEDIUM
+        calls=[]
+        pool,_=_make_pool(tmp_path/model_name,model=model_name)
+        profile=llm.resolve_model_profile(model_name)
+        client=llm.create_decision_client(
+            {**profile,"min_request_interval_seconds":0},
+            thinking_level="medium",free_tier_confirmed=True,
+            pool=pool,transport=httpx.MockTransport(lambda req:(calls.append(req),_ok_response())[1]))
+        try:
+            assert client.timeout_seconds==60.0
+            assert client.metadata()["thinking_level"]=="medium"
+            decision,record=client.request("single_agent",{"candidate_regions":[]})
+            assert decision==NO_OP and record["status"]=="ok"
+            body=json.loads(calls[-1].content)
+            assert body["generationConfig"]["thinkingConfig"]=={"thinkingLevel":"MEDIUM","includeThoughts":False}
+        finally:
+            client.close()
 
 
-def test_valid_json_usage_and_bounded_native_config(adapter):
-    client,response,calls=adapter
+def test_valid_json_usage_and_bounded_http_config(adapter):
+    client,_,calls=adapter
     decision,record=client.request("single_agent",{"candidate_regions":[]},12)
     assert decision==NO_OP and record["status"]=="ok"
     assert record["api_requests"]==1 and record["thinking_tokens"]==12
     assert record["total_tokens"]==62 and record["provider"]=="gemini"
-    config=calls[0]["config"]
-    assert config.response_json_schema==llm.SCHEMAS["single_agent"]
-    assert config.http_options.timeout<=12000
-    assert config.http_options.retry_options.attempts==3
-    assert 429 not in config.http_options.retry_options.http_status_codes
-    assert {500,503,504}<=set(config.http_options.retry_options.http_status_codes)
-    assert config.max_output_tokens==4096 and config.candidate_count==1
-    assert config.automatic_continuation is False and config.automatic_function_calling.disable is True
-    assert config.thinking_config.thinking_level==types.ThinkingLevel.LOW
-    assert config.tools is None
+    request,=calls
+    assert request.url.host=="generativelanguage.googleapis.com"
+    body=json.loads(request.content)
+    config=body["generationConfig"]
+    assert config["responseJsonSchema"]==llm.SCHEMAS["single_agent"]
+    assert config["responseMimeType"]=="application/json"
+    assert config["maxOutputTokens"]==4096 and config["candidateCount"]==1
+    assert config["thinkingConfig"]=={"thinkingLevel":"LOW","includeThoughts":False}
 
 
 @pytest.mark.parametrize("text,status",[
@@ -114,15 +145,16 @@ def test_valid_json_usage_and_bounded_native_config(adapter):
     (json.dumps({**NO_OP,"operator_id":"run_python"}),"invalid_schema"),
 ])
 def test_malformed_responses_never_reach_solver(adapter,text,status):
-    client,response,_=adapter
-    response.text=text
+    client,state,_=adapter
+    state["responder"]=lambda _req:_ok_response(text=text)
     decision,record=client.request("single_agent",{})
     assert decision is None and record["status"]==status
 
 
-def test_truncated_response_is_not_success_even_if_partial_text_parses(adapter):
-    client,response,_=adapter
-    response.candidates[0].finish_reason="MAX_TOKENS"
+@pytest.mark.parametrize("finish_reason",["MAX_TOKENS","CONTINUATION"])
+def test_non_stop_finish_reason_is_incomplete_even_with_valid_json(adapter,finish_reason):
+    client,state,_=adapter
+    state["responder"]=lambda _req:_ok_response(finish_reason=finish_reason)
     decision,record=client.request("single_agent",{})
     assert decision is None and record["status"]=="incomplete_response"
 
@@ -137,135 +169,55 @@ def test_input_limit_and_expired_deadline_make_zero_requests(adapter):
     assert calls==[]
 
 
-def test_pacing_respects_remaining_deadline_and_records_wait(adapter,monkeypatch):
-    client,_,calls=adapter
-    clock=[100.0]
-    monkeypatch.setattr(llm.time,"perf_counter",lambda:clock[0])
-    monkeypatch.setattr(llm.time,"sleep",lambda seconds:clock.__setitem__(0,clock[0]+seconds))
-    client.min_request_interval_seconds=10
-    client._last_request_started=95
-    assert client.request("single_agent",{},3)[1]["status"]=="api_deadline_skipped"
-    assert calls==[] and clock==[100]
-    _,record=client.request("single_agent",{},8)
-    assert record["pacing_wait_seconds"]==5 and calls[0]["config"].http_options.timeout==3000
+def test_pacing_respects_remaining_deadline_and_records_wait(tmp_path):
+    clock=FakeClock()
+    initial=clock.time()
+    calls=[]
+    pool,_=_make_pool(tmp_path,clock=clock)
+    profile={**llm.resolve_model_profile(llm.DEFAULT_MODEL),"min_request_interval_seconds":10}
+    client=llm.create_decision_client(
+        profile,free_tier_confirmed=True,pool=pool,
+        transport=httpx.MockTransport(lambda req:(calls.append(req),_ok_response())[1]))
+    try:
+        assert client.request("single_agent",{})[0]==NO_OP
+        assert client.request("single_agent",{},remaining_seconds=3)[1]["status"]=="api_deadline_skipped"
+        assert len(calls)==1
+        decision,record=client.request("single_agent",{},remaining_seconds=20)
+        assert decision==NO_OP and record["pacing_wait_seconds"]==7.0
+        assert clock.time()==initial+10.0
+    finally:
+        client.close()
 
 
-@pytest.mark.parametrize("code,status",[(429,"api_quota_exhausted"),(402,"api_billing_required"),
-                                      (401,"api_configuration_error"),(503,"api_service_error")])
-def test_api_failures_are_explicit_no_retry_no_provider_fallback(adapter,code,status):
-    client,_,calls=adapter
-    class Failure(Exception):
-        pass
-    def fail(**kwargs):
-        calls.append(kwargs)
-        exc=Failure("offline-test-key-never-send failed")
-        exc.code=code
-        raise exc
-    client.client.models.generate_content=fail
+@pytest.mark.parametrize("code,status",[(402,"api_billing_required"),(401,"api_configuration_error")])
+def test_api_non_retryable_failures_fail_closed(adapter,code,status):
+    client,state,calls=adapter
+    state["responder"]=lambda _req:httpx.Response(code,json={"error":{"message":"offline-test-key-never-send"}})
     decision,record=client.request("single_agent",{})
     assert decision is None and record["status"]==status and len(calls)==1
     assert "offline-test-key-never-send" not in json.dumps(record)
-    if code in (429,402,401):
-        assert client.request("single_agent",{})[1]["api_requests"]==0
-        assert len(calls)==1
+    assert client.request("single_agent",{})[1]["api_requests"]==0
+    assert len(calls)==1
 
 
-def test_timeout_is_recorded(adapter):
-    client,_,_=adapter
-    def fail(**kwargs):
+def test_timeout_within_short_deadline_records_deadline_skip(adapter):
+    client,state,_=adapter
+    def fail(_req):
         raise httpx.ReadTimeout("slow")
-    client.client.models.generate_content=fail
-    assert client.request("single_agent",{})[1]["status"]=="api_timeout"
+    state["responder"]=fail
+    decision,record=client.request("single_agent",{},remaining_seconds=0.5)
+    assert decision is None and record["status"]=="api_deadline_skipped"
 
 
-@pytest.mark.parametrize("finish_reason",["STOP","CONTINUATION"])
-def test_native_sdk_serializes_schema_without_network(monkeypatch,finish_reason):
-    monkeypatch.setenv("GEMINI_API_KEY","offline-placeholder")
-    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
-    seen=[]
-    def handler(request):
-        seen.append(json.loads(request.content))
-        assert request.url.host=="generativelanguage.googleapis.com"
-        return httpx.Response(200,json={
-            "candidates":[{"content":{"role":"model","parts":[{"text":json.dumps(NO_OP)}]},
-                           "finishReason":finish_reason}],"modelVersion":"gemini-4-hydrogen-v1",
-            "continuationToken":"must-not-be-followed",
-            "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,15,free_tier_confirmed=True)
-    client.close()
-    client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
-        http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
-                                      retry_options=types.HttpRetryOptions(attempts=1)))
-    try:
-        decision,record=client.request("single_agent",{})
-        if finish_reason=="STOP":
-            assert decision==NO_OP and record["status"]=="ok"
-        else:
-            assert decision is None and record["status"]=="incomplete_response"
-        assert len(seen)==1 and seen[0]["generationConfig"]["responseMimeType"]=="application/json"
-        assert seen[0]["generationConfig"]["responseJsonSchema"]==llm.SCHEMAS["single_agent"]
-    finally:
-        client.close()
-
-
-def test_native_sdk_does_not_retry_429(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY","offline-placeholder")
-    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
-    requests=[]
-    def handler(request):
-        requests.append(request)
-        return httpx.Response(429,json={"error":{"code":429,"status":"RESOURCE_EXHAUSTED",
-                                                 "message":"fake test quota"}})
-    client=llm.GeminiDecisionClient(llm.DEFAULT_MODEL,60,free_tier_confirmed=True)
-    client.close()
-    client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
-        http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
-                                      retry_options=client.retry_options))
-    try:
-        decision,record=client.request("single_agent",{})
-        assert decision is None and record["status"]=="api_quota_exhausted"
-        assert len(requests)==1
-    finally:
-        client.close()
-
-
-def test_native_sdk_retries_transient_504_up_to_3_attempts(monkeypatch):
-    import tenacity.nap
-    monkeypatch.setenv("GEMINI_API_KEY","offline-placeholder")
-    monkeypatch.delenv("GOOGLE_API_KEY",raising=False)
-    monkeypatch.setattr(tenacity.nap.time,"sleep",lambda _s:None)
-    requests=[]
-    def handler(request):
-        requests.append(request)
-        if len(requests)<3:
-            return httpx.Response(504,json={"error":{"code":504,"status":"DEADLINE_EXCEEDED",
-                                                     "message":"transient test timeout"}})
-        return httpx.Response(200,json={
-            "candidates":[{"content":{"role":"model","parts":[{"text":json.dumps(NO_OP)}]},
-                           "finishReason":"STOP"}],
-            "modelVersion":"gemini-4-hydrogen-v1",
-            "usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":30,"totalTokenCount":50}})
-    client=llm.GeminiDecisionClient("gemini-4-hydrogen",60,free_tier_confirmed=True)
-    client.close()
-    client.client=genai.Client(api_key="offline-placeholder",vertexai=False,
-        http_options=types.HttpOptions(httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
-                                      retry_options=client.retry_options))
-    try:
-        decision,record=client.request("single_agent",{})
-        assert len(requests)==3
-        assert decision==NO_OP and record["status"]=="ok"
-    finally:
-        client.close()
-
-
-def test_wrapper_applies_gemini_policy_only_to_controllers():
-    profile=json.loads((ROOT/"profiles/experiment.json").read_text(encoding="utf-8"))
+def test_wrapper_applies_model_policy_only_to_controllers():
+    profile=json.loads((ROOT/"settings/experiment.json").read_text(encoding="utf-8"))
+    expected_model=llm.resolve_model_profile(experiment_settings=profile)["model"]
     for mode in ("baseline","single","multi","random","greedy"):
         command=commands(profile,pipeline=mode,seed=17,instances=["nbi-spr18"],model=None,
                          output=None,confirm_free_tier=True,thinking_level="high")[0]
         if mode in ("single","multi"):
             assert "--confirm-free-tier" in command
-            assert command[command.index("--model")+1]==profile["llm"]["model"]
+            assert command[command.index("--model")+1]==expected_model
             assert command[command.index("--api-timeout-seconds")+1]=="60"
             assert command[command.index("--thinking-level")+1]=="high"
             assert command.count("--provider")==1
@@ -306,7 +258,7 @@ def make_runs(tmp_path,incomplete=False):
                 controller={"model":llm.DEFAULT_MODEL,"provider":"gemini","max_reviews":1,
                             "max_api_calls":1 if mode=="single" else 2},
                 controller_sources_sha256={"NSGA-III/itc2019/llm.py":"same"},llm={"provider":"gemini"})
-            settings["environment"]["google-genai"]="same"
+            settings["environment"]["httpx"]="same"
             row["controller"]={"comparison_eligible":not(incomplete and mode=="multi"),
                                "completion_status":"incomplete_api_failure" if incomplete else "completed"}
         (folder/"run_config.json").write_text(json.dumps({"settings":settings}))

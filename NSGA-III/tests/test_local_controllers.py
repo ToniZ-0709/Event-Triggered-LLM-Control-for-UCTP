@@ -199,6 +199,7 @@ def test_local_cli_exports_auditable_zero_api_run(dataset, tmp_path, monkeypatch
 
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.setattr(llm, "GeminiDecisionClient", unexpected_api)
+    monkeypatch.setattr(llm, "create_decision_client", unexpected_api)
     profile = {"schema_version": 1,
                "instances": {"tiny": {"evaluations": 60}},
                "solver": {"population": 4, "partitions": 1, "generations": 8,

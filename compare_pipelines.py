@@ -108,10 +108,12 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
             {key: value for key, value in multi_controller.items() if key != "max_api_calls"}):
         raise ValueError("Controller settings differ between single and multi runs")
     _check_review_budget(single_controller, multi_controller)
+    single_provider = runs["single"][0]["settings"]["controller"].get("provider")
+    multi_provider = runs["multi"][0]["settings"]["controller"].get("provider")
+    if not single_provider or single_provider == "none" or single_provider != multi_provider:
+        raise ValueError("Single-agent and multi-agent runs must share the same active LLM provider")
     for method in ("single", "multi"):
         settings = runs[method][0]["settings"]
-        if settings["controller"].get("provider") != "gemini":
-            raise ValueError("Both controller runs must use the Gemini adapter")
         for row in runs[method][1].values():
             controller = row.get("controller", {})
             if not controller.get("comparison_eligible", False):
@@ -119,10 +121,11 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
                                  f"{controller.get('completion_status', 'unknown')}. "
                                  "Do not interpret quota/network failures as controller decisions.")
     if runs["single"][0]["settings"].get("llm") != runs["multi"][0]["settings"].get("llm"):
-        raise ValueError("Gemini transport, model or pacing policies differ")
-    if (runs["single"][0]["settings"]["environment"].get("google-genai") !=
-            runs["multi"][0]["settings"]["environment"].get("google-genai")):
-        raise ValueError("Google GenAI SDK versions differ between single and multi runs")
+        raise ValueError("LLM transport, model or pacing policies differ")
+    for client_pkg in ("httpx", "google-genai"):
+        if (runs["single"][0]["settings"]["environment"].get(client_pkg) !=
+                runs["multi"][0]["settings"]["environment"].get(client_pkg)):
+            raise ValueError(f"HTTP client versions ({client_pkg}) differ between single and multi runs")
     def llm_source_hash(method: str) -> str:
         sources = runs[method][0]["settings"]["controller_sources_sha256"]
         matches = [value for key, value in sources.items()
@@ -170,7 +173,7 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
         single_versions = records["single"].get("controller", {}).get("models_returned", [])
         multi_versions = records["multi"].get("controller", {}).get("models_returned", [])
         if single_versions and multi_versions and set(single_versions) != set(multi_versions):
-            raise ValueError(f"Returned Gemini model versions differ for {instance}")
+            raise ValueError(f"Returned model versions differ for {instance}")
         rows.append({
             "instance": instance,
             "methods": {
@@ -211,7 +214,7 @@ def compare(folders: dict[str, Path], *, allow_generation_only: bool = False) ->
         "seed": baseline["config"]["seed"],
         "time_limit_seconds": baseline.get("time_limit_seconds"),
         "model": single_model,
-        "provider": "gemini",
+        "provider": single_provider,
         "runs": {method: str(folders[method].resolve()) for method in methods},
         "instances": rows,
     }

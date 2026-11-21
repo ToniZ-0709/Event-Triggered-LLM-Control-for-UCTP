@@ -99,7 +99,7 @@ Preview experiment commands and budgets with `--dry-run`:
 python run_experiment.py --pipeline greedy --instance muni-fsps-spr17 --seed 17 --dry-run
 ```
 
-Run optimization through the experiment runner (defaults to `profiles/experiment.json`; omit `--instance` to run all 12 benchmark instances, or pass `--output DIR`):
+Run optimization through the experiment runner (defaults to `settings/experiment.json`; omit `--instance` to run all 12 benchmark instances, or pass `--output DIR`):
 
 ```cmd
 python run_experiment.py --pipeline greedy --instance muni-fsps-spr17 --seed 17

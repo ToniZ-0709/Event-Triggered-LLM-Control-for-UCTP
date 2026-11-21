@@ -40,21 +40,32 @@ Install the shared solver dependencies for `baseline`, `random`, and `greedy`:
 python -m pip install -r NSGA-III/requirements.txt
 ```
 
-Install the Gemini controller dependencies (`google-genai` plus solver dependencies) for `single` and `multi`:
+Install the Gemini controller dependencies (`httpx` plus solver dependencies) for `single` and `multi`:
 
 ```powershell
 python -m pip install -r "Single-Agent Controller/requirements.txt"
 python -m pip install -r "Multi-Agent Controller/requirements.txt"
 ```
 
-### Gemini Free Tier Configuration and Preflight
+### Centralized Settings and Gemini Profiles
 
-Only published Gemini Free Tier text models are permitted by `NSGA-III/itc2019/llm.py` (`FREE_TIER_MODELS`):
+All solver, repair, controller, and model settings are centralized under [`settings/`](settings/):
 
-- `gemini-4-hydrogen` (default)
-- `gemini-3.5-flash-lite`
+- [`settings/experiment.json`](settings/experiment.json): Shared defaults for `population`, `generations`, `evaluations`, `mutation_rate`, `repair`, `controller`, LLM transport caps, and the 12 benchmark instances. Direct CLI runs (`NSGA-III/main.py`) and batch runs (`run_experiment.py`) both load defaults from this file.
+- [`settings/models/gemini_hydrogen.json`](settings/models/gemini_hydrogen.json): `gemini-4-hydrogen` (default, `thinking_level: "low"`), daily/minute Free Tier quota policy.
+- [`settings/models/gemini_flash_lite.json`](settings/models/gemini_flash_lite.json): `gemini-3.5-flash-lite` (`thinking_level: "low"`), daily/minute Free Tier quota policy.
 
-Set `GEMINI_API_KEY` locally in your environment (never pass a key as a CLI argument or commit it, and avoid setting a conflicting `GOOGLE_API_KEY`). Because an API key alone does not expose its project billing tier, confirm in Google AI Studio that the project is on the Free Tier and either pass `--confirm-free-tier` or set `GEMINI_FREE_TIER_CONFIRMED=1`. Direct CLI runs read `GEMINI_API_KEY` from the process environment.
+Pass `--model <profile_or_id>` (for example `--model gemini_flash_lite` or `--model gemini-3.5-flash-lite`) to `NSGA-III/main.py` / `run_experiment.py` / `tools/gemini_preflight.py`, or override via `LLM_MODEL` / `GEMINI_MODEL`.
+
+### Gemini Free Tier Credentials and Preflight
+
+Only published Gemini Free Tier text models configured under `settings/models/` are permitted by default (`gemini-4-hydrogen`, `gemini-3.5-flash-lite`).
+
+Configure credentials locally using **either**:
+- Numbered entries in a repository-root `.env` file (`GEMINI_API_KEY_001=...`, `GEMINI_API_KEY_002=...`, using [`.env.example`](.env.example)), using one key per Free Tier project so `providers/gemini_pool.py` tracks per-model daily/minute quotas under `tmp/gemini/` and rotates/waits safely across slots; or
+- A single `GEMINI_API_KEY` environment variable when `.env` is absent (never pass a key on the command line or commit it, and avoid conflicting `GOOGLE_API_KEY`).
+
+Confirm in Google AI Studio that the projects are on the Free Tier and either pass `--confirm-free-tier` or set `GEMINI_FREE_TIER_CONFIRMED=1`.
 
 Run the offline preflight check (zero network calls) from the repository root (`Experiment/`):
 
@@ -65,16 +76,16 @@ python tools/gemini_preflight.py
 Run one bounded synthetic `no_op` live check after confirming the Free Tier project:
 
 ```powershell
-python tools/gemini_preflight.py --live --confirm-free-tier --model gemini-4-hydrogen --thinking-level low --timeout-seconds 60
+python tools/gemini_preflight.py --live --confirm-free-tier --model gemini_hydrogen --thinking-level low --timeout-seconds 60
 ```
 
-`--thinking-level` accepts `minimal`, `low` (default), `medium`, or `high`, and can also be set via `GEMINI_THINKING_LEVEL`. `--model` can also be set via `GEMINI_MODEL`.
+`--thinking-level` accepts `low` (default), `medium`, or `high`, and can also be set via `LLM_THINKING_LEVEL` or `GEMINI_THINKING_LEVEL`.
 
 ### API Timeout, Retries, and Fail-Closed Policy
 
-- **Request timeout and pacing:** Each Gemini call uses a `60s` default timeout (`--api-timeout-seconds`), a `10.0s` minimum interval between request starts (`--api-min-interval-seconds`), and a `60,000`-character input cap (`--api-max-input-characters`).
-- **Transient retries:** The SDK retries up to `attempts=3` times only on transient timeouts and HTTP 5xx status codes (`408`, `500`, `502`, `503`, `504`).
-- **Fail-closed exit code `3`:** Quota exhaustion (`429`), billing-required (`402`), configuration or auth errors (`400`, `401`, `403`, `404`), and unrecovered API errors do not fall back to another provider or model. The controller disables further API calls, stops the run, saves partial results marked `completion_status: "incomplete_api_failure"`, and exits with code `3`.
+- **Request timeout and pacing:** Each Gemini call uses `httpx` against `https://generativelanguage.googleapis.com` (`v1beta`) with a `60s` default timeout (`--api-timeout-seconds`), a `10.0s` minimum interval between request starts (`--api-min-interval-seconds`), per-model quota tracking (`tmp/gemini/`), and a `60,000`-character input cap (`--api-max-input-characters`).
+- **Transient retries and slot cooldown:** `CredentialPool` retries transient HTTP errors (`408`, transient `429`, `5xx`) and transport timeouts, cools down a slot for `60s` after `3` consecutive transient errors, and advances cleanly when a slot hits daily quota.
+- **Fail-closed exit code `3`:** Non-retryable billing (`402`) or configuration/auth errors (`400`, `401`, `403`, `404`) do not fall back to another model or paid tier. The controller disables further API calls, stops the run, saves partial results marked `completion_status: "incomplete_api_failure"`, and exits with code `3`.
 
 ---
 
@@ -82,7 +93,7 @@ python tools/gemini_preflight.py --live --confirm-free-tier --model gemini-4-hyd
 
 Run all commands from the repository root (`Experiment/`). Add `--dry-run` with `run_experiment.py` to print the resolved solver commands and budgets before running.
 
-### Experiment Profile ([`profiles/experiment.json`](profiles/experiment.json))
+### Experiment Profile ([`settings/experiment.json`](settings/experiment.json))
 
 The benchmark matrix covers **12 balanced ITC 2019 instances** across size tiers and bottleneck regimes (`2` Small: `wbg-fal10`, `pu-cs-fal07`; `4` Medium: `yach-fal17`, `agh-h-spr17`, `lums-fal17`, `muni-fsps-spr17`; `4` Large: `nbi-spr18`, `mary-spr17`, `pu-d5-spr17`, `bet-spr18`; `2` XL: `muni-pdf-spr16`, `iku-spr18`):
 
@@ -101,7 +112,7 @@ python run_experiment.py --pipeline baseline --pipeline random --pipeline greedy
 Preview the full 60-job matrix for one seed:
 
 ```powershell
-python run_experiment.py --profile profiles/experiment.json --pipeline baseline --pipeline random --pipeline greedy --pipeline single --pipeline multi --seed 17 --model gemini-4-hydrogen --thinking-level low --output ExperimentResult --dry-run
+python run_experiment.py --profile settings/experiment.json --pipeline baseline --pipeline random --pipeline greedy --pipeline single --pipeline multi --seed 17 --model gemini_hydrogen --thinking-level low --output ExperimentResult --dry-run
 ```
 
 ### Running Offline and Gemini Pipelines via `run_experiment.py`
@@ -158,7 +169,7 @@ python NSGA-III/main.py --instance wbg-fal10 --inspect
 python "Random Controller/main.py" --instance muni-fsps-spr17 --seed 17 --generations 200 --evaluations 1800 --progress-interval 5
 ```
 
-Direct `main.py` entrypoints default `--seed` to `42` and `--generations` to `20`, whereas `run_experiment.py` defaults `--seed` to `17` and applies full budgets from `profiles/experiment.json`.
+Direct `main.py` entrypoints and `run_experiment.py` both inherit their default parameters (`seed=17`, `generations=200`, `evaluations=1800`, `population=20`, `partitions=3`, `mutation-rate=0.35`, `mutation-fraction=0.01`) from `settings/experiment.json`.
 
 ---
 
@@ -200,4 +211,4 @@ Use `compare_pipelines.py` to generate a paired comparison JSON across completed
 python compare_pipelines.py --baseline <baseline_run_dir> --random <random_run_dir> --greedy <greedy_run_dir> --single <single_run_dir> --multi <multi_run_dir> --allow-generation-only --output comparison.json
 ```
 
-`compare_pipelines.py` checks matching instance lists, solver and repair settings, dependency versions, Gemini model and `llm.py` hashes, shared review parameters, zero API failures (`comparison_eligible: true`), and `fixed_execution_budget == 10` for `random`/`greedy`. For runs without `--time-limit-seconds` (such as `profiles/experiment.json`), pass `--allow-generation-only`.
+`compare_pipelines.py` checks matching instance lists, solver and repair settings, dependency versions, matching LLM provider/model and `llm.py` hashes, shared review parameters, zero API failures (`comparison_eligible: true`), and `fixed_execution_budget == 10` for `random`/`greedy`. For runs without `--time-limit-seconds` (such as `settings/experiment.json`), pass `--allow-generation-only`.

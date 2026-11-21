@@ -81,13 +81,13 @@ python run_experiment.py --pipeline random --instance muni-fsps-spr17 --seed 17 
 
 ### Running Optimization
 
-Run via `run_experiment.py` using the default experiment profile (`profiles/experiment.json`, default `--seed 17`):
+Run via `run_experiment.py` using the default experiment settings (`settings/experiment.json`, default `--seed 17`):
 
 ```cmd
 python run_experiment.py --pipeline random --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all 12 instances in [profiles/experiment.json](../profiles/experiment.json), pass `--output ExperimentResult` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
+Omit `--instance` to run all 12 instances in [settings/experiment.json](../settings/experiment.json), pass `--output ExperimentResult` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
 
 Run directly via `Random Controller/main.py` when specifying custom solver, repair, or review-gate flags:
 
@@ -95,7 +95,7 @@ Run directly via `Random Controller/main.py` when specifying custom solver, repa
 python "Random Controller/main.py" --instance muni-fsps-spr17 --seed 17 --population 20 --generations 200 --evaluations 1800
 ```
 
-Direct CLI defaults when flags are omitted: `--population 20`, `--generations 20`, `--partitions 3`, `--seed 42`, `--dataset Dataset_ITC2019`, `--output "Random Controller/results_itc2019"`, `--review-interval 10`, `--warmup-generations 5`, `--stagnation-window 5`, `--min-review-interval 3`, `--max-review-interval 20`, `--diversity-threshold 0.20`, `--diversity-recovery-threshold 0.30`, `--max-regions 6`, `--region-size 5`, `--max-operator-evaluations 24`, and `--max-reviews 12`. `--stop-on-feasible`, `--manifest FILE`, `--all`, and `--repair-*` options are also supported. Run `python "Random Controller/main.py" --help` for the full option list.
+Direct CLI defaults inherit from [settings/experiment.json](../settings/experiment.json): `--population 20`, `--generations 200`, `--evaluations 1800`, `--partitions 3`, `--seed 17`, `--mutation-rate 0.35`, `--mutation-fraction 0.01`, `--crossover-rate 0.7`, `--dataset Dataset_ITC2019`, `--output "Random Controller/results_itc2019"`, `--review-interval 10`, `--warmup-generations 5`, `--stagnation-window 5`, `--min-review-interval 3`, `--max-review-interval 20`, `--diversity-threshold 0.20`, `--diversity-recovery-threshold 0.30`, `--max-regions 6`, `--region-size 5`, `--max-operator-evaluations 24`, and `--max-reviews 12`. `--stop-on-feasible`, `--manifest FILE`, `--all`, and `--repair-*` options are also supported. Run `python "Random Controller/main.py" --help` for the full option list.
 
 ### Live Progress Flags
 

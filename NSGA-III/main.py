@@ -26,8 +26,14 @@ from itc2019.nsga3 import Config, evaluation_count, reference_directions, run
 from itc2019.scoring import Score, evaluate, validate_sectioning
 from itc2019.repair_policy import RepairSettings
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-DEFAULT_DATASET = Path(__file__).resolve().parent.parent / "Dataset_ITC2019"
+from providers.settings import load_experiment_settings, resolve_model_profile  # noqa: E402
+
+
+DEFAULT_DATASET = _REPO_ROOT / "Dataset_ITC2019"
 
 
 def _sha256(path: Path) -> str:
@@ -145,6 +151,12 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
          controller_sources: tuple[Path, ...] = ()) -> None:
     pipeline_root = pipeline_root or Path(__file__).resolve().parent
     uses_llm = controller_factory is not None and getattr(controller_factory, "requires_llm", True)
+    exp_settings = load_experiment_settings()
+    solver_defaults = exp_settings.get("solver", {})
+    repair_defaults = {**asdict(RepairSettings()), **exp_settings.get("repair", {})}
+    ctrl_defaults = exp_settings.get("controller", {})
+    llm_defaults = exp_settings.get("llm", {})
+
     parser = argparse.ArgumentParser(description=(
         f"Run the ITC 2019 {pipeline_name} pipeline" if pipeline_name else __doc__))
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
@@ -153,23 +165,25 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     parser.add_argument("--all", action="store_true", help="Run every XML file in --dataset")
     parser.add_argument("--inspect", action="store_true", help="Parse and summarize instances without optimizing")
     parser.add_argument("--output", type=Path, default=pipeline_root / "results_itc2019")
-    parser.add_argument("--population", type=int, default=20)
-    parser.add_argument("--generations", type=int, default=20)
-    parser.add_argument("--partitions", type=int, default=3)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--evaluations", type=int, help="Cap full search evaluations, including routine repair")
-    parser.add_argument("--mutation-rate", type=float, default=0.2)
-    parser.add_argument("--mutation-fraction", type=float, default=0.005)
-    parser.add_argument("--crossover-rate", type=float, default=0.7)
-    parser.add_argument("--initial-repair-steps", type=int, default=12)
-    parser.add_argument("--initial-pair-trials", type=int, default=3)
-    parser.add_argument("--inner-partitions", type=int, help="Add an inner reference-direction layer")
-    parser.add_argument("--inner-scale", type=float, default=0.5)
-    parser.add_argument("--offspring-repair-steps", type=int, default=8,
-                        help="Hard-repair rounds for each generated offspring (default: 8)")
-    parser.add_argument("--offspring-pair-trials", type=int, default=2,
-                        help="Bounded joint-move attempts per offspring (default: 2)")
-    parser.add_argument("--time-limit-seconds", type=float,
+    parser.add_argument("--population", type=int, default=solver_defaults.get("population", 20))
+    parser.add_argument("--generations", type=int, default=solver_defaults.get("generations", 200))
+    parser.add_argument("--partitions", type=int, default=solver_defaults.get("partitions", 3))
+    parser.add_argument("--seed", type=int, default=solver_defaults.get("seed", 17))
+    parser.add_argument("--evaluations", type=int, default=solver_defaults.get("evaluations"),
+                        help="Cap full search evaluations, including routine repair")
+    parser.add_argument("--mutation-rate", type=float, default=solver_defaults.get("mutation_rate", 0.35))
+    parser.add_argument("--mutation-fraction", type=float, default=solver_defaults.get("mutation_fraction", 0.01))
+    parser.add_argument("--crossover-rate", type=float, default=solver_defaults.get("crossover_rate", 0.7))
+    parser.add_argument("--initial-repair-steps", type=int, default=solver_defaults.get("initial_repair_steps", 12))
+    parser.add_argument("--initial-pair-trials", type=int, default=solver_defaults.get("initial_pair_trials", 3))
+    parser.add_argument("--inner-partitions", type=int, default=solver_defaults.get("inner_partitions"),
+                        help="Add an inner reference-direction layer")
+    parser.add_argument("--inner-scale", type=float, default=solver_defaults.get("inner_scale", 0.5))
+    parser.add_argument("--offspring-repair-steps", type=int, default=solver_defaults.get("offspring_repair_steps", 8),
+                        help="Hard-repair rounds for each generated offspring")
+    parser.add_argument("--offspring-pair-trials", type=int, default=solver_defaults.get("offspring_pair_trials", 2),
+                        help="Bounded joint-move attempts per offspring")
+    parser.add_argument("--time-limit-seconds", type=float, default=solver_defaults.get("time_limit_seconds"),
                         help="Per-instance wall-clock limit for solver and controller")
     parser.add_argument("--stop-on-feasible", action="store_true",
                         help="Stop after a generation contains a candidate with zero hard violations")
@@ -182,42 +196,46 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     parser.add_argument("--author", default=pipeline_name or "NSGA-III baseline")
     parser.add_argument("--institution", default="Ho Chi Minh City University of Technology")
     parser.add_argument("--country", default="Vietnam")
-    for name, default in asdict(RepairSettings()).items():
+    for name, default in repair_defaults.items():
         parser.add_argument("--repair-" + name.replace("_", "-"), type=type(default), default=default,
                             help=f"Shared repair setting {name} (default: {default})")
     if controller_factory is not None:
-        parser.add_argument("--review-interval", type=int, default=10,
+        parser.add_argument("--review-interval", type=int, default=ctrl_defaults.get("review_interval", 10),
                             help="Default controller review interval in generations")
     if uses_llm:
-        from itc2019.llm import (DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_MODEL, DEFAULT_THINKING_LEVEL,
-                               DEFAULT_TIMEOUT_SECONDS, VALID_THINKING_LEVELS)
-        parser.add_argument("--provider", choices=("gemini",), default="gemini")
-        parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
-                            help="Gemini Free Tier text model; can also be set via GEMINI_MODEL")
-        parser.add_argument("--thinking-level", choices=VALID_THINKING_LEVELS,
-                            default=os.environ.get("GEMINI_THINKING_LEVEL") or DEFAULT_THINKING_LEVEL,
-                            help="Gemini thinking level; can also be set via GEMINI_THINKING_LEVEL")
+        from itc2019.llm import VALID_THINKING_LEVELS
+        parser.add_argument("--provider", help="Optional expected provider filter matching the selected model")
+        parser.add_argument("--model", default=None,
+                            help="Model profile name, model ID, or profile JSON path (default from settings/experiment.json)")
+        parser.add_argument("--thinking-level", choices=VALID_THINKING_LEVELS, default=None,
+                            help="Reasoning effort override when supported by the selected model")
         parser.add_argument("--confirm-free-tier", action="store_true",
-                            help="Confirm in AI Studio that this API key's project is Free Tier")
-        parser.add_argument("--api-min-interval-seconds", type=float, default=10.0,
+                            help="Confirm in provider console that credentials are on the Free Tier")
+        parser.add_argument("--api-min-interval-seconds", type=float,
+                            default=llm_defaults.get("min_request_interval_seconds", 10.0),
                             help="Pace API request starts; actual project quota must still be checked")
-        parser.add_argument("--api-max-input-characters", type=int, default=60000)
-        parser.add_argument("--api-timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
-        parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS,
-                            help=f"Gemini output budget including thinking (default: {DEFAULT_MAX_OUTPUT_TOKENS})")
+        parser.add_argument("--api-max-input-characters", type=int,
+                            default=llm_defaults.get("max_input_characters", 60000))
+        parser.add_argument("--api-timeout-seconds", type=float,
+                            default=llm_defaults.get("api_timeout_seconds", 60.0))
+        parser.add_argument("--max-output-tokens", type=int,
+                            default=llm_defaults.get("max_output_tokens", 4096),
+                            help="Model output token budget (including thinking tokens if used)")
         parser.add_argument("--max-api-calls", type=int, default=100)
     if controller_factory is not None:
-        parser.add_argument("--warmup-generations", type=int, default=5)
-        parser.add_argument("--stagnation-window", type=int, default=5)
-        parser.add_argument("--min-review-interval", type=int, default=3)
-        parser.add_argument("--max-review-interval", type=int, default=20)
-        parser.add_argument("--diversity-threshold", type=float, default=0.20,
+        parser.add_argument("--warmup-generations", type=int, default=ctrl_defaults.get("warmup_generations", 5))
+        parser.add_argument("--stagnation-window", type=int, default=ctrl_defaults.get("stagnation_window", 5))
+        parser.add_argument("--min-review-interval", type=int, default=ctrl_defaults.get("min_review_interval", 3))
+        parser.add_argument("--max-review-interval", type=int, default=ctrl_defaults.get("max_review_interval", 20))
+        parser.add_argument("--diversity-threshold", type=float, default=ctrl_defaults.get("diversity_threshold", 0.20),
                             help="Trigger when timetable placement diversity falls below this fraction")
-        parser.add_argument("--diversity-recovery-threshold", type=float, default=0.30)
-        parser.add_argument("--max-regions", type=int, default=6)
-        parser.add_argument("--region-size", type=int, default=5)
-        parser.add_argument("--max-operator-evaluations", type=int, default=24)
-        parser.add_argument("--max-reviews", type=int, default=12,
+        parser.add_argument("--diversity-recovery-threshold", type=float,
+                            default=ctrl_defaults.get("diversity_recovery_threshold", 0.30))
+        parser.add_argument("--max-regions", type=int, default=ctrl_defaults.get("max_regions", 6))
+        parser.add_argument("--region-size", type=int, default=ctrl_defaults.get("region_size", 5))
+        parser.add_argument("--max-operator-evaluations", type=int,
+                            default=ctrl_defaults.get("max_operator_evaluations", 24))
+        parser.add_argument("--max-reviews", type=int, default=ctrl_defaults.get("max_reviews", 12),
                             help="Maximum number of review opportunities per instance")
     args = parser.parse_args()
     if args.time_limit_seconds is not None and args.time_limit_seconds <= 0:
@@ -254,9 +272,22 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
     client = None
     if controller_factory is not None:
         try:
+            model_profile = None
+            if uses_llm:
+                model_profile = resolve_model_profile(args.model, experiment_settings=exp_settings)
+                if args.provider and args.provider != model_profile["provider"]:
+                    raise ValueError(
+                        f"--provider={args.provider!r} does not match selected model profile "
+                        f"provider {model_profile['provider']!r}"
+                    )
+                model_profile = {
+                    **model_profile,
+                    "min_request_interval_seconds": args.api_min_interval_seconds,
+                    "max_input_characters": args.api_max_input_characters,
+                }
             controller_settings = ControllerSettings(
-                model=args.model if uses_llm else None,
-                provider=args.provider if uses_llm else "none",
+                model=model_profile["model"] if uses_llm else None,
+                provider=model_profile["provider"] if uses_llm else "none",
                 review_interval=args.review_interval,
                 warmup_generations=args.warmup_generations,
                 stagnation_window=args.stagnation_window,
@@ -267,18 +298,27 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
                 max_regions=args.max_regions,
                 region_size=args.region_size,
                 max_operator_evaluations=args.max_operator_evaluations,
+                recent_outcomes=ctrl_defaults.get("recent_outcomes", 5),
                 api_timeout_seconds=args.api_timeout_seconds if uses_llm else 60.0,
-                max_output_tokens=args.max_output_tokens if uses_llm else 300,
+                max_output_tokens=args.max_output_tokens if uses_llm else ctrl_defaults.get("max_output_tokens", 4096),
                 max_api_calls=args.max_api_calls if uses_llm else 0,
                 max_reviews=args.max_reviews,
             )
             if uses_llm:
-                from itc2019.llm import GeminiDecisionClient
-                client = GeminiDecisionClient(args.model, args.api_timeout_seconds,
-                    args.max_output_tokens, free_tier_confirmed=args.confirm_free_tier,
-                    min_request_interval_seconds=args.api_min_interval_seconds,
-                    max_input_characters=args.api_max_input_characters,
-                    thinking_level=args.thinking_level)
+                from itc2019.llm import create_decision_client
+                chosen_thinking = (
+                    args.thinking_level
+                    or os.environ.get("LLM_THINKING_LEVEL")
+                    or os.environ.get("GEMINI_THINKING_LEVEL")
+                    or None
+                )
+                client = create_decision_client(
+                    model_profile,
+                    thinking_level=chosen_thinking,
+                    free_tier_confirmed=args.confirm_free_tier,
+                    timeout_seconds=args.api_timeout_seconds,
+                    max_output_tokens=args.max_output_tokens,
+                )
         except (ValueError, RuntimeError) as exc:
             parser.error(str(exc))
     settings = _run_settings(paths, config, args)
@@ -290,7 +330,7 @@ def main(*, controller_factory=None, pipeline_root: Path | None = None,
         settings["controller"] = asdict(controller_settings)
         if uses_llm:
             settings["llm"] = client.metadata()
-            settings["environment"]["google-genai"] = package_version("google-genai")
+            settings["environment"]["httpx"] = package_version("httpx")
         else:
             settings["controller"]["fixed_execution_budget"] = FIXED_EXECUTION_BUDGET
         settings["controller_sources_sha256"] = {

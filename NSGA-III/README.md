@@ -79,11 +79,11 @@ python run_experiment.py --pipeline baseline --instance muni-fsps-spr17 --seed 1
 python run_experiment.py --pipeline baseline --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all 12 instances defined in the default profile ([profiles/experiment.json](../profiles/experiment.json)).
+Omit `--instance` to run all 12 instances defined in the default profile ([settings/experiment.json](../settings/experiment.json)).
 
 ### Direct CLI Options
 
-Direct invocations of `python NSGA-III/main.py` default to `population=20`, `generations=20`, `partitions=3`, `seed=42`, `mutation-rate=0.2`, `mutation-fraction=0.005`, and `crossover-rate=0.7` (whereas `run_experiment.py` applies profile presets such as `generations=200`, `evaluations=1800`, `mutation-rate=0.35`, and `mutation-fraction=0.01`). Inspect all flags with `python NSGA-III/main.py --help`.
+Both direct invocations (`python NSGA-III/main.py`) and `run_experiment.py` load their default solver, repair, and controller parameters from [settings/experiment.json](../settings/experiment.json) (`population=20`, `generations=200`, `evaluations=1800`, `partitions=3`, `seed=17`, `mutation-rate=0.35`, `mutation-fraction=0.01`, `crossover-rate=0.7`). Inspect all flags with `python NSGA-III/main.py --help`.
 
 | Option group | Flags | Notes |
 | :--- | :--- | :--- |

@@ -81,19 +81,19 @@ Valid interventions run through `apply_operator` in [../NSGA-III/itc2019/operato
 
 ## 2. Gemini Free Tier Settings and Fail-Closed Policy
 
-All API transport rules live in [../NSGA-III/itc2019/llm.py](../NSGA-III/itc2019/llm.py) using the `google-genai` SDK against `https://generativelanguage.googleapis.com` (`v1beta`, `vertexai=False`):
+All model profiles and transport defaults live centrally under [../settings/](../settings/) (`experiment.json` and `models/gemini_*.json`), and requests are served by [../providers/gemini.py](../providers/gemini.py) using `httpx` + multi-slot `.env` quota tracking against `https://generativelanguage.googleapis.com` (`v1beta`):
 
 | Setting | CLI flag / environment variable | Default / allowed values |
 | :--- | :--- | :--- |
-| **Allowed models (`FREE_TIER_MODELS`)** | `--model` / `GEMINI_MODEL` | `gemini-4-hydrogen` (default), `gemini-3.5-flash-lite` |
+| **Model profiles (`settings/models/`)** | `--model` / `LLM_MODEL` / `GEMINI_MODEL` | `gemini_hydrogen` / `gemini-4-hydrogen` (default), `gemini_flash_lite` / `gemini-3.5-flash-lite` |
 | **Free Tier confirmation** | `--confirm-free-tier` / `GEMINI_FREE_TIER_CONFIRMED=1` | Required before any API client is created |
-| **API key** | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Read from environment only (never pass as a CLI argument, redacted in logs, conflicting dual keys rejected) |
-| **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
-| **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (`DEFAULT_TIMEOUT_SECONDS = 60.0`) |
-| **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
+| **API key** | `.env` `GEMINI_API_KEY_001...` or env `GEMINI_API_KEY` | Read locally (never pass on CLI or commit, redacted in logs) |
+| **Thinking level** | `--thinking-level` / `LLM_THINKING_LEVEL` / `GEMINI_THINKING_LEVEL` | `low` (default), `medium`, `high` |
+| **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (from `settings/experiment.json`) |
+| **Retry & cooldown policy** | `providers/credential_pool.py` | Transient retry + `60s` slot cooldown after `3` consecutive transient errors; daily quota rotation across `.env` slots |
 | **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`12` via `run_experiment.py`) |
 
-Note on profiles: [profiles/experiment.json](../profiles/experiment.json) configures `gemini-4-hydrogen` with `thinking_level: "low"` and `max_reviews: 12`.
+Note on centralized settings: [settings/experiment.json](../settings/experiment.json) selects `gemini_hydrogen` by default and shares all solver/repair/controller/LLM caps across both direct CLI runs and `run_experiment.py`.
 
 **Fail-closed API and quota policy**:
 

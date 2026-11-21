@@ -45,18 +45,18 @@ class ControllerSettings:
     max_operator_evaluations: int = 24
     recent_outcomes: int = 5
     api_timeout_seconds: float = 60.0
-    max_output_tokens: int = 300
+    max_output_tokens: int = 4096
     max_api_calls: int = 100
     max_reviews: int = 12
     provider: str = "gemini"
 
     def __post_init__(self) -> None:
-        if self.provider == "gemini":
-            if not self.model or self.max_api_calls < 1:
-                raise ValueError("Gemini controllers require a model and a positive API call limit")
-        elif self.provider == "none":
+        if self.provider == "none":
             if self.model is not None or self.max_api_calls != 0:
                 raise ValueError("Local controllers require no model and a zero API call limit")
+        elif self.provider and isinstance(self.provider, str):
+            if not self.model or self.max_api_calls < 1:
+                raise ValueError("API controllers require a model and a positive API call limit")
         else:
             raise ValueError("Unknown controller provider")
         positive = (self.review_interval, self.warmup_generations,

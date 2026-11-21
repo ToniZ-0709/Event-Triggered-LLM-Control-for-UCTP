@@ -4,6 +4,7 @@
   "solver": {
     "population": 20,
     "partitions": 3,
+    "seed": 17,
     "mutation_rate": 0.35,
     "mutation_fraction": 0.01,
     "crossover_rate": 0.7,
@@ -41,14 +42,12 @@
     "region_size": 5,
     "max_operator_evaluations": 24,
     "max_reviews": 12,
-    "api_timeout_seconds": 60,
-    "max_output_tokens": 4096
+    "recent_outcomes": 5
   },
   "llm": {
-    "provider": "gemini",
-    "model": "gemini-4-hydrogen",
-    "thinking_level": "low",
-    "free_tier_only": true,
+    "model_profile": "gemini_hydrogen",
+    "api_timeout_seconds": 60,
+    "max_output_tokens": 4096,
     "min_request_interval_seconds": 10.0,
     "max_input_characters": 60000
   },

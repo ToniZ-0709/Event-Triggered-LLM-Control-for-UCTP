@@ -41,7 +41,7 @@ def test_cli_publishes_bound_xml_or_incomplete_api_run(tmp_path,monkeypatch,api_
         class QuotaController(ControllerCallback):
             def decide(self,packet):
                 return None,[{"api_requests":1,"status":"api_quota_exhausted"}],"api_quota_exhausted"
-        monkeypatch.setattr(llm,"GeminiDecisionClient",lambda *a,**kw:
+        monkeypatch.setattr(llm,"create_decision_client",lambda *a,**kw:
                             type("OfflineClient",(),{"metadata":lambda self:{"provider":"gemini"},
                                                       "close":lambda self:None})())
         kwargs={"controller_factory":QuotaController,"pipeline_name":"test-agent"}

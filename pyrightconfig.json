@@ -5,9 +5,14 @@
     "Greedy Controller",
     "Single-Agent Controller",
     "Multi-Agent Controller",
+    "providers",
+    "tools",
+    "tests",
+    "run_experiment.py",
     "compare_pipelines.py"
   ],
   "extraPaths": [
+    ".",
     "NSGA-III",
     "Random Controller",
     "Greedy Controller",
