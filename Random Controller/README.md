@@ -73,26 +73,26 @@ Inspect an ITC 2019 XML instance using the direct entrypoint without running opt
 python "Random Controller/main.py" --instance wbg-fal10 --inspect
 ```
 
-Preview the exact pilot solver command and per-instance budget without running it:
+Preview the exact solver command and budget without running it:
 
 ```cmd
-python run_pilot.py --pipeline random --instance muni-fsps-spr17 --seed 17 --dry-run
+python run_experiment.py --pipeline random --instance muni-fsps-spr17 --seed 17 --dry-run
 ```
 
 ### Running Optimization
 
-Run via `run_pilot.py` using the default pilot profile (`profiles/pilot.json`, default `--seed 17`):
+Run via `run_experiment.py` using the default experiment profile (`profiles/experiment.json`, default `--seed 17`):
 
 ```cmd
-python run_pilot.py --pipeline random --instance muni-fsps-spr17 --seed 17
+python run_experiment.py --pipeline random --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all instances in the selected profile. Pass `--profile profiles/phase1.json` for the 8-instance Phase 1 set or `--profile profiles/phase2.json` for the 18-instance Phase 2 set, `--output ExperimentResult/phase2` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
+Omit `--instance` to run all 12 instances in [profiles/experiment.json](../profiles/experiment.json), pass `--output ExperimentResult` to write under a shared campaign folder, or `--workers N --live` to execute multiple offline jobs in parallel.
 
 Run directly via `Random Controller/main.py` when specifying custom solver, repair, or review-gate flags:
 
 ```cmd
-python "Random Controller/main.py" --instance muni-fsps-spr17 --seed 17 --population 20 --generations 200 --evaluations 1200 --time-limit-seconds 630
+python "Random Controller/main.py" --instance muni-fsps-spr17 --seed 17 --population 20 --generations 200 --evaluations 1800
 ```
 
 Direct CLI defaults when flags are omitted: `--population 20`, `--generations 20`, `--partitions 3`, `--seed 42`, `--dataset Dataset_ITC2019`, `--output "Random Controller/results_itc2019"`, `--review-interval 10`, `--warmup-generations 5`, `--stagnation-window 5`, `--min-review-interval 3`, `--max-review-interval 20`, `--diversity-threshold 0.20`, `--diversity-recovery-threshold 0.30`, `--max-regions 6`, `--region-size 5`, `--max-operator-evaluations 24`, and `--max-reviews 12`. `--stop-on-feasible`, `--manifest FILE`, `--all`, and `--repair-*` options are also supported. Run `python "Random Controller/main.py" --help` for the full option list.
@@ -109,7 +109,7 @@ When invoking `Random Controller/main.py` directly, you can control live logging
 
 ## 4. Output Artifacts
 
-By default, direct runs write to `Random Controller/results_itc2019/<run_id>/`. When run with `run_pilot.py --output DIR`, results are written to `DIR/random/<run_id>/`. Each `<run_id>` encodes the instance count, population, generations, partitions, seed, and a 16-character SHA-256 fingerprint of all solver, repair, controller, and source-file settings.
+By default, direct runs write to `Random Controller/results_itc2019/<run_id>/`. When run with `run_experiment.py --output DIR`, results are written to `DIR/random/<run_id>/`. Each `<run_id>` encodes the instance count, population, generations, partitions, seed, and a 16-character SHA-256 fingerprint of all solver, repair, controller, and source-file settings.
 
 Run-level files under `<output>/<run_id>/`:
 

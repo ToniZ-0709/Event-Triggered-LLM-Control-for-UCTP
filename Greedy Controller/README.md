@@ -93,22 +93,22 @@ Inspect an instance without running optimization:
 python "Greedy Controller/main.py" --instance wbg-fal10 --inspect
 ```
 
-Preview pilot commands and per-instance budgets with `--dry-run`:
+Preview experiment commands and budgets with `--dry-run`:
 
 ```cmd
-python run_pilot.py --pipeline greedy --instance muni-fsps-spr17 --seed 17 --dry-run
+python run_experiment.py --pipeline greedy --instance muni-fsps-spr17 --seed 17 --dry-run
 ```
 
-Run optimization through the pilot runner (defaults to `profiles/pilot.json`, omit `--instance` to run all profile instances, or pass `--profile profiles/phase1.json` or `--profile profiles/phase2.json` and `--output DIR`):
+Run optimization through the experiment runner (defaults to `profiles/experiment.json`; omit `--instance` to run all 12 benchmark instances, or pass `--output DIR`):
 
 ```cmd
-python run_pilot.py --pipeline greedy --instance muni-fsps-spr17 --seed 17
+python run_experiment.py --pipeline greedy --instance muni-fsps-spr17 --seed 17
 ```
 
 Run the direct entrypoint directly (see `python "Greedy Controller/main.py" --help` for all solver and controller flags):
 
 ```cmd
-python "Greedy Controller/main.py" --instance muni-fsps-spr17 --seed 17 --population 20 --generations 200 --evaluations 1200 --time-limit-seconds 630
+python "Greedy Controller/main.py" --instance muni-fsps-spr17 --seed 17 --population 20 --generations 200 --evaluations 1800
 ```
 
 Live progress flags on `Greedy Controller/main.py`:
@@ -120,7 +120,7 @@ Live progress flags on `Greedy Controller/main.py`:
 
 ## 4. Output Artifacts
 
-Direct runs write under `Greedy Controller/results_itc2019/<run_id>/` by default (override with `--output`). Running via `run_pilot.py --output DIR` writes under `DIR/greedy/<run_id>/` (without `--output`, it writes to `Greedy Controller/results_itc2019/<run_id>/`).
+Direct runs write under `Greedy Controller/results_itc2019/<run_id>/` by default (override with `--output`). Running via `run_experiment.py --output DIR` writes under `DIR/greedy/<run_id>/` (without `--output`, it writes to `Greedy Controller/results_itc2019/<run_id>/`).
 
 Run-level files under `<run_id>/`:
 - `run_config.json`: run ID, resolved solver/repair/controller settings (`provider: "none"`, `model: null`, `max_api_calls: 0`, `fixed_execution_budget: 10`, no `llm` section), XML SHA-256 hashes, dependency versions, `controller_sources_sha256`, and `completion_status`
@@ -134,4 +134,4 @@ Per-instance files under `<run_id>/<instance>/`:
 - `run.log`: human-readable live progress and completion log
 - `solution.xml` (with `expected.json`): exported only when the final solution is internally feasible (`score.hard == 0`) with valid student sectioning (official ITC 2019 validation is a separate step)
 
-See the [repository README](../README.md) for pipeline comparisons, profiles, and pilot workflows.
+See the [repository README](../README.md) for pipeline comparisons, profiles, and runner workflows.

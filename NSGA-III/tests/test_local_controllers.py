@@ -22,8 +22,8 @@ from itc2019.controller import ControllerSettings
 from itc2019.instance import load_instance
 from itc2019.nsga3 import PlacementProblem
 from itc2019.regions import RegionCandidate
-from run_pilot import commands
-from tools.audit_expanded_pilot import audit_attempt
+from run_experiment import commands
+from tools.audit_runs import audit_attempt
 
 
 def load_module(path):

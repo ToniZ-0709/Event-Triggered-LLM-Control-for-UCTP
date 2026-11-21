@@ -16,7 +16,7 @@ sys.path.insert(0,str(ROOT))
 sys.path.insert(0,str(ROOT/"NSGA-III"))
 from itc2019 import llm
 from itc2019.controller import ControllerCallback,ControllerSettings
-from run_pilot import commands
+from run_experiment import commands
 from compare_pipelines import compare
 
 NO_OP={"solution_id":None,"region_id":None,"boundary_id":None,"operator_id":"no_op",
@@ -259,7 +259,7 @@ def test_native_sdk_retries_transient_504_up_to_3_attempts(monkeypatch):
 
 
 def test_wrapper_applies_gemini_policy_only_to_controllers():
-    profile=json.loads((ROOT/"profiles/pilot.json").read_text(encoding="utf-8"))
+    profile=json.loads((ROOT/"profiles/experiment.json").read_text(encoding="utf-8"))
     for mode in ("baseline","single","multi","random","greedy"):
         command=commands(profile,pipeline=mode,seed=17,instances=["nbi-spr18"],model=None,
                          output=None,confirm_free_tier=True,thinking_level="high")[0]

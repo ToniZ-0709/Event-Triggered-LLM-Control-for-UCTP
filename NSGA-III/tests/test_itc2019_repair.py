@@ -581,8 +581,8 @@ def test_controller_does_not_call_api_after_search_budget_is_spent() -> None:
     assert controller.budget_skipped_reviews >= 1
 
 
-def test_pilot_runner_keeps_per_instance_budgets_and_role_call_caps() -> None:
-    from run_pilot import commands
+def test_experiment_runner_keeps_per_instance_budgets_and_role_call_caps() -> None:
+    from run_experiment import commands
     profile = {"schema_version": 1, "solver": {"population": 20, "partitions": 3},
                "instances": {"A": {"evaluations": 600, "generations": 100},
                              "B": {"evaluations": 1200, "generations": 200}},
@@ -593,7 +593,7 @@ def test_pilot_runner_keeps_per_instance_budgets_and_role_call_caps() -> None:
     assert baseline[1][baseline[1].index("--evaluations") + 1] == "1200"
     assert multi[0][multi[0].index("--max-api-calls") + 1] == "8"
     assert multi[0][multi[0].index("--evaluations") + 1] == "1200"
-    with pytest.raises(ValueError, match="No measured budget"):
+    with pytest.raises(ValueError, match="Instance not configured in profile"):
         commands(profile, pipeline="baseline", seed=17, instances=["C"], model=None, output=None)
 
 

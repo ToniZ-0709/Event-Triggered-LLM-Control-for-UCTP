@@ -72,18 +72,18 @@ Inspect an instance without running optimization:
 python NSGA-III/main.py --instance wbg-fal10 --inspect
 ```
 
-Preview or run the calibrated pilot profile via `run_pilot.py` from `Experiment/`:
+Preview or run the benchmark profile via `run_experiment.py` from `Experiment/`:
 
 ```powershell
-python run_pilot.py --pipeline baseline --instance muni-fsps-spr17 --seed 17 --dry-run
-python run_pilot.py --pipeline baseline --instance muni-fsps-spr17 --seed 17
+python run_experiment.py --pipeline baseline --instance muni-fsps-spr17 --seed 17 --dry-run
+python run_experiment.py --pipeline baseline --instance muni-fsps-spr17 --seed 17
 ```
 
-Omit `--instance` to run all instances defined in the selected profile ([profiles/pilot.json](../profiles/pilot.json) by default, or pass `--profile profiles/phase1.json` or `--profile profiles/phase2.json`).
+Omit `--instance` to run all 12 instances defined in the default profile ([profiles/experiment.json](../profiles/experiment.json)).
 
 ### Direct CLI Options
 
-Direct invocations of `python NSGA-III/main.py` default to `population=20`, `generations=20`, `partitions=3`, `seed=42`, `mutation-rate=0.2`, `mutation-fraction=0.005`, and `crossover-rate=0.7` (whereas `run_pilot.py` applies profile presets such as `generations=200`, `mutation-rate=0.35`, and `mutation-fraction=0.01`). Inspect all flags with `python NSGA-III/main.py --help`.
+Direct invocations of `python NSGA-III/main.py` default to `population=20`, `generations=20`, `partitions=3`, `seed=42`, `mutation-rate=0.2`, `mutation-fraction=0.005`, and `crossover-rate=0.7` (whereas `run_experiment.py` applies profile presets such as `generations=200`, `evaluations=1800`, `mutation-rate=0.35`, and `mutation-fraction=0.01`). Inspect all flags with `python NSGA-III/main.py --help`.
 
 | Option group | Flags | Notes |
 | :--- | :--- | :--- |
@@ -104,7 +104,7 @@ python NSGA-III/main.py --instance wbg-fal10 --generations 100 --evaluations 120
 
 ## 5. Output Artifacts and Verification Caveat
 
-Direct runs write to `NSGA-III/results_itc2019/<run_id>/`, while `run_pilot.py --output DIR` writes to `DIR/baseline/<run_id>/`. Runs stage into a temporary directory and atomically publish only when settings match or the target directory does not yet exist (`run_id` includes a SHA-256 fingerprint of instance hashes, solver/repair settings, and environment/source hashes).
+Direct runs write to `NSGA-III/results_itc2019/<run_id>/`, while `run_experiment.py --output DIR` writes to `DIR/baseline/<run_id>/`. Runs stage into a temporary directory and atomically publish only when settings match or the target directory does not yet exist (`run_id` includes a SHA-256 fingerprint of instance hashes, solver/repair settings, and environment/source hashes).
 
 - `run_config.json`: Run ID, complete solver/repair parameters, instance XML SHA-256 hashes, Python/dependency versions, and source hashes.
 - `summary.json`: Array of per-instance summary records for all instances in the run.

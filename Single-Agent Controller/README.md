@@ -91,9 +91,9 @@ All API transport rules live in [../NSGA-III/itc2019/llm.py](../NSGA-III/itc2019
 | **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
 | **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (`DEFAULT_TIMEOUT_SECONDS = 60.0`) |
 | **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
-| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`12` via `run_pilot.py`) |
+| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`12` via `run_experiment.py`) |
 
-Note on profiles: [profiles/pilot.json](../profiles/pilot.json) and [profiles/phase1.json](../profiles/phase1.json) configure `gemini-3.5-flash-lite`, while [profiles/phase2.json](../profiles/phase2.json) configures `gemini-4-hydrogen`. All three set `thinking_level: "low"` and `max_reviews: 12`.
+Note on profiles: [profiles/experiment.json](../profiles/experiment.json) configures `gemini-4-hydrogen` with `thinking_level: "low"` and `max_reviews: 12`.
 
 **Fail-closed API and quota policy**:
 
@@ -117,17 +117,17 @@ Verify key presence, Free Tier confirmation, and one live `no_op` test call befo
 python tools/gemini_preflight.py --live --confirm-free-tier
 ```
 
-Preview or run the pilot profile via `run_pilot.py`:
+Preview or run the experiment profile via `run_experiment.py`:
 
 ```powershell
-python run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --dry-run
-python run_pilot.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+python run_experiment.py --pipeline single --instance muni-fsps-spr17 --seed 17 --dry-run
+python run_experiment.py --pipeline single --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
 ```
 
 Override the model or thinking level if needed:
 
 ```powershell
-python run_pilot.py --profile profiles/phase1.json --pipeline single --instance pu-cs-fal07 --seed 17 --model gemini-4-hydrogen --thinking-level medium --confirm-free-tier
+python run_experiment.py --pipeline single --instance pu-cs-fal07 --seed 17 --model gemini-3.5-flash-lite --thinking-level medium --confirm-free-tier
 ```
 
 ### Direct CLI and Live Logging Options
@@ -150,7 +150,7 @@ python "Single-Agent Controller/main.py" --instance wbg-fal10 --generations 50 -
 
 ## 4. Output Artifacts
 
-Direct runs save to `Single-Agent Controller/results_itc2019/<run_id>/`, while `run_pilot.py --output DIR` saves to `DIR/single/<run_id>/`.
+Direct runs save to `Single-Agent Controller/results_itc2019/<run_id>/`, while `run_experiment.py --output DIR` saves to `DIR/single/<run_id>/`.
 
 - `run_config.json`: Run ID, full solver/repair/controller/LLM metadata (no API keys), instance and source SHA-256 hashes, and `completion_status` (`"completed"` or `"incomplete_api_failure"`).
 - `summary.json`: Array of per-instance summaries.

@@ -93,7 +93,7 @@ _ACCEPTANCE_GUIDANCE = (
 )
 _BUDGET_GUIDANCE = (
     "Region scoring, operator trials and any recheck share the entire search evaluation budget "
-    "(1,800 in the Phase 2 campaign; use global.evaluation_budget and remaining_evaluations "
+    "(1,800 in the standard campaign; use global.evaluation_budget and remaining_evaluations "
     "for this run). Even no_op consumes a review and region scoring has already spent evaluations. "
     "Use reviews_used and max_reviews to preserve review opportunities and leave evaluations "
     "for NSGA-III generations. "

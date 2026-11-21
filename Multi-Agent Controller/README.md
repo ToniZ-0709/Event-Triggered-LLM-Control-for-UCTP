@@ -87,9 +87,9 @@ Both Inspector and Planner share the same `GeminiDecisionClient` instance in [..
 | **Thinking level** | `--thinking-level` / `GEMINI_THINKING_LEVEL` | `minimal`, `low` (default), `medium`, `high` |
 | **Request timeout** | `--api-timeout-seconds` | `60.0` seconds (`DEFAULT_TIMEOUT_SECONDS = 60.0`) |
 | **SDK retries (`RETRY_ATTEMPTS`)** | Internal `HttpRetryOptions` | `attempts=3` on transient HTTP codes `(408, 500, 502, 503, 504)` only |
-| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`24` via `run_pilot.py` for `max_reviews=12`) |
+| **Pacing & payload caps** | `--api-min-interval-seconds`, `--api-max-input-characters`, `--max-output-tokens`, `--max-api-calls` | Defaults: `10.0s`, `60000` chars, `4096` tokens including thinking, `100` calls direct (`24` via `run_experiment.py` for `max_reviews=12`) |
 
-Note on pacing and call budgets: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_pilot.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). Profiles [profiles/pilot.json](../profiles/pilot.json) and [profiles/phase1.json](../profiles/phase1.json) use `gemini-3.5-flash-lite`, while [profiles/phase2.json](../profiles/phase2.json) uses `gemini-4-hydrogen`, all with `thinking_level: "low"`.
+Note on pacing and call budgets: Because each full review invokes Inspector and then Planner sequentially, `--api-min-interval-seconds` (default `10.0s`) paces the gap between Inspector and Planner as well as between consecutive reviews. In `run_experiment.py`, `--max-api-calls` is automatically set to `max_reviews * 2` (`24` when `max_reviews = 12`). [profiles/experiment.json](../profiles/experiment.json) configures `gemini-4-hydrogen` with `thinking_level: "low"`.
 
 **Fail-closed API and quota policy**:
 
@@ -113,17 +113,17 @@ Verify Free Tier readiness with one live synthetic `no_op` check before running 
 python tools/gemini_preflight.py --live --confirm-free-tier
 ```
 
-Preview or run the pilot profile via `run_pilot.py`:
+Preview or run the experiment profile via `run_experiment.py`:
 
 ```powershell
-python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --dry-run
-python run_pilot.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
+python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --dry-run
+python run_experiment.py --pipeline multi --instance muni-fsps-spr17 --seed 17 --confirm-free-tier
 ```
 
-Run with an alternative profile, model, or thinking level:
+Run with an alternative model or thinking level:
 
 ```powershell
-python run_pilot.py --profile profiles/phase1.json --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini-4-hydrogen --thinking-level medium --confirm-free-tier
+python run_experiment.py --pipeline multi --instance pu-cs-fal07 --seed 17 --model gemini-3.5-flash-lite --thinking-level medium --confirm-free-tier
 ```
 
 ### Direct CLI and Live Logging Options
@@ -146,7 +146,7 @@ python "Multi-Agent Controller/main.py" --instance wbg-fal10 --generations 50 --
 
 ## 4. Output Artifacts
 
-Direct runs save to `Multi-Agent Controller/results_itc2019/<run_id>/`, while `run_pilot.py --output DIR` saves to `DIR/multi/<run_id>/`.
+Direct runs save to `Multi-Agent Controller/results_itc2019/<run_id>/`, while `run_experiment.py --output DIR` saves to `DIR/multi/<run_id>/`.
 
 - `run_config.json`: Run ID, full solver/repair/controller/LLM metadata (no API keys), source and instance SHA-256 hashes, and `completion_status` (`"completed"` or `"incomplete_api_failure"`).
 - `summary.json`: Array of per-instance summaries.
